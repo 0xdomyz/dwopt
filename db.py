@@ -1,4 +1,5 @@
 import sqlalchemy as alc
+from sqlalchemy.sql import text
 import pandas as pd
 import logging as logging
 from dw.fil import get_key
@@ -14,11 +15,14 @@ class _Db:
     def con(self):
         return self.eng.connect()
 
-    def run(self,sql):
+    def run(self,sql,args = None):
         with self.con() as c:
             _logger.info('running:')
             _logger.info(sql)
-            r = c.execute(sql)
+            if args is not None:
+                r = c.execute(text(sql), args)
+            else:
+                r = c.execute(sql)
             if r.returns_rows:
                 _ = pd.DataFrame(r.all(),columns = r.keys())
                 _logger.info(f'done, len: {len(_)}')
