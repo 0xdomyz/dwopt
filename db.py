@@ -1,7 +1,7 @@
 import sqlalchemy as alc
 from sqlalchemy.sql import text
 import pandas as pd
-import logging as logging
+import logging
 from dw.fil import get_key
 from dw._qry import PgQry, LtQry, OcQry
 _logger = logging.getLogger(__name__)
@@ -48,13 +48,19 @@ class _Db:
         cols = ','.join(pkey)
         where_cls = f'\nwhere {where}' if where else ''
         db_tbl = self.run(f"select {cols} from {sch_tbl_nme} {where_cls}")
-        dedup_tbl = (
-            tbl
-            .merge(db_tbl,how='left',on = pkey
-                ,validate='one_to_one',indicator=True)
-            .loc[lambda x:x._merge == 'left_only',:]
-            .drop(columns='_merge')
-        )
+        if len(db_tbl) > 0:
+            dedup_tbl = (
+                tbl
+                .merge(db_tbl,how='left',on = pkey
+                    ,validate='one_to_one',indicator=True)
+                .loc[lambda x:x._merge == 'left_only',:]
+                .drop(columns='_merge')
+            )
+        else:
+            dedup_tbl = tbl
+        if _logger.isEnabledFor(logging.INFO): 
+            _logger.info(f"write nodup tbl lens: {len(tbl)}, {len(db_tbl)}"
+                f", {len(dedup_tbl)}")
         self.write(dedup_tbl,sch_tbl_nme)
 
     def drop(self,tbl_nme):

@@ -4,19 +4,20 @@ class _Qry:
     def __init__(self
             ,operator
             ,from_ = None,select = None,left_join = None,where = None
-            ,sql = None):
+            ,order = None,sql = None):
         self._ops = operator
         self._from = from_
         self._select = (select,) if isinstance(select,str) else select
         self._left_join = left_join
         self._where = where
+        self._order = order
         self._sql = sql
         self._make_qry()
 
     def __copy__(self):
         return type(self)(
              self._ops,self._from,self._select,self._left_join,self._where
-            ,self._sql
+            ,self._order,self._sql
         )
 
     def _make_qry(self):
@@ -24,15 +25,12 @@ class _Qry:
             self._qry = self._sql
         else:
             select = (
-                f"select {','.join(self._select)} "
-                if self._select is not None 
-                else 'select * '
+                f"select {','.join(self._select)}" 
+                if self._select is not None else 'select *'
             )
-            _ = '\n' if len(select) > 60 else ''
+            _ = '\n' if len(select) > 60 else ' '
             from_ = (
-                f'from {self._from}'
-                if self._from is not None 
-                else 'from test'
+                f'from {self._from}' if self._from is not None else 'from test'
             )
             self._qry = select + _ + from_
             if self._left_join is not None:
@@ -48,6 +46,11 @@ class _Qry:
                 else ''
             )
             self._qry = self._qry + where
+            order = (
+                f'order by {self._order}' if self._order is not None else ''
+            )
+            _ = '\n' if len(where) == 0 or len(where)> 40 else ' '
+            self._qry = self._qry + _ + order
 
     def select(self,*args):
         _ = self.__copy__()
@@ -61,18 +64,24 @@ class _Qry:
         _._make_qry()
         return _
 
-    def where(self,where):
-        _ = self.__copy__()
-        _._where = where
-        _._make_qry()
-        return _
-
     def left_join(self,tbl,on):
         _ = self.__copy__()
         if _._left_join is not None:
             _._left_join = _._left_join + [(tbl,on)]
         else:
             _._left_join = [(tbl,on)]
+        _._make_qry()
+        return _
+
+    def where(self,where):
+        _ = self.__copy__()
+        _._where = where
+        _._make_qry()
+        return _
+
+    def order_by(self,order):
+        _ = self.__copy__()
+        _._order = order
         _._make_qry()
         return _
 
