@@ -25,7 +25,8 @@ class _Db:
                 r = c.execute(sql)
             if r.returns_rows:
                 _ = pd.DataFrame(r.all(),columns = r.keys())
-                _logger.info(f'done, len: {len(_)}')
+                if _logger.isEnabledFor(logging.INFO): 
+                    _logger.info(f'done, len: {len(_)}')
             else:
                 _logger.info('done')
                 _ = None
@@ -39,7 +40,8 @@ class _Db:
 
     def write(self,tbl,sch_tbl_nme):
         sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
-        _logger.info(f'writing to {sch_tbl_nme}, len: {len(tbl)}')
+        if _logger.isEnabledFor(logging.INFO): 
+            _logger.info(f'writing to {sch_tbl_nme}, len: {len(tbl)}')
         with self.con() as c:
             tbl.to_sql(tbl_nme,c,sch,if_exists = 'append',index=False)
         _logger.info(f'done')
