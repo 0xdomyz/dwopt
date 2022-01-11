@@ -3,12 +3,12 @@ class _Qry:
 
     def __init__(self
             ,operator
-            ,from_ = None,select = None,left_join = None,where = None
+            ,from_ = None,select = None,join = None,where = None
             ,order = None,sql = None):
         self._ops = operator
         self._from = from_
         self._select = (select,) if isinstance(select,str) else select
-        self._left_join = left_join
+        self._join = join
         self._where = where
         self._order = order
         self._sql = sql
@@ -16,7 +16,7 @@ class _Qry:
 
     def __copy__(self):
         return type(self)(
-             self._ops,self._from,self._select,self._left_join,self._where
+             self._ops,self._from,self._select,self._join,self._where
             ,self._order,self._sql
         )
 
@@ -33,13 +33,13 @@ class _Qry:
                 f'from {self._from}' if self._from is not None else 'from test'
             )
             self._qry = select + _ + from_
-            if self._left_join is not None:
-                for i,j in self._left_join:
-                    left = (
-                        f'\nleft join {i}\n'
+            if self._join is not None:
+                for i,j,k in self._join:
+                    join = (
+                        f'\n{k} join {i}\n'
                         f'on {j}'
                     )
-                    self._qry = self._qry + left
+                    self._qry = self._qry + join
             where = (
                 f'\nwhere {self._where}'
                 if self._where is not None 
@@ -64,12 +64,12 @@ class _Qry:
         _._make_qry()
         return _
 
-    def left_join(self,tbl,on):
+    def join(self,tbl,on,how = 'left'):
         _ = self.__copy__()
-        if _._left_join is not None:
-            _._left_join = _._left_join + [(tbl,on)]
+        if _._join is not None:
+            _._join = _._join + [(tbl,on,how)]
         else:
-            _._left_join = [(tbl,on)]
+            _._join = [(tbl,on,how)]
         _._make_qry()
         return _
 
@@ -127,6 +127,11 @@ class LtQry(_Qry):
     pass
 
 class OcQry(_Qry):
+
+    def _make_qry(self):
+        super()._make_qry()
+        self._qry = self._qry.replace('select','select /*+PARALLEL (4)*/')
+
     from dw._sqls.oc import head
     from dw._sqls.oc import first
     from dw._sqls.oc import hash

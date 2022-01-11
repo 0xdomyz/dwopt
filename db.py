@@ -140,6 +140,14 @@ class Oc(_Db):
         print(sql)
         return self.run(sql)
 
+    def drop(self,tbl_nme):
+        try:
+            self.run(f'drop table {tbl_nme} purge')
+        except Exception as ex:
+            return str(ex)
+        else:
+            return f'{tbl_nme} dropped'
+
     def qry(self,*args,**kwargs):
         return OcQry(self,*args,**kwargs)
 
