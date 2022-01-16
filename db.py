@@ -52,7 +52,7 @@ class _Db:
             mods.update(kwargs)
         for i,j in mods.items():
             sql = sql.replace(f':{i}',str(j))
-            _logger.debug(f'replaced {i} by {j}')
+            _logger.debug(f'replaced :{i} by {j}')
         return sql
 
     def create(self,tbl_nme,dtypes = None,**kwargs):
