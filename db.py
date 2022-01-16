@@ -24,16 +24,35 @@ class _Db:
     def update_meta(self,meta):
         self.meta.update({meta.schema,meta})
 
-    def run(self,sql,args = None):
+    def _run(self,sql,args = None):
         with self.eng.begin() as c:
             _logger.info(f'running:\n{sql}')
             if args is not None:
+                _logger.info(f'{len(args) = }')
                 r = c.execute(text(sql), args)
             else:
                 r = c.execute(sql)
         _logger.info('done')
         if r.returns_rows:
             return pd.DataFrame(r.all(),columns = r.keys())
+
+    def run(self,sql,args=None,pth=None,mods=None,**kwargs):
+        if sql is None and pth is not None:
+            with open(pth) as f:
+                sql = f.read()
+            _logger.info(f'sql from:\n{pth}')
+        if mods is not None or len(kwargs) > 0:
+            sql = self._bind_mods(sql,mods,**kwargs)
+        return self._run(sql,args)
+
+    def _bind_mods(self,sql,mods = None,**kwargs):
+        if mods is None:
+            mods = kwargs
+        else:
+            mods.update(kwargs)
+        for i,j in mods.items():
+            sql = sql.replace(f":{i}",str(j))
+        return sql
 
     def create(self,tbl_nme,dtypes = None,**kwargs):
         if dtypes is None:
@@ -158,10 +177,33 @@ class Lt(_Db):
         return LtQry(self,*args,**kwargs)
 
 class Oc(_Db):
-    def list_tables(self):
+    def list_tables(self,owner):
         sql = (
-            "select * from all_table_columns "
-            "\nwhere rownum < 5"
+            "select/*+PARALLEL (4)*/ owner,table_name"
+            "\n    ,max(column_name),min(column_name)"
+            "\nfrom all_tab_columns"
+            f"\nwhere owner = {owner.upper()}"
+            "\ngroup by owner,table_name"
+        )
+        return self.run(sql)
+
+    def table_sizes(self):
+        sql = (
+            "select/*+PARALLEL (4)*/ "
+            "\n    tablespace_name,segment_type,segment_name"
+            "\n    ,sum(bytes)/1024/1024 table_size_mb"
+            "\nfrom user_extents"
+            "\ngroup by tablespace_name,segment_type,segment_name"
+        )
+        return self.run(sql)
+
+    def table_cols(self,sch_tbl_nme):
+        sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
+        sql = (
+            "select/*+PARALLEL (4)*/ "
+            "\nfrom all_tab_columns"
+            f"\nwhere owner = '{sch.upper()}'"
+            f"\nand table_name = '{tbl_nme.upper()}'"
         )
         return self.run(sql)
 
