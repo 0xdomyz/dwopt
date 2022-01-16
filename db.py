@@ -36,7 +36,7 @@ class _Db:
         if r.returns_rows:
             return pd.DataFrame(r.all(),columns = r.keys())
 
-    def run(self,sql,args=None,pth=None,mods=None,**kwargs):
+    def run(self,sql=None,args=None,pth=None,mods=None,**kwargs):
         if sql is None and pth is not None:
             with open(pth) as f:
                 sql = f.read()
@@ -51,7 +51,8 @@ class _Db:
         else:
             mods.update(kwargs)
         for i,j in mods.items():
-            sql = sql.replace(f":{i}",str(j))
+            sql = sql.replace(f':{i}',str(j))
+            _logger.debug(f'replaced {i} by {j}')
         return sql
 
     def create(self,tbl_nme,dtypes = None,**kwargs):
@@ -182,14 +183,14 @@ class Oc(_Db):
             "select/*+PARALLEL (4)*/ owner,table_name"
             "\n    ,max(column_name),min(column_name)"
             "\nfrom all_tab_columns"
-            f"\nwhere owner = {owner.upper()}"
+            f"\nwhere owner = '{owner.upper()}'"
             "\ngroup by owner,table_name"
         )
         return self.run(sql)
 
     def table_sizes(self):
         sql = (
-            "select/*+PARALLEL (4)*/ "
+            "select/*+PARALLEL (4)*/"
             "\n    tablespace_name,segment_type,segment_name"
             "\n    ,sum(bytes)/1024/1024 table_size_mb"
             "\nfrom user_extents"
@@ -200,7 +201,7 @@ class Oc(_Db):
     def table_cols(self,sch_tbl_nme):
         sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
         sql = (
-            "select/*+PARALLEL (4)*/ "
+            "select/*+PARALLEL (4)*/ *"
             "\nfrom all_tab_columns"
             f"\nwhere owner = '{sch.upper()}'"
             f"\nand table_name = '{tbl_nme.upper()}'"
