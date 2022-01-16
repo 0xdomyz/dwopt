@@ -4,7 +4,8 @@ from .fil import (
     ,get_key
     ,get_pth
 )
-from .db import Pg,Lt
-pg = Pg('psql_dw')
-lt = Lt('sqlite3_dw')
+from .db import make_eng,Pg,Lt
+
+pg = Pg(make_eng('psql_dw'))
+lt = Lt(make_eng('sqlite3_dw'))
 

@@ -1,56 +1,79 @@
 import sqlalchemy as alc
 from sqlalchemy.sql import text
 import pandas as pd
+import numpy as np
 import logging
 from dw.fil import get_key
 from dw._qry import PgQry, LtQry, OcQry
 _logger = logging.getLogger(__name__)
 
-class _Db:
-    def __init__(self,key_nme):
-        self.key_nme = key_nme
-        self.url = get_key(self.key_nme)[0]
-        self.eng = alc.create_engine(self.url)
+def make_eng(key_nme):
+    url = get_key(key_nme)[0]
+    _logger.debug('making sqlalchemy engine')
+    return alc.create_engine(url)
 
-    def con(self):
-        return self.eng.connect()
+def make_meta(eng,schema):
+    _logger.debug('making sqlalchemy meta')
+    pass
+
+class _Db:
+    def __init__(self,eng):
+        self.eng = eng
+        self.meta = {}
+
+    def update_meta(self,meta):
+        self.meta.update({meta.schema,meta})
 
     def run(self,sql,args = None):
-        with self.con() as c:
-            _logger.info('running:')
-            _logger.info(sql)
+        with self.eng.begin() as c:
+            _logger.info(f'running:\n{sql}')
             if args is not None:
                 r = c.execute(text(sql), args)
             else:
                 r = c.execute(sql)
-            if r.returns_rows:
-                _ = pd.DataFrame(r.all(),columns = r.keys())
-                if _logger.isEnabledFor(logging.INFO): 
-                    _logger.info(f'done, len: {len(_)}')
-            else:
-                _logger.info('done')
-                _ = None
-        return _
+        _logger.info('done')
+        if r.returns_rows:
+            return pd.DataFrame(r.all(),columns = r.keys())
 
-    def create(self,sch_tbl_nme,sql):
-        return (
-            f'create table {sch_tbl_nme} '
-            f'\n{sql}'
+    def create(self,tbl_nme,dtypes = None,**kwargs):
+        if dtypes is None:
+            dtypes = kwargs
+        else:
+            dtypes.update(kwargs)
+        cls = ''
+        for col,dtype in dtypes.items():
+            cls += f"\n    ,{col} {dtype}"
+        self.run(
+            f'create table {tbl_nme}('
+            f"\n    {cls[6:]}"
+            "\n)"
         )
 
-    def write(self,tbl,sch_tbl_nme):
-        sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
-        if _logger.isEnabledFor(logging.INFO): 
-            _logger.info(f'writing to {sch_tbl_nme}, len: {len(tbl)}')
-        with self.con() as c:
-            tbl.to_sql(tbl_nme,c,sch,if_exists = 'append',index=False)
-        _logger.info(f'done')
+    def write(self,tbl,tbl_nme):
+        _ = len(tbl)
+        _logger.debug(f'writing to {tbl_nme}, len: {_}')
+        if _ == 0:
+            return
+        tbl = tbl.copy()
+        cols = tbl.columns.tolist()
+        for i in cols:
+            if np.issubdtype(tbl[i].dtype, np.datetime64):
+                tbl[i] = tbl[i].astype(str)
+                logging.debug(f'converted col {i} to str')
+        _ = ','.join(f':{i}' for i in cols)
+        sql = (
+            f"insert into {tbl_nme} ({','.join(cols)})"
+            f" values ({_})"
+        )
+        self.run(sql,args = tbl.to_dict('records'))
 
-    def write_nodup(self,tbl,sch_tbl_nme,pkey,where = None):
+    def write_nodup(self,tbl,tbl_nme,pkey,where = None):
         cols = ','.join(pkey)
         where_cls = f'\nwhere {where}' if where else ''
-        db_tbl = self.run(f"select {cols} from {sch_tbl_nme} {where_cls}")
-        if len(db_tbl) > 0:
+        db_tbl = self.run(f"select {cols} from {tbl_nme} {where_cls}")
+        l_tbl = len(tbl)
+        l_db_tbl = len(db_tbl)
+        if l_tbl > 0 and l_db_tbl > 0:
             dedup_tbl = (
                 tbl
                 .merge(db_tbl,how='left',on = pkey
@@ -60,16 +83,19 @@ class _Db:
             )
         else:
             dedup_tbl = tbl
-        if _logger.isEnabledFor(logging.INFO): 
-            _logger.info(f"write nodup tbl lens: {len(tbl)}, {len(db_tbl)}"
-                f", {len(dedup_tbl)}")
-        self.write(dedup_tbl,sch_tbl_nme)
+        if _logger.isEnabledFor(logging.DEBUG): 
+            _logger.debug(
+                f"write nodup: {l_tbl = }, {l_db_tbl = }"
+                f", {len(dedup_tbl) = }"
+            )
+        self.write(dedup_tbl,tbl_nme)
 
     def drop(self,tbl_nme):
         try:
             self.run(f'drop table {tbl_nme}')
         except Exception as ex:
-            return str(ex)
+            _logger.debug(str(ex))
+            return f'{tbl_nme} not exist'
         else:
             return f'{tbl_nme} dropped'
 
@@ -97,7 +123,6 @@ class Pg(_Db):
             "\nwhere table_schema"
             "\n   not in ('information_schema','pg_catalog')"
         )
-        print(sql)
         return self.run(sql)
 
     def table_cols(self,sch_tbl_nme):
@@ -107,12 +132,14 @@ class Pg(_Db):
             f"\nwhere table_schema = '{sch}' "
             f"\nand table_name = '{tbl_nme}'"
         )
-        print(sql)
         return self.run(sql)
 
     def add_pkey(self,tbl_nme,pkey):
         sql = f"alter table {tbl_nme} add primary key ({pkey})"
-        print(sql)
+        return self.run(sql)
+
+    def list_cons():
+        sql = 'SELECT * FROM information_schema.constraint_table_usage'
         return self.run(sql)
 
     def qry(self,*args,**kwargs):
@@ -125,7 +152,6 @@ class Lt(_Db):
             "\nwhere type ='table' "
             "\nand name NOT LIKE 'sqlite_%' "
         )
-        print(sql)
         return self.run(sql)
 
     def qry(self,*args,**kwargs):
@@ -137,14 +163,14 @@ class Oc(_Db):
             "select * from all_table_columns "
             "\nwhere rownum < 5"
         )
-        print(sql)
         return self.run(sql)
 
     def drop(self,tbl_nme):
         try:
             self.run(f'drop table {tbl_nme} purge')
         except Exception as ex:
-            return str(ex)
+            _logger.debug(str(ex))
+            return f'{tbl_nme} not exist'
         else:
             return f'{tbl_nme} dropped'
 
