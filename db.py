@@ -32,9 +32,9 @@ class _Db:
                 r = c.execute(text(sql), args)
             else:
                 r = c.execute(sql)
-        _logger.info('done')
-        if r.returns_rows:
-            return pd.DataFrame(r.all(),columns = r.keys())
+            _logger.info('done')
+            if r.returns_rows:
+                return pd.DataFrame(r.all(),columns = r.keys())
 
     def run(self,sql=None,args=None,pth=None,mods=None,**kwargs):
         if sql is None and pth is not None:
