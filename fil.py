@@ -51,4 +51,7 @@ def get_key(nme, pth = _pth):
 def get_pth(nme, pth = _pth):
     return f'{pth}\\{nme}'
 
+def start(nme, pth = _pth):
+    return os.startfile(f'{pth}\\{nme}')
+
 
