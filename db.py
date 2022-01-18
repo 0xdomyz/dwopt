@@ -3,6 +3,7 @@ from sqlalchemy.sql import text
 import pandas as pd
 import numpy as np
 import logging
+import re
 from dw.fil import get_key
 from dw._qry import PgQry, LtQry, OcQry
 _logger = logging.getLogger(__name__)
@@ -51,7 +52,7 @@ class _Db:
         else:
             mods.update(kwargs)
         for i,j in mods.items():
-            sql = sql.replace(f':{i}',str(j))
+            sql = re.sub(f':{i}(?=[^a-zA-Z0-9]|$)',str(j),sql)
             _logger.debug(f'replaced :{i} by {j}')
         return sql
 
