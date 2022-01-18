@@ -13,11 +13,8 @@ def hash(self,*args):
         "select/*+ PARALLEL(4) */ \n"
         "    ora_hash(sum(ora_hash(\n"
         f"        {_}\n"
-        "    ))) hash\n"
+        "    ) - 4294967296/2)) hash\n"
         "from x"
     )
     return self.run(_).iloc[0,0]
-
-
-
 
