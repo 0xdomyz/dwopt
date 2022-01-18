@@ -5,6 +5,8 @@ def first(self):
     return self.run("select * from x where rownum<=1")
 
 def hash(self,*args):
+    if len(args) == 0:
+        args = self.cols()
     _ = args[0] if len(args) == 1 and not isinstance(args[0],str) else args
     _ = " || '_' || ".join(_)
     _ = (
