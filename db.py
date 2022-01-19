@@ -120,6 +120,16 @@ class _Db:
         else:
             return f'{tbl_nme} dropped'
 
+    def update(self):
+        pass
+
+    def delete(self):
+        pass
+
+    def add_pkey(self,tbl_nme,pkey):
+        sql = f"alter table {tbl_nme} add primary key ({pkey})"
+        return self.run(sql)
+
     def _parse_sch_tbl_nme(self,sch_tbl_nme):
         _ = sch_tbl_nme.split('.')
         n = len(_)
@@ -153,10 +163,6 @@ class Pg(_Db):
             f"\nwhere table_schema = '{sch}' "
             f"\nand table_name = '{tbl_nme}'"
         )
-        return self.run(sql)
-
-    def add_pkey(self,tbl_nme,pkey):
-        sql = f"alter table {tbl_nme} add primary key ({pkey})"
         return self.run(sql)
 
     def list_cons():
