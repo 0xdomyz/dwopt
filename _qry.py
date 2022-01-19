@@ -3,101 +3,126 @@ class _Qry:
 
     def __init__(self
             ,operator
-            ,from_ = None,select = None,join = None,where = None
-            ,order = None,sql = None):
+            ,from_ = None,select = None,join = None
+            ,where = None,group_by = None,having = None
+            ,order_by = None,sql = None):
         self._ops = operator
-        self._from = from_
-        self._select = (select,) if isinstance(select,str) else select
+        self._from_ = from_
+        self._select = select
         self._join = join
         self._where = where
-        self._order = order
+        self._group_by = group_by
+        self._having = having
+        self._order_by = order_by
         self._sql = sql
-        self._make_qry()
 
     def __copy__(self):
         return type(self)(
-             self._ops,self._from,self._select,self._join,self._where
-            ,self._order,self._sql
+             self._ops
+            ,self._from_,self._select,self._join
+            ,self._where,self._group_by,self._having
+            ,self._order_by,self._sql
         )
 
-    def _make_qry(self):
-        if self._sql is not None:
-            self._qry = self._sql
+    def _args2str(self,args,sep):
+        l = len(args)
+        if l == 0:
+            res = None
+        elif l == 1:
+            arg = args[0]
+            if isinstance(arg,str):
+                res = arg
+            else:
+                res = sep.join(arg)
         else:
-            select = (
-                f"select {','.join(self._select)}" 
-                if self._select is not None else 'select *'
-            )
-            _ = '\n' if len(select) > 60 else ' '
-            from_ = (
-                f'from {self._from}' if self._from is not None else 'from test'
-            )
-            self._qry = select + _ + from_
-            if self._join is not None:
-                for i,j,k in self._join:
-                    join = (
-                        f'\n{k} join {i}\n'
-                        f'on {j}'
-                    )
-                    self._qry = self._qry + join
-            where = (
-                f'\nwhere {self._where}'
-                if self._where is not None 
-                else ''
-            )
-            self._qry = self._qry + where
-            order = (
-                f'order by {self._order}' if self._order is not None else ''
-            )
-            _ = '\n' if len(where) == 0 or len(where)> 40 else ' '
-            self._qry = self._qry + _ + order
+            res = sep.join(args)
+        return res
 
     def select(self,*args):
         _ = self.__copy__()
-        _._select = args[0] if not isinstance(args[0],str) else args
-        _._make_qry()
+        _._select = self._args2str(args,',')
         return _
+
+    def case(self,*kwargs):
+        pass
 
     def from_(self,from_):
         _ = self.__copy__()
-        _._from = from_
-        _._make_qry()
+        _._from_ = from_
         return _
 
-    def join(self,tbl,on,how = 'left'):
+    def join(self,tbl,*args,how = 'left'):
         _ = self.__copy__()
+        on = self._args2str(args,'\n    and ')
+        cls = (
+            f'{how} join {tbl}'
+            f'\n    on {on}'
+        )
         if _._join is not None:
-            _._join = _._join + [(tbl,on,how)]
+            _._join = _._join + '\n' + cls
         else:
-            _._join = [(tbl,on,how)]
-        _._make_qry()
+            _._join = cls
         return _
 
-    def where(self,where):
+    def where(self,*args):
         _ = self.__copy__()
-        _._where = where
-        _._make_qry()
+        _._where = self._args2str(args,'\n    and ')
         return _
 
-    def order_by(self,order):
+    def group_by(self,*args):
         _ = self.__copy__()
-        _._order = order
-        _._make_qry()
+        _._group_by = self._args2str(args,',')
+        return _
+
+    def having(self,*args):
+        _ = self.__copy__()
+        _._having = self._args2str(args,'\n    and ')
+        return _
+
+    def order_by(self,*args):
+        _ = self.__copy__()
+        _._order_by = self._args2str(args,',')
         return _
 
     def sql(self,sql):
         _ = self.__copy__()
         _._sql = sql
-        _._make_qry()
         return _
 
+    def _make_cls(self,key,load,na = ''):
+        return f"{key}{load}" if load is not None else na
+
+    def _make_qry(self):
+        if self._sql is not None:
+            self._qry = self._sql
+        else:
+            select = self._make_cls('select ',self._select,'select *')
+            from_ = self._make_cls('from ',self._from_,'from test')
+            join = self._make_cls('\n',self._join)
+            where = self._make_cls('\nwhere ',self._where)
+            group_by = self._make_cls('\ngroup by ',self._group_by)
+            having = self._make_cls('\nhaving ',self._having)
+            order_by = self._make_cls('\norder by ',self._order_by)
+            self._qry = (
+                select 
+                + ('\n' if len(select) > 60 else ' ') + from_ 
+                + join
+                + where 
+                + group_by 
+                + having 
+                + order_by
+            )
+
     def __str__(self):
+        self._make_qry()
         return self._qry
 
     def print(self):
+        self._make_qry()
         print(self)
 
     def run(self,sql = None):
+        self._make_qry()
         if sql is not None:
             _ = self._qry.replace('\n','\n    ')
             _ = (
@@ -108,12 +133,10 @@ class _Qry:
             qry = f"{_}\n{sql}"
         else:
             qry = self._qry
-        if self.print_:
-            print(qry)
         return self._ops.run(qry)
 
     from dw._sqls.base import head
-    from dw._sqls.base import first
+    from dw._sqls.base import top
     from dw._sqls.base import cols
     from dw._sqls.base import len
     from dw._sqls.base import dist
@@ -133,7 +156,7 @@ class OcQry(_Qry):
         self._qry = self._qry.replace('select','select /*+PARALLEL (4)*/')
 
     from dw._sqls.oc import head
-    from dw._sqls.oc import first
+    from dw._sqls.oc import top
     from dw._sqls.oc import hash
 
 

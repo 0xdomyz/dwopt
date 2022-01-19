@@ -1,7 +1,7 @@
 def head(self):
     return self.run("select * from x limit 5")
 
-def first(self):
+def top(self):
     return self.run("select * from x limit 1").iloc[0,]
 
 def cols(self):

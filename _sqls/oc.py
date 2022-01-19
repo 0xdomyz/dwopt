@@ -1,7 +1,7 @@
 def head(self):
     return self.run("select * from x where rownum<=5")
 
-def first(self):
+def top(self):
     return self.run("select * from x where rownum<=1")
 
 def hash(self,*args):
