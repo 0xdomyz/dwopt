@@ -15,6 +15,7 @@ query generation to summary results end-to-end within python
 caters for sqlite, postgre and oracle dialects
 
 ```python
+from dw import pg
 pg.qry('test').where("score > 0.5") \
 .valc('time,cat',"avg(score) avgscore,round(sum(amt)/1e3,2) total") \
 .pivot('time','cat',['n','avgscore','total'])
