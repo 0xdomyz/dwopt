@@ -9,7 +9,7 @@ based on sqlalchemy, pandas
 syntax similiar to sql clauses \
 based on text manipulation
 
-### Programmatically generate summary query on top of generated query
+### Programmatically generate summary query on top of generated sql
 provide wrapers for common summary queries \
 avoids passing base layer data, passing intermediate results cross systems \
 receive summary results as python pandas dataframe
