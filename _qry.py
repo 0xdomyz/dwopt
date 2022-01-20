@@ -38,13 +38,33 @@ class _Qry:
             res = sep.join(args)
         return res
 
-    def select(self,*args):
+    def select(self,*args,sep = ','):
         _ = self.__copy__()
-        _._select = self._args2str(args,',')
+        _._select = self._args2str(args,sep)
         return _
 
-    def case(self,*kwargs):
-        pass
+    def case(self,col,*args,cond = None,els = 'NULL'):
+        _ = self.__copy__()
+        if cond is not None:
+            for i,j in cond.items():
+                args = args + (f"{i} then {j}",)
+        if len(args) == 0:
+            raise Exception('too few cases')
+        elif len(args) == 1 and len(args[0]) < 35:
+            cls = f"\n    ,case when {args[0]} else {els} end as {col}"
+        else:
+            cls = self._args2str(args,'\n        when ')
+            cls = (
+                "\n    ,case"
+                f"\n        when {cls}"
+                f"\n        else {els}"
+                f"\n    end as {col}"
+            )
+        if _._select is None:
+            _._select = '*' + cls
+        else:
+            _._select = _._select + cls
+        return _
 
     def from_(self,from_):
         _ = self.__copy__()
@@ -105,7 +125,8 @@ class _Qry:
             order_by = self._make_cls('\norder by ',self._order_by)
             self._qry = (
                 select 
-                + ('\n' if len(select) > 60 else ' ') + from_ 
+                + (' ' if select == 'select *' else '\n')
+                + from_ 
                 + join
                 + where 
                 + group_by 
