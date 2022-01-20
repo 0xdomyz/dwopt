@@ -14,4 +14,4 @@ provide wrapers for common summary queries \
 avoids passing base layer data, passing intermediate results cross systems \
 receive summary results as python pandas dataframe
 
-aim to support postgre and oracle dialects
+aim to cater for postgre and oracle dialects
