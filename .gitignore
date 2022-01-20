@@ -1,4 +1,3 @@
-test.py
 # data
 *.csv
 *.xlsx
@@ -10,7 +9,6 @@ test.py
 *.json
 *.sqlite3
 *.db
-*.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

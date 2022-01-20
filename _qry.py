@@ -121,7 +121,7 @@ class _Qry:
         self._make_qry()
         print(self)
 
-    def run(self,sql = None):
+    def run(self,sql = None,*args,**kwargs):
         self._make_qry()
         if sql is not None:
             _ = self._qry.replace('\n','\n    ')
@@ -133,7 +133,7 @@ class _Qry:
             qry = f"{_}\n{sql}"
         else:
             qry = self._qry
-        return self._ops.run(qry)
+        return self._ops.run(qry,*args,**kwargs)
 
     from dw._sqls.base import head
     from dw._sqls.base import top
