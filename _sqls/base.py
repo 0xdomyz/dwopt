@@ -61,6 +61,7 @@ def valc(self,group_by,agg = None,order_by = None,n = True):
     )
     return self.run(_)
 
-
+def piv(self):
+    pass
 
 
