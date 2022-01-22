@@ -11,7 +11,7 @@ based on string injection
 ### Generate and run summary queries
 utlise data manipulation capability of database instead of passing \
 large raw data to python which may not be feasible \
-summary query results as pandas dataframe for access to python toolkit \
+summary query results as pandas dataframe for access to python toolkit
 
 aim to cater for sqlite, postgre and oracle dialects
 
