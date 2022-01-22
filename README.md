@@ -1,39 +1,40 @@
-## dw - database operator package
+## dw - database operator
 
-### Run sql statement
+### Run sql statement in python
 support argument passing, text replacement, read sql from file \
-provide function for DDL/DML on database table and python dataframe \
-primitive to query running processes, uses logging package for audit trails
+function for DDL/DML on database table and pandas dataframe \
+logging via the logging package
 
 ### Programmatically generate simple sql query
-based on text manipulation
+based on string injection
 
 ### Generate and run summary queries
-build after generated query in the previous step, results as pandas dataframe \
-query generation to summary results end-to-end within python
+utlise data manipulation capability of database instead of passing \
+large raw data to python which may not be feasible \
+summary query results as pandas dataframe for access to python toolkit \
 
-caters for sqlite, postgre and oracle dialects
+aim to cater for sqlite, postgre and oracle dialects
 
 ```python
-from dw import pg
-pg.qry('test').where("score > 0.5") \
+from dw import lt
+lt.qry('test').where("score > 0.5") \
 .valc('time,cat',"avg(score) avgscore,round(sum(amt)/1e3,2) total") \
 .pivot('time','cat',['n','avgscore','total'])
 ```
 ```<!-- language: none -->
-2022-01-20 23:52:44,145 [INFO] running: 
+2022-01-23 01:08:13,407 [INFO] running:
 with x as (
     select * from test
     where score > 0.5
 )
-select
+select 
     time,cat
     ,count(1) n
-    ,avg(score) avgscore,round(sum(amt)/1e3,2) total
+    ,avg(score) avgscore, round(sum(amt)/1e3,2) total
 from x
 group by time,cat
 order by n desc
-2022-01-20 23:52:44,184 [INFO] done
+2022-01-23 01:08:13,413 [INFO] done
 ```
 
 <table border=\"1\" class=\"dataframe\">
@@ -68,30 +69,30 @@ order by n desc
   <tbody>
     <tr>
       <th>2013-01-02</th>
-      <td>855</td>
-      <td>789</td>
-      <td>0.748191</td>
-      <td>0.750798</td>
-      <td>423.06</td>
-      <td>393.58</td>
+      <td>816.0</td>
+      <td>847.0</td>
+      <td>0.746747</td>
+      <td>0.750452</td>
+      <td>398.34</td>
+      <td>417.31</td>
     </tr>
     <tr>
       <th>2013-02-02</th>
-      <td>828</td>
-      <td>829</td>
-      <td>0.747892</td>
-      <td>0.755623</td>
-      <td>402.04</td>
-      <td>415.65</td>
+      <td>837.0</td>
+      <td>858.0</td>
+      <td>0.748214</td>
+      <td>0.743094</td>
+      <td>419.11</td>
+      <td>447.04</td>
     </tr>
     <tr>
       <th>2013-03-02</th>
-      <td>839</td>
-      <td>855</td>
-      <td>0.751682</td>
-      <td>0.75397</td>
-      <td>423.70</td>
-      <td>419.70</td>
+      <td>805.0</td>
+      <td>860.0</td>
+      <td>0.756775</td>
+      <td>0.739017</td>
+      <td>394.89</td>
+      <td>422.35</td>
     </tr>
   </tbody>
 </table>

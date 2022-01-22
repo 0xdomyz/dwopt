@@ -4,12 +4,10 @@ import pandas as pd
 import numpy as np
 import logging
 import re
-from dw.fil import get_key
 from dw._qry import PgQry, LtQry, OcQry
 _logger = logging.getLogger(__name__)
 
-def make_eng(key_nme):
-    url = get_key(key_nme)[0]
+def make_eng(url):
     _logger.debug('making sqlalchemy engine')
     return alc.create_engine(url)
 
