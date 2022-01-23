@@ -8,6 +8,11 @@ from dw._qry import PgQry, LtQry, OcQry
 _logger = logging.getLogger(__name__)
 
 def make_eng(url):
+    """Return sqlalchemy engine from database connection url
+
+    :param url: 
+
+    """
     _logger.debug('making sqlalchemy engine')
     return alc.create_engine(url)
 
@@ -16,12 +21,44 @@ def make_meta(eng,schema):
     pass
 
 class _Db:
+    """ Base class for different database operator classes. 
+    Database operators provide methods to run statement, construct and run DDL
+    , DML statements, provide access to the query objects
+
+    :param eng: sqlalchemy engine
+    """
     def __init__(self,eng):
         self.eng = eng
         self.meta = {}
 
     def update_meta(self,meta):
         self.meta.update({meta.schema,meta})
+
+    def run(self,sql=None,args=None,pth=None,mods=None,**kwargs):
+        """Run sql statement. Support text replacement and running from 
+        sql script.
+
+        :param sql:  (Default value = None)
+        :type sql: str, optional
+        :param args:  (Default value = None)
+        :type args: Dictionary of argument name to argument str mappings
+            , optional
+        :param pth: path to sql script (Default value = None)
+        :type pth: str, optional
+        :param mods:  (Default value = None)
+        :type mods: Dictionary of modification name to modification str mappings
+            ,optional
+        :param **kwargs: keyword arguments that will be interpreted as
+            modification name to modification mappings
+
+        """
+        if sql is None and pth is not None:
+            with open(pth) as f:
+                sql = f.read()
+            _logger.info(f'sql from:\n{pth}')
+        if mods is not None or len(kwargs) > 0:
+            sql = self._bind_mods(sql,mods,**kwargs)
+        return self._run(sql,args)
 
     def _run(self,sql,args = None):
         with self.eng.begin() as c:
@@ -35,15 +72,6 @@ class _Db:
             if r.returns_rows:
                 return pd.DataFrame(r.all(),columns = r.keys())
 
-    def run(self,sql=None,args=None,pth=None,mods=None,**kwargs):
-        if sql is None and pth is not None:
-            with open(pth) as f:
-                sql = f.read()
-            _logger.info(f'sql from:\n{pth}')
-        if mods is not None or len(kwargs) > 0:
-            sql = self._bind_mods(sql,mods,**kwargs)
-        return self._run(sql,args)
-
     def _bind_mods(self,sql,mods = None,**kwargs):
         if mods is None:
             mods = kwargs
@@ -55,6 +83,13 @@ class _Db:
         return sql
 
     def create(self,tbl_nme,dtypes = None,**kwargs):
+        """Make and run create table statment
+
+        :param tbl_nme: 
+        :param dtypes: dictionary of column names (Default value = None)
+        :param **kwargs: 
+
+        """
         if dtypes is None:
             dtypes = kwargs
         else:
@@ -69,6 +104,12 @@ class _Db:
         )
 
     def write(self,tbl,tbl_nme):
+        """
+
+        :param tbl: 
+        :param tbl_nme: 
+
+        """
         _ = len(tbl)
         _logger.debug(f'writing to {tbl_nme}, len: {_}')
         if _ == 0:
@@ -87,6 +128,14 @@ class _Db:
         self.run(sql,args = tbl.to_dict('records'))
 
     def write_nodup(self,tbl,tbl_nme,pkey,where = None):
+        """
+
+        :param tbl: 
+        :param tbl_nme: 
+        :param pkey: 
+        :param where:  (Default value = None)
+
+        """
         cols = ','.join(pkey)
         where_cls = f'\nwhere {where}' if where else ''
         db_tbl = self.run(f"select {cols} from {tbl_nme} {where_cls}")
@@ -110,6 +159,11 @@ class _Db:
         self.write(dedup_tbl,tbl_nme)
 
     def drop(self,tbl_nme):
+        """
+
+        :param tbl_nme: 
+
+        """
         try:
             self.run(f'drop table {tbl_nme}')
         except Exception as ex:
@@ -119,16 +173,29 @@ class _Db:
             return f'{tbl_nme} dropped'
 
     def update(self):
+        """ """
         pass
 
     def delete(self):
+        """ """
         pass
 
     def add_pkey(self,tbl_nme,pkey):
+        """
+
+        :param tbl_nme: 
+        :param pkey: 
+
+        """
         sql = f"alter table {tbl_nme} add primary key ({pkey})"
         return self.run(sql)
 
     def _parse_sch_tbl_nme(self,sch_tbl_nme):
+        """
+
+        :param sch_tbl_nme: 
+
+        """
         _ = sch_tbl_nme.split('.')
         n = len(_)
         if n == 1:
@@ -144,7 +211,9 @@ class _Db:
         return sch, tbl_nme
 
 class Pg(_Db):
+    """ """
     def list_tables(self):
+        """ """
         sql = (
             "select table_catalog,table_schema,table_name"
             "\n    ,is_insertable_into,commit_action"
@@ -155,6 +224,11 @@ class Pg(_Db):
         return self.run(sql)
 
     def table_cols(self,sch_tbl_nme):
+        """
+
+        :param sch_tbl_nme: 
+
+        """
         sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
         sql = (
             "select column_name, data_type from information_schema.columns"
@@ -164,14 +238,23 @@ class Pg(_Db):
         return self.run(sql)
 
     def list_cons():
+        """ """
         sql = 'SELECT * FROM information_schema.constraint_table_usage'
         return self.run(sql)
 
     def qry(self,*args,**kwargs):
+        """
+
+        :param *args: 
+        :param **kwargs: 
+
+        """
         return PgQry(self,*args,**kwargs)
 
 class Lt(_Db):
+    """ """
     def list_tables(self):
+        """ """
         sql = (
             "select * from sqlite_schema "
             "\nwhere type ='table' "
@@ -180,10 +263,22 @@ class Lt(_Db):
         return self.run(sql)
 
     def qry(self,*args,**kwargs):
+        """
+
+        :param *args: 
+        :param **kwargs: 
+
+        """
         return LtQry(self,*args,**kwargs)
 
 class Oc(_Db):
+    """ """
     def list_tables(self,owner):
+        """
+
+        :param owner: 
+
+        """
         sql = (
             "select/*+PARALLEL (4)*/ owner,table_name"
             "\n    ,max(column_name),min(column_name)"
@@ -194,6 +289,7 @@ class Oc(_Db):
         return self.run(sql)
 
     def table_sizes(self):
+        """ """
         sql = (
             "select/*+PARALLEL (4)*/"
             "\n    tablespace_name,segment_type,segment_name"
@@ -204,6 +300,11 @@ class Oc(_Db):
         return self.run(sql)
 
     def table_cols(self,sch_tbl_nme):
+        """
+
+        :param sch_tbl_nme: 
+
+        """
         sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
         sql = (
             "select/*+PARALLEL (4)*/ *"
@@ -214,6 +315,11 @@ class Oc(_Db):
         return self.run(sql)
 
     def drop(self,tbl_nme):
+        """
+
+        :param tbl_nme: 
+
+        """
         try:
             self.run(f'drop table {tbl_nme} purge')
         except Exception as ex:
@@ -223,6 +329,12 @@ class Oc(_Db):
             return f'{tbl_nme} dropped'
 
     def qry(self,*args,**kwargs):
+        """
+
+        :param *args: 
+        :param **kwargs: 
+
+        """
         return OcQry(self,*args,**kwargs)
 
 
