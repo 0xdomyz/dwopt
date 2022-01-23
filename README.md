@@ -119,7 +119,7 @@ The package provides 3 database operator classes for 3 dialects: Lt for sqlite, 
 Database operator objects are initiated via sqlalchemy engine objects, which are generated via sqlalchemy engine urls \
 Format of url and details, see: https://docs.sqlalchemy.org/en/14/core/engines.html
 
-The function dw.make_engine makes engine from url \
+The function dw.make_eng makes engine from url \
 The package provides a folder within the package installation directory called "urls" to store default urls in txt file, \
 this is also supported via dw.get_url function to retrieve url via file name of the text file
 
