@@ -127,7 +127,7 @@ example usage where "my_pg_url.txt" in the url folder stores user defined url:
 
 ```python
 from dw import Pg,make_eng,get_url
-pg = Pg(make_eng(get_url('my_url')))
+pg = Pg(make_eng(get_url('my_pg_url')))
 ```
 
 example usage where url is provided:
