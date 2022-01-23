@@ -5,7 +5,6 @@
 *.yaml
 *.tar.gz
 *.pdf
-*.txt
 *.json
 *.sqlite3
 *.db
