@@ -123,6 +123,21 @@ The function dw.make_eng makes engine from url \
 The package provides a folder within the package installation directory called "urls" to store default urls in txt file, \
 this is also supported via dw.get_url function to retrieve url via file name of the text file
 
+example usage where "my_pg_url.txt" in the url folder stores user defined url:
+
+```python
+from dw import Pg,make_eng,get_url
+pg = Pg(make_eng(get_url('my_url')))
+```
+
+example usage where url is provided:
+
+```python
+from dw import Pg,make_eng
+url = "postgresql://scott:tiger@localhost/mydatabase"
+pg = Pg(make_eng(url))
+```
+
 For convenience, the package pre-instantiate 3 database operator objects: lt, pg, and oc. \
 The sqlite operator, lt, is coded to connect to the in-memory databse for illustration purpose \
 The postgre operator, pg, uses the placeholder url txt file called "psql_default" \
