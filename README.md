@@ -1,19 +1,26 @@
 ## dw - database operator
 
 ### Run sql statement in python
-support argument passing, text replacement, read sql from file \
-function for DDL/DML on database table and pandas dataframe \
-logging via the logging package
+Support argument passing, text replacement, read sql from file \
+Provide functions for running DDL/DML on database table and pandas dataframe \
+Logging via the logging package
 
 ### Programmatically generate simple sql query
-based on string injection
+Allow building of select, case when, join, where, group by, having, order by clauses
 
 ### Generate and run summary queries
-utlise data manipulation capability of database instead of passing \
-large raw data to python which may not be feasible \
-summary query results as pandas dataframe for access to python toolkit
+Utlise data manipulation capability of database instead of passing \
+large raw data to python \
+Summary query results as pandas dataframe for access to python toolkit
 
-aim to cater for sqlite, postgre and oracle dialects
+Aim to cater for sqlite, postgre and oracle dialects
+
+### Installation
+```<!-- language: none -->
+pip install dwops
+```
+
+### Excel pivot table - like experience on database tables
 
 ```python
 from dw import lt
@@ -21,6 +28,16 @@ lt.qry('test').where("score > 0.5") \
 .valc('time,cat',"avg(score) avgscore,round(sum(amt)/1e3,2) total") \
 .pivot('time','cat',['n','avgscore','total'])
 ```
+
+Code is doing 3 things:
+1. Generate a query with a where clause to be used as the base table for next stage
+2. Generate and run a summary query grouping 2 columns, and with 2 aggregation calcs, results as pandas dataframe
+3. Call pandas dataframe's pivot method to make pivot table from the database generated intermediate results
+
+By orchastrating the data heavy step to the database, only minimal amount of data is passed between systems. \
+This allows quick summary results on large database tables, programmatically made in one environment.
+
+Logging messages:
 ```<!-- language: none -->
 2022-01-23 01:08:13,407 [INFO] running:
 with x as (
@@ -36,7 +53,7 @@ group by time,cat
 order by n desc
 2022-01-23 01:08:13,413 [INFO] done
 ```
-
+Results:
 <table border=\"1\" class=\"dataframe\">
   <thead>
     <tr>
@@ -96,3 +113,6 @@ order by n desc
     </tr>
   </tbody>
 </table>
+
+### Setting up default and/or specific database connections
+TBC
