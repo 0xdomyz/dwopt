@@ -3,6 +3,17 @@ from .db import make_eng,Pg,Lt,Oc
 import os
 _pth = os.path.dirname(__file__)
 def get_url(nme):
+    """
+
+    Parameters
+    ----------
+    nme :
+        
+
+    Returns
+    -------
+
+    """
     fp = f'{_pth}\\urls\\{nme}.txt'
     with open(fp,"r") as f:
         return f.readline().rstrip()

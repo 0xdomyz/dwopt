@@ -9,7 +9,13 @@ def top(self):
 def hash(self,*args):
     """
 
-    :param *args: 
+    Parameters
+    ----------
+    *args :
+        
+
+    Returns
+    -------
 
     """
     if len(args) == 0:

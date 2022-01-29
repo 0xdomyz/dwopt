@@ -17,7 +17,13 @@ def len(self):
 def dist(self,*args):
     """
 
-    :param *args: 
+    Parameters
+    ----------
+    *args :
+        
+
+    Returns
+    -------
 
     """
     _ = (" || '_' || ".join(_) if not isinstance(_,str) else _ 
@@ -38,7 +44,13 @@ def dist(self,*args):
 def mimx(self,col):
     """
 
-    :param col: 
+    Parameters
+    ----------
+    col :
+        
+
+    Returns
+    -------
 
     """
     _ = (
@@ -51,10 +63,19 @@ def mimx(self,col):
 def valc(self,group_by,agg = None,order_by = None,n = True):
     """
 
-    :param group_by: 
-    :param agg:  (Default value = None)
-    :param order_by:  (Default value = None)
-    :param n:  (Default value = True)
+    Parameters
+    ----------
+    group_by :
+        param agg:  (Default value = None)
+    order_by :
+        Default value = None)
+    n :
+        Default value = True)
+    agg :
+         (Default value = None)
+
+    Returns
+    -------
 
     """
     group_by_cls = (','.join(group_by) if not isinstance(group_by,str)

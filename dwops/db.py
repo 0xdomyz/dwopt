@@ -8,10 +8,17 @@ from dwops._qry import PgQry, LtQry, OcQry
 _logger = logging.getLogger(__name__)
 
 def make_eng(url):
-    """Return sqlalchemy engine from database connection url
+    """Make database engine
 
-    :param url: 
+    Parameters
+    ----------
+    url : str
+        url as specified on:
+        https://docs.sqlalchemy.org/en/14/core/engines.html#database-urls
 
+    Returns
+    -------
+    sqlalchemy engine
     """
     _logger.debug('making sqlalchemy engine')
     return alc.create_engine(url)
@@ -21,11 +28,22 @@ def make_meta(eng,schema):
     pass
 
 class _Db:
-    """ Base class for different database operator classes. 
-    Database operators provide methods to run statement, construct and run DDL
-    , DML statements, provide access to the query objects
+    """Generic database operator class.
 
-    :param eng: sqlalchemy engine
+    Three usages:
+        1. Use the run method to run sql statments.
+        2. Varies DDL/DML methods to run DDL/DML.
+        3. Use the qry method to create qry object.
+
+    Parameters
+    ----------
+    eng : sqlalchemy engine
+        Engine to be used for database connection.
+
+    Attributes
+    ----------
+    eng : sqlalchemy engine
+        Engine used for database connection.
     """
     def __init__(self,eng):
         self.eng = eng
@@ -35,21 +53,29 @@ class _Db:
         self.meta.update({meta.schema,meta})
 
     def run(self,sql=None,args=None,pth=None,mods=None,**kwargs):
-        """Run sql statement. Support text replacement and running from 
-        sql script.
+        """Run sql statement. Support argument passing, text replacement 
+        and reading statements from sql script.
 
-        :param sql:  (Default value = None)
-        :type sql: str, optional
-        :param args:  (Default value = None)
-        :type args: Dictionary of argument name to argument str mappings
-            , optional
-        :param pth: path to sql script (Default value = None)
-        :type pth: str, optional
-        :param mods:  (Default value = None)
-        :type mods: Dictionary of modification name to modification str mappings
-            ,optional
-        :param **kwargs: keyword arguments that will be interpreted as
-            modification name to modification mappings
+        Parameters
+        ----------
+        sql : str, optional
+            Sql statement to run.
+        args : {str:str}, optional
+            Dictionary of argument name to argument mappings.
+        pth : str, optional
+            path to sql script, ignored if sql is not None.
+        mods : {str:str},optional
+            Dictionary of modification name to modification mappings.
+        **kwargs : str, optional
+            Convenience way to add modification mappings. 
+            Keyword to argument mappings will be added to the mods dictionary.
+
+        Returns
+        -------
+        pandas.DataFrame or None
+            Dataframe if the database returns any result, even if the result
+            has zero rows. Returns None otherwise, for example when 
+            running DDL/DML statements.
 
         """
         if sql is None and pth is not None:
@@ -85,9 +111,17 @@ class _Db:
     def create(self,tbl_nme,dtypes = None,**kwargs):
         """Make and run create table statment
 
-        :param tbl_nme: 
-        :param dtypes: dictionary of column names (Default value = None)
-        :param **kwargs: 
+        Parameters
+        ----------
+        tbl_nme :
+            param dtypes: dictionary of column names (Default value = None)
+        dtypes :
+             (Default value = None)
+        **kwargs :
+            
+
+        Returns
+        -------
 
         """
         if dtypes is None:
@@ -106,8 +140,15 @@ class _Db:
     def write(self,tbl,tbl_nme):
         """
 
-        :param tbl: 
-        :param tbl_nme: 
+        Parameters
+        ----------
+        tbl :
+            param tbl_nme:
+        tbl_nme :
+            
+
+        Returns
+        -------
 
         """
         _ = len(tbl)
@@ -130,10 +171,19 @@ class _Db:
     def write_nodup(self,tbl,tbl_nme,pkey,where = None):
         """
 
-        :param tbl: 
-        :param tbl_nme: 
-        :param pkey: 
-        :param where:  (Default value = None)
+        Parameters
+        ----------
+        tbl :
+            param tbl_nme:
+        pkey :
+            param where:  (Default value = None)
+        tbl_nme :
+            
+        where :
+             (Default value = None)
+
+        Returns
+        -------
 
         """
         cols = ','.join(pkey)
@@ -161,7 +211,13 @@ class _Db:
     def drop(self,tbl_nme):
         """
 
-        :param tbl_nme: 
+        Parameters
+        ----------
+        tbl_nme :
+            
+
+        Returns
+        -------
 
         """
         try:
@@ -183,8 +239,15 @@ class _Db:
     def add_pkey(self,tbl_nme,pkey):
         """
 
-        :param tbl_nme: 
-        :param pkey: 
+        Parameters
+        ----------
+        tbl_nme :
+            param pkey:
+        pkey :
+            
+
+        Returns
+        -------
 
         """
         sql = f"alter table {tbl_nme} add primary key ({pkey})"
@@ -193,7 +256,13 @@ class _Db:
     def _parse_sch_tbl_nme(self,sch_tbl_nme):
         """
 
-        :param sch_tbl_nme: 
+        Parameters
+        ----------
+        sch_tbl_nme :
+            
+
+        Returns
+        -------
 
         """
         _ = sch_tbl_nme.split('.')
@@ -226,7 +295,13 @@ class Pg(_Db):
     def table_cols(self,sch_tbl_nme):
         """
 
-        :param sch_tbl_nme: 
+        Parameters
+        ----------
+        sch_tbl_nme :
+            
+
+        Returns
+        -------
 
         """
         sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
@@ -245,8 +320,15 @@ class Pg(_Db):
     def qry(self,*args,**kwargs):
         """
 
-        :param *args: 
-        :param **kwargs: 
+        Parameters
+        ----------
+        *args :
+            
+        **kwargs :
+            
+
+        Returns
+        -------
 
         """
         return PgQry(self,*args,**kwargs)
@@ -265,8 +347,15 @@ class Lt(_Db):
     def qry(self,*args,**kwargs):
         """
 
-        :param *args: 
-        :param **kwargs: 
+        Parameters
+        ----------
+        *args :
+            
+        **kwargs :
+            
+
+        Returns
+        -------
 
         """
         return LtQry(self,*args,**kwargs)
@@ -276,7 +365,13 @@ class Oc(_Db):
     def list_tables(self,owner):
         """
 
-        :param owner: 
+        Parameters
+        ----------
+        owner :
+            
+
+        Returns
+        -------
 
         """
         sql = (
@@ -302,7 +397,13 @@ class Oc(_Db):
     def table_cols(self,sch_tbl_nme):
         """
 
-        :param sch_tbl_nme: 
+        Parameters
+        ----------
+        sch_tbl_nme :
+            
+
+        Returns
+        -------
 
         """
         sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
@@ -317,7 +418,13 @@ class Oc(_Db):
     def drop(self,tbl_nme):
         """
 
-        :param tbl_nme: 
+        Parameters
+        ----------
+        tbl_nme :
+            
+
+        Returns
+        -------
 
         """
         try:
@@ -331,8 +438,15 @@ class Oc(_Db):
     def qry(self,*args,**kwargs):
         """
 
-        :param *args: 
-        :param **kwargs: 
+        Parameters
+        ----------
+        *args :
+            
+        **kwargs :
+            
+
+        Returns
+        -------
 
         """
         return OcQry(self,*args,**kwargs)

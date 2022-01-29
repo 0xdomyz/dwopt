@@ -28,8 +28,15 @@ class _Qry:
     def _args2str(self,args,sep):
         """
 
-        :param args: 
-        :param sep: 
+        Parameters
+        ----------
+        args :
+            param sep:
+        sep :
+            
+
+        Returns
+        -------
 
         """
         l = len(args)
@@ -48,9 +55,17 @@ class _Qry:
     def select(self,*args,sep = ','):
         """
 
-        :param *args: 
-        :param sep:  (Default value = ')
-        :param ': 
+        Parameters
+        ----------
+        *args :
+            
+        sep :
+             (Default value = ')
+        ' :
+            
+
+        Returns
+        -------
 
         """
         _ = self.__copy__()
@@ -60,10 +75,19 @@ class _Qry:
     def case(self,col,*args,cond = None,els = 'NULL'):
         """
 
-        :param col: 
-        :param *args: 
-        :param cond:  (Default value = None)
-        :param els:  (Default value = 'NULL')
+        Parameters
+        ----------
+        col :
+            param *args:
+        cond :
+            Default value = None)
+        els :
+            Default value = 'NULL')
+        *args :
+            
+
+        Returns
+        -------
 
         """
         _ = self.__copy__()
@@ -91,7 +115,13 @@ class _Qry:
     def from_(self,from_):
         """
 
-        :param from_: 
+        Parameters
+        ----------
+        from_ :
+            
+
+        Returns
+        -------
 
         """
         _ = self.__copy__()
@@ -101,9 +131,17 @@ class _Qry:
     def join(self,tbl,*args,how = 'left'):
         """
 
-        :param tbl: 
-        :param *args: 
-        :param how:  (Default value = 'left')
+        Parameters
+        ----------
+        tbl :
+            param *args:
+        how :
+            Default value = 'left')
+        *args :
+            
+
+        Returns
+        -------
 
         """
         _ = self.__copy__()
@@ -121,7 +159,13 @@ class _Qry:
     def where(self,*args):
         """
 
-        :param *args: 
+        Parameters
+        ----------
+        *args :
+            
+
+        Returns
+        -------
 
         """
         _ = self.__copy__()
@@ -131,7 +175,13 @@ class _Qry:
     def group_by(self,*args):
         """
 
-        :param *args: 
+        Parameters
+        ----------
+        *args :
+            
+
+        Returns
+        -------
 
         """
         _ = self.__copy__()
@@ -141,7 +191,13 @@ class _Qry:
     def having(self,*args):
         """
 
-        :param *args: 
+        Parameters
+        ----------
+        *args :
+            
+
+        Returns
+        -------
 
         """
         _ = self.__copy__()
@@ -151,7 +207,13 @@ class _Qry:
     def order_by(self,*args):
         """
 
-        :param *args: 
+        Parameters
+        ----------
+        *args :
+            
+
+        Returns
+        -------
 
         """
         _ = self.__copy__()
@@ -161,7 +223,13 @@ class _Qry:
     def sql(self,sql):
         """
 
-        :param sql: 
+        Parameters
+        ----------
+        sql :
+            
+
+        Returns
+        -------
 
         """
         _ = self.__copy__()
@@ -171,9 +239,17 @@ class _Qry:
     def _make_cls(self,key,load,na = ''):
         """
 
-        :param key: 
-        :param load: 
-        :param na:  (Default value = '')
+        Parameters
+        ----------
+        key :
+            param load:
+        na :
+            Default value = '')
+        load :
+            
+
+        Returns
+        -------
 
         """
         return f"{key}{load}" if load is not None else na
@@ -213,9 +289,17 @@ class _Qry:
     def run(self,sql = None,*args,**kwargs):
         """
 
-        :param sql:  (Default value = None)
-        :param *args: 
-        :param **kwargs: 
+        Parameters
+        ----------
+        sql :
+            Default value = None)
+        *args :
+            
+        **kwargs :
+            
+
+        Returns
+        -------
 
         """
         self._make_qry()
