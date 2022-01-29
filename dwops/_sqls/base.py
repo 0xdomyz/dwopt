@@ -1,16 +1,25 @@
 def head(self):
+    """ """
     return self.run("select * from x limit 5")
 
 def top(self):
+    """ """
     return self.run("select * from x limit 1").iloc[0,]
 
 def cols(self):
+    """ """
     return self.run("select * from x where 1=2").columns.tolist()
 
 def len(self):
+    """ """
     return self.run("select count(1) from x").iloc[0,0]
 
 def dist(self,*args):
+    """
+
+    :param *args: 
+
+    """
     _ = (" || '_' || ".join(_) if not isinstance(_,str) else _ 
         for _ in args)
     _ = ''.join(
@@ -27,6 +36,11 @@ def dist(self,*args):
     return self.run(_).iloc[0,:]
 
 def mimx(self,col):
+    """
+
+    :param col: 
+
+    """
     _ = (
         "select \n"
         f"    max({col}),min({col})\n"
@@ -35,6 +49,14 @@ def mimx(self,col):
     return self.run(_).iloc[0,:]
 
 def valc(self,group_by,agg = None,order_by = None,n = True):
+    """
+
+    :param group_by: 
+    :param agg:  (Default value = None)
+    :param order_by:  (Default value = None)
+    :param n:  (Default value = True)
+
+    """
     group_by_cls = (','.join(group_by) if not isinstance(group_by,str)
         else group_by)
     if agg is None:
@@ -62,6 +84,7 @@ def valc(self,group_by,agg = None,order_by = None,n = True):
     return self.run(_)
 
 def piv(self):
+    """ """
     pass
 
 

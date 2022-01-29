@@ -1,4 +1,5 @@
 class _Qry:
+    """ """
     print_ = False
 
     def __init__(self
@@ -25,6 +26,12 @@ class _Qry:
         )
 
     def _args2str(self,args,sep):
+        """
+
+        :param args: 
+        :param sep: 
+
+        """
         l = len(args)
         if l == 0:
             res = None
@@ -39,11 +46,26 @@ class _Qry:
         return res
 
     def select(self,*args,sep = ','):
+        """
+
+        :param *args: 
+        :param sep:  (Default value = ')
+        :param ': 
+
+        """
         _ = self.__copy__()
         _._select = self._args2str(args,sep)
         return _
 
     def case(self,col,*args,cond = None,els = 'NULL'):
+        """
+
+        :param col: 
+        :param *args: 
+        :param cond:  (Default value = None)
+        :param els:  (Default value = 'NULL')
+
+        """
         _ = self.__copy__()
         if cond is not None:
             for i,j in cond.items():
@@ -67,11 +89,23 @@ class _Qry:
         return _
 
     def from_(self,from_):
+        """
+
+        :param from_: 
+
+        """
         _ = self.__copy__()
         _._from_ = from_
         return _
 
     def join(self,tbl,*args,how = 'left'):
+        """
+
+        :param tbl: 
+        :param *args: 
+        :param how:  (Default value = 'left')
+
+        """
         _ = self.__copy__()
         on = self._args2str(args,'\n    and ')
         cls = (
@@ -85,34 +119,67 @@ class _Qry:
         return _
 
     def where(self,*args):
+        """
+
+        :param *args: 
+
+        """
         _ = self.__copy__()
         _._where = self._args2str(args,'\n    and ')
         return _
 
     def group_by(self,*args):
+        """
+
+        :param *args: 
+
+        """
         _ = self.__copy__()
         _._group_by = self._args2str(args,',')
         return _
 
     def having(self,*args):
+        """
+
+        :param *args: 
+
+        """
         _ = self.__copy__()
         _._having = self._args2str(args,'\n    and ')
         return _
 
     def order_by(self,*args):
+        """
+
+        :param *args: 
+
+        """
         _ = self.__copy__()
         _._order_by = self._args2str(args,',')
         return _
 
     def sql(self,sql):
+        """
+
+        :param sql: 
+
+        """
         _ = self.__copy__()
         _._sql = sql
         return _
 
     def _make_cls(self,key,load,na = ''):
+        """
+
+        :param key: 
+        :param load: 
+        :param na:  (Default value = '')
+
+        """
         return f"{key}{load}" if load is not None else na
 
     def _make_qry(self):
+        """ """
         if self._sql is not None:
             self._qry = self._sql
         else:
@@ -139,10 +206,18 @@ class _Qry:
         return self._qry
 
     def print(self):
+        """ """
         self._make_qry()
         print(self)
 
     def run(self,sql = None,*args,**kwargs):
+        """
+
+        :param sql:  (Default value = None)
+        :param *args: 
+        :param **kwargs: 
+
+        """
         self._make_qry()
         if sql is not None:
             _ = self._qry.replace('\n','\n    ')
@@ -165,14 +240,18 @@ class _Qry:
     from dw._sqls.base import valc
 
 class PgQry(_Qry):
+    """ """
     pass
 
 class LtQry(_Qry):
+    """ """
     pass
 
 class OcQry(_Qry):
+    """ """
 
     def _make_qry(self):
+        """ """
         super()._make_qry()
         self._qry = self._qry.replace('select','select /*+PARALLEL (4)*/')
 

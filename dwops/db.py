@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import logging
 import re
-from dw._qry import PgQry, LtQry, OcQry
+from dwops._qry import PgQry, LtQry, OcQry
 _logger = logging.getLogger(__name__)
 
 def make_eng(url):

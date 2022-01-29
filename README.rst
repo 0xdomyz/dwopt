@@ -45,7 +45,7 @@ Excel pivot table - like experience on database tables
 
 ::
 
-    from dw import lt
+    from dwops import lt
     lt.qry('test').where("score > 0.5") \
     .valc('time,cat',"avg(score) avgscore,round(sum(amt)/1e3,2) total") \
     .pivot('time','cat',['n','avgscore','total'])
@@ -116,7 +116,7 @@ example usage where "my_pg_url.txt" in the url folder stores user defined url:
 
 ::
 
-    from dw import Pg,make_eng,get_url
+    from dwops import Pg,make_eng,get_url
     pg = Pg(make_eng(get_url('my_pg_url')))
 
 
@@ -124,7 +124,7 @@ example usage where url is provided:
 
 ::
 
-    from dw import Pg,make_eng
+    from dwops import Pg,make_eng
     url = "postgresql://scott:tiger@localhost/mydatabase"
     pg = Pg(make_eng(url))
 
