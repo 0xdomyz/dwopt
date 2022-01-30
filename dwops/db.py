@@ -8,12 +8,19 @@ from dwops._qry import PgQry, LtQry, OcQry
 _logger = logging.getLogger(__name__)
 
 def make_eng(url):
-    """Make database engine
+    """
+    Make database connection engine.
+    
+    Engine object best to be created once per application.
 
     Parameters
     ----------
     url : str
-        url as specified on:
+        Sqlalchemy engine url. Format varies from database to database
+        , typically have user name, password, and location or host address 
+        or tns of database.
+
+        Details on:
         https://docs.sqlalchemy.org/en/14/core/engines.html#database-urls
 
     Returns
@@ -28,22 +35,34 @@ def make_meta(eng,schema):
     pass
 
 class _Db:
-    """Generic database operator class.
+    """
+    Generic database operator class.
 
-    Three usages:
-        1. Use the run method to run sql statments.
-        2. Varies DDL/DML methods to run DDL/DML.
-        3. Use the qry method to create qry object.
+    This base class should not be instantiated directly by user
+    , it's child classes relevant to varies databases 
+    should be instantiated and used intead.
+
+    The methods defined here can be grouped into 3 main usages.
+
+    1. Run sql statment.
+    2. Run DDL/DML via the convenience methods.
+    3. Create query object, which allows running summary query.
 
     Parameters
     ----------
     eng : sqlalchemy engine
-        Engine to be used for database connection.
+        Database connection engine to be used.
 
     Attributes
     ----------
     eng : sqlalchemy engine
-        Engine used for database connection.
+        Database connection engine to be used.
+
+    See Also
+    --------
+    dwops.db.Pg : Postgre database operator class.
+    dwops.db.Lt : Sqlite database operator class.
+    dwops.db.Oc : Oracle database operator class.
     """
     def __init__(self,eng):
         self.eng = eng
@@ -53,30 +72,98 @@ class _Db:
         self.meta.update({meta.schema,meta})
 
     def run(self,sql=None,args=None,pth=None,mods=None,**kwargs):
-        """Run sql statement. Support argument passing, text replacement 
+        """
+        Run sql statement.
+
+        Support argument passing, text replacement 
         and reading statements from sql script.
 
         Parameters
         ----------
         sql : str, optional
-            Sql statement to run.
-        args : {str:str}, optional
-            Dictionary of argument name to argument mappings.
+            The sql statement to run. Only 1 statement is allowed.
+        args : dict, optional
+            Dictionary of argument name str to argument str mappings.
+            These arguments are passed to the database, to function as data
+            for the argument names. 
+            See the notes and the examples section for details.
         pth : str, optional
-            path to sql script, ignored if sql is not None.
-        mods : {str:str},optional
-            Dictionary of modification name to modification mappings.
-        **kwargs : str, optional
-            Convenience way to add modification mappings. 
+            Path to sql script, ignored if the sql parameter is not None.
+            The script can hold one and only one sql statement, typically
+            a significant piece of table creation statement.
+        mods : dict, optional
+            Dictionary of modification name str to modification str mappings.
+            Replaces modification name in the sql by the respective 
+            modification str. 
+            See the notes and the examples section for details.
+        **kwargs :
+            Convenient way to add modification mappings. 
             Keyword to argument mappings will be added to the mods dictionary.
+            The keyword cannot be one of the positional parameter names.
 
         Returns
         -------
         pandas.DataFrame or None
-            Dataframe if the database returns any result, even if the result
-            has zero rows. Returns None otherwise, for example when 
-            running DDL/DML statements.
+            Returns dataframe if the database returns any result. 
+            Returns dataframe with column names and zero rows if running query
+            that returns zero rows. 
+            Returns None otherwise, typically when running DDL/DML statement.
 
+        Notes
+        -----
+
+        **The args and the mods parameter**
+
+        An argument name is denoted in the sql by prepending a colon symbol `:` 
+        before a str.
+
+        Similiarly, a modification name is denoted by prepending a 
+        colon symbol `:` before a str in the sql. 
+        The end of str is to be followed by a symbol other than 
+        a lower or upper case letter, or a number. 
+        It is also ended before a line break.
+
+        The args parameter method of passing arguments is less prone 
+        to unintended sql injection, while the mods paramter method of 
+        text replacement gives much more flexibility when it comes to
+        programatically generate sql statment. For example when database 
+        does not support argument passing on DDL/DML statement.
+
+        Examples
+        --------
+        Make example table.
+
+        >>> import pandas as pd
+        >>> from dw import lt
+        >>> 
+        >>> tbl = pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]})
+        >>> lt.drop('test')
+        >>> lt.create('test',{'col1':'int','col2':'int'})
+        >>> lt.write(tbl,'test')
+
+        Run sql.
+
+        >>> lt.run("select * from test")
+            col1  col2
+        0     1     3
+        1     2     4
+
+        Run sql with argument passing.
+
+        >>> lt.run("select * from test where col1 = :cond",args = {'cond':2})
+            col1  col2
+        1     2     4
+
+        Run sql with text modification.
+
+        >>> tbl_nme = 'test2'
+        >>> lt.run("drop table :tbl",mods = {'tbl':tbl_nme})
+        >>> lt.run("create table :tbl as select * from test where :col = 1"
+        >>>        , mods = {'tbl':tbl_nme}, col = 'col1')
+        >>> lt.run("select *,col2 + 1 as :col from :tbl_nme"
+        >>>        , tbl_nme = tbl_nme, col = 'col3')
+            col1  col2  col3
+        1     1     3     4
         """
         if sql is None and pth is not None:
             with open(pth) as f:
@@ -87,6 +174,7 @@ class _Db:
         return self._run(sql,args)
 
     def _run(self,sql,args = None):
+        """Run sql statement with argument passing"""
         with self.eng.begin() as c:
             _logger.info(f'running:\n{sql}')
             if args is not None:
@@ -99,6 +187,7 @@ class _Db:
                 return pd.DataFrame(r.all(),columns = r.keys())
 
     def _bind_mods(self,sql,mods = None,**kwargs):
+        """Apply modification to sql statement"""
         if mods is None:
             mods = kwargs
         else:
@@ -109,20 +198,72 @@ class _Db:
         return sql
 
     def create(self,tbl_nme,dtypes = None,**kwargs):
-        """Make and run create table statment
+        """Generate and run a create table statment.
 
         Parameters
         ----------
-        tbl_nme :
-            param dtypes: dictionary of column names (Default value = None)
-        dtypes :
-             (Default value = None)
+        tbl_nme : str
+            Name of the table to create.
+        dtypes : dict, optional
+            Dictionary of column names to data types mappings.
         **kwargs :
-            
+            Convenient way to add mappings.
+            Keyword to argument mappings will be added to the dtypes dictionary.
+            The keyword cannot be one of the positional parameter names.
 
-        Returns
-        -------
+        Notes
+        -----
 
+        **Datatypes**
+
+        Datatypes varies across databses, common example below:
+
+        ==========  =======  ===========  ============
+        Type        Sqlite   Postgre      Oracle      
+        ==========  =======  ===========  ============
+        integer     integer  bigint       number
+        float       real     float8       float
+        string      text     varchar(20)  varchar2(20)
+        datetime    text     timestamp    timestamp
+        date        text     date         date
+        ==========  =======  ===========  ============
+
+        Details:
+
+        * https://www.sqlite.org/datatype3.html
+        * https://www.postgresql.org/docs/current/datatype.html
+        * https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlqr/Data-Types.html
+
+        **Other statements**
+
+        The dtypes mappings also allow other sql statements which are 
+        part of a create statement to be added. For example 
+        a primary key constraint.
+
+        Details:
+
+        * https://sqlite.org/lang_createtable.html
+        * https://www.postgresql.org/docs/current/sql-createtable.html
+        * https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlrf/CREATE-TABLE.html
+
+        Examples
+        --------
+
+        Make example table on sqlite.
+
+        >>> from dw import lt
+        ... 
+        >>> lt.drop('test')
+        >>> lt.create('test'
+        ...     ,{
+        ...         'id':'integer'
+        ...         ,'score':'real'
+        ...         ,'amt':'integer'
+        ...         ,'cat':'text'
+        ...         ,'time':'text'
+        ...         ,'constraint df_pk':
+        ...             'primary key (id)'
+        ...     })
         """
         if dtypes is None:
             dtypes = kwargs
@@ -229,11 +370,9 @@ class _Db:
             return f'{tbl_nme} dropped'
 
     def update(self):
-        """ """
         pass
 
     def delete(self):
-        """ """
         pass
 
     def add_pkey(self,tbl_nme,pkey):
@@ -254,17 +393,7 @@ class _Db:
         return self.run(sql)
 
     def _parse_sch_tbl_nme(self,sch_tbl_nme):
-        """
-
-        Parameters
-        ----------
-        sch_tbl_nme :
-            
-
-        Returns
-        -------
-
-        """
+        """Resolve schema dot table name name into components"""
         _ = sch_tbl_nme.split('.')
         n = len(_)
         if n == 1:
@@ -280,9 +409,15 @@ class _Db:
         return sch, tbl_nme
 
 class Pg(_Db):
-    """ """
+    """
+    Postgre databse operator class.
+
+    Inherits most of the methods from the parent class dwops.db._Db.
+    Provides prostgre specific methods.
+
+    """
     def list_tables(self):
-        """ """
+        """List all tables."""
         sql = (
             "select table_catalog,table_schema,table_name"
             "\n    ,is_insertable_into,commit_action"
@@ -294,11 +429,12 @@ class Pg(_Db):
 
     def table_cols(self,sch_tbl_nme):
         """
+        
 
         Parameters
         ----------
-        sch_tbl_nme :
-            
+        sch_tbl_nme : str
+            Table name in format: `schema.table`.
 
         Returns
         -------
