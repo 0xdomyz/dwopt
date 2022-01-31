@@ -20,12 +20,15 @@ def make_eng(url):
         , typically have user name, password, and location or host address 
         or tns of database.
 
-        Details on:
-        https://docs.sqlalchemy.org/en/14/core/engines.html#database-urls
-
     Returns
     -------
     sqlalchemy engine
+
+    Notes
+    -----
+
+    Details on sqlalchemy engine and url syntax:
+    https://docs.sqlalchemy.org/en/14/core/engines.html#database-urls
     """
     _logger.debug('making sqlalchemy engine')
     return alc.create_engine(url)
@@ -56,7 +59,7 @@ class _Db:
     Attributes
     ----------
     eng : sqlalchemy engine
-        Database connection engine to be used.
+        Database connection engine that is used.
 
     See Also
     --------
@@ -114,11 +117,11 @@ class _Db:
 
         **The args and the mods parameter**
 
-        An argument name is denoted in the sql by prepending a colon symbol `:` 
-        before a str.
+        An argument name is denoted in the sql by prepending 
+        a colon symbol ``:`` before a str.
 
         Similiarly, a modification name is denoted by prepending a 
-        colon symbol `:` before a str in the sql. 
+        colon symbol ``:`` before a str in the sql. 
         The end of str is to be followed by a symbol other than 
         a lower or upper case letter, or a number. 
         It is also ended before a line break.
@@ -127,11 +130,11 @@ class _Db:
         to unintended sql injection, while the mods paramter method of 
         text replacement gives much more flexibility when it comes to
         programatically generate sql statment. For example when database 
-        does not support argument passing on DDL/DML statement.
+        does not support argument passing on DDL/DML statements.
 
         Examples
         --------
-        Make example table.
+        Make example table on sqlite.
 
         >>> import pandas as pd
         >>> from dw import lt
@@ -152,7 +155,7 @@ class _Db:
 
         >>> lt.run("select * from test where col1 = :cond",args = {'cond':2})
             col1  col2
-        1     2     4
+        0     2     4
 
         Run sql with text modification.
 
@@ -163,7 +166,7 @@ class _Db:
         >>> lt.run("select *,col2 + 1 as :col from :tbl_nme"
         >>>        , tbl_nme = tbl_nme, col = 'col3')
             col1  col2  col3
-        1     1     3     4
+        0     1     3     4
         """
         if sql is None and pth is not None:
             with open(pth) as f:
@@ -198,7 +201,16 @@ class _Db:
         return sql
 
     def create(self,tbl_nme,dtypes = None,**kwargs):
-        """Generate and run a create table statment.
+        """
+        Make and run a create table statment. Example sql code:
+
+        .. code-block:: sql
+
+            create table tbl_nme(
+                ,col1 dtype1
+                ,col2 dtype2
+                ...
+            )
 
         Parameters
         ----------
@@ -214,7 +226,7 @@ class _Db:
         Notes
         -----
 
-        **Datatypes**
+        *Datatypes*
 
         Datatypes varies across databses, common example below:
 
@@ -234,7 +246,7 @@ class _Db:
         * https://www.postgresql.org/docs/current/datatype.html
         * https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlqr/Data-Types.html
 
-        **Other statements**
+        *Other statements*
 
         The dtypes mappings also allow other sql statements which are 
         part of a create statement to be added. For example 
@@ -280,17 +292,53 @@ class _Db:
 
     def write(self,tbl,tbl_nme):
         """
+        Make and run a insert statement. Example sql code:
+
+        .. code-block:: sql
+
+            insert into tbl_nme (col1, col2, ...)
+            values (:col1, :col2, ...)
+
+        With arguments to sql being:
+
+        .. code-block:: python
+
+            {
+                ['col1' : data1, 'col2' : data2, ...]
+                ,['col1' : data3, 'col2' : data4, ...]
+                ...
+            }
 
         Parameters
         ----------
-        tbl :
-            param tbl_nme:
-        tbl_nme :
-            
+        tbl : pandas.DataFrame
+            Payload Dataframe with data to insert.
+        tbl_nme : str
+            Name of the database table to insert into.
 
-        Returns
-        -------
+        Notes
+        -----
 
+        *Datetime*
+
+        Datetime objects are converted into str before inserting.
+
+        *Null values*
+
+        Behaviour with null values are not tested for current version.
+
+        Examples
+        --------
+
+        Make example table on sqlite, then insert rows into it.
+
+        >>> import pandas as pd
+        >>> from dw import lt
+        >>> 
+        >>> tbl = pd.DataFrame({'col1': [1, 2], 'col2': ['a', 'b']})
+        >>> lt.drop('test')
+        >>> lt.create('test',{'col1':'int','col2':'text'})
+        >>> lt.write(tbl,'test')
         """
         _ = len(tbl)
         _logger.debug(f'writing to {tbl_nme}, len: {_}')
@@ -311,21 +359,65 @@ class _Db:
 
     def write_nodup(self,tbl,tbl_nme,pkey,where = None):
         """
+        Make and run a insert statement without creating duplicates on 
+        the database table. Implemented as below process:
+
+        1. Make and run a select statement with optionally provided
+           where clause.
+        2. If step 1 returns any results and the payload table in non-empty
+           , remove duplicates on the payload table, using the provided primary
+           key columns as judge of duplication.
+        3. Make insert statement on the non-duplicating payload data.
+
+        Example sql code:
+
+        .. code-block:: sql
+
+            select * from tbl_nme where where_clause;
+
+            insert into tbl_nme (col1, col2, ...)
+            values (:col1, :col2, ...)
+
+        With arguments to sql being:
+
+        .. code-block:: python
+
+            {
+                ['col1' : data1, 'col2' : data2, ...]
+                ,['col1' : data3, 'col2' : data4, ...]
+                ...
+            }
 
         Parameters
         ----------
-        tbl :
-            param tbl_nme:
-        pkey :
-            param where:  (Default value = None)
-        tbl_nme :
-            
-        where :
-             (Default value = None)
+        tbl : pandas.DataFrame
+            Payload Dataframe with data to insert.
+        pkey : [str]
+            Iterable of column name str.
+        tbl_nme : str
+            Name of the database table to insert into.
+        where : str
+            where clause in str form. The ``where`` keyword is not needed.
 
-        Returns
-        -------
+        Examples
+        --------
 
+        Make example table on sqlite, then insert duplicated rows into it.
+
+        >>> import pandas as pd
+        >>> from dw import lt
+        >>> 
+        >>> tbl = pd.DataFrame({'col1': [1, 2], 'col2': ['a', 'b']})
+        >>> tbl2 = pd.DataFrame({'col1': [1, 3], 'col2': ['a', 'c']})
+        >>> lt.drop('test')
+        >>> lt.create('test',{'col1':'int','col2':'text'})
+        >>> lt.write(tbl,'test')
+        >>> lt.write_nodup(tbl2,'test',['col1'],"col1 < 4")
+        >>> lt.run("select * from test")
+            col1  col2
+        0     1     a
+        1     2     b
+        2     3     c
         """
         cols = ','.join(pkey)
         where_cls = f'\nwhere {where}' if where else ''
@@ -351,15 +443,46 @@ class _Db:
 
     def drop(self,tbl_nme):
         """
+        Make and run a drop table statement. Does not throw error if table
+        not exist. Example sql code:
+
+        .. code-block:: sql
+
+            drop tbl_nme
 
         Parameters
         ----------
-        tbl_nme :
-            
+        tbl_nme : str
+            Name of the database table to drop.
 
         Returns
         -------
+        str
+            ``tbl_nme not exist`` if table not exist
+            , ``tbl_nme dropped`` otherwise.
 
+        Notes
+        -----
+
+        *Error catching*
+
+        Does not catch specifically the error related to table not exist in
+        this version.
+
+        See Also
+        --------
+        dwops.db.Oc.drop : Oracle databse operator drop method.
+
+        Examples
+        --------
+
+        Make example table on sqlite, then drop it.
+
+        >>> from dw import lt
+        >>> 
+        >>> lt.drop('test')
+        >>> lt.create('test',{'col1':'int','col2':'text'})
+        >>> lt.drop('test')
         """
         try:
             self.run(f'drop table {tbl_nme}')
@@ -377,17 +500,29 @@ class _Db:
 
     def add_pkey(self,tbl_nme,pkey):
         """
+        Make and run an add primary key statement. Example sql code:
+
+        .. code-block:: sql
+
+            alter table tbl_nme add primary key (col1, col2, ...)
 
         Parameters
         ----------
-        tbl_nme :
-            param pkey:
-        pkey :
-            
+        tbl_nme : str
+            Name of the database table to operate on.
+        tbl_nme : str
+            columns names in form ``col1, col2, ...``.
 
-        Returns
-        -------
+        Examples
+        --------
 
+        Make example table on sqlite, then add primary key constraint.
+
+        >>> from dw import lt
+        >>> 
+        >>> lt.drop('test')
+        >>> lt.create('test',{'col1':'int','col2':'text'})
+        >>> lt.add_pkey('col1,col2')
         """
         sql = f"alter table {tbl_nme} add primary key ({pkey})"
         return self.run(sql)
@@ -412,9 +547,12 @@ class Pg(_Db):
     """
     Postgre databse operator class.
 
-    Inherits most of the methods from the parent class dwops.db._Db.
+    Inherits all methods from the parent class dwops.db._Db.
     Provides prostgre specific methods.
 
+    See Also
+    --------
+    dwops.db._Db : Parent class.
     """
     def list_tables(self):
         """List all tables."""
@@ -470,7 +608,16 @@ class Pg(_Db):
         return PgQry(self,*args,**kwargs)
 
 class Lt(_Db):
-    """ """
+    """
+    Sqlite databse operator class.
+
+    Inherits all methods from the parent class dwops.db._Db.
+    Provides sqlite specific methods.
+
+    See Also
+    --------
+    dwops.db._Db : Parent class.
+    """
     def list_tables(self):
         """ """
         sql = (
@@ -497,7 +644,16 @@ class Lt(_Db):
         return LtQry(self,*args,**kwargs)
 
 class Oc(_Db):
-    """ """
+    """ 
+    Oracle databse operator class.
+
+    Inherits all methods from the parent class. 
+    Provides oracle specific methods.
+
+    See Also
+    --------
+    dwops.db._Db : Parent class.
+    """
     def list_tables(self,owner):
         """
 

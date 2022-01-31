@@ -31,9 +31,8 @@ class _Qry:
         Parameters
         ----------
         args :
-            param sep:
         sep :
-            
+        
 
         Returns
         -------
@@ -60,8 +59,6 @@ class _Qry:
         *args :
             
         sep :
-             (Default value = ')
-        ' :
             
 
         Returns
@@ -78,13 +75,6 @@ class _Qry:
         Parameters
         ----------
         col :
-            param *args:
-        cond :
-            Default value = None)
-        els :
-            Default value = 'NULL')
-        *args :
-            
 
         Returns
         -------
@@ -134,9 +124,7 @@ class _Qry:
         Parameters
         ----------
         tbl :
-            param *args:
         how :
-            Default value = 'left')
         *args :
             
 
@@ -242,9 +230,7 @@ class _Qry:
         Parameters
         ----------
         key :
-            param load:
         na :
-            Default value = '')
         load :
             
 
@@ -292,7 +278,6 @@ class _Qry:
         Parameters
         ----------
         sql :
-            Default value = None)
         *args :
             
         **kwargs :
