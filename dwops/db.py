@@ -545,17 +545,33 @@ class _Db:
 
 class Pg(_Db):
     """
-    Postgre databse operator class.
-
-    Inherits all methods from the parent class dwops.db._Db.
-    Provides prostgre specific methods.
+    Postgre databse operator class with database specific methods.
 
     See Also
     --------
-    dwops.db._Db : Parent class.
+    dwops.db._Db : Parent class with many generic methods.
     """
     def list_tables(self):
-        """List all tables."""
+        """
+        List all tables. Static sql used:
+
+        .. code-block:: sql
+
+            select 
+                table_catalog,table_schema,table_name
+                ,is_insertable_into,commit_action
+            from information_schema.tables
+            where table_schema
+               not in ('information_schema','pg_catalog')
+
+        Details:
+
+        https://www.postgresql.org/docs/current/infoschema-tables.html
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
         sql = (
             "select table_catalog,table_schema,table_name"
             "\n    ,is_insertable_into,commit_action"
@@ -567,7 +583,18 @@ class Pg(_Db):
 
     def table_cols(self,sch_tbl_nme):
         """
-        
+        Show columns' information of specified table. Sql used:
+
+        .. code-block:: sql
+
+            select column_name, data_type
+            from information_schema.columns
+            where table_schema = 'schema_nme'
+            and table_name = 'tbl_nme'
+
+        Details:
+
+        https://www.postgresql.org/docs/current/infoschema-columns.html
 
         Parameters
         ----------
@@ -576,7 +603,7 @@ class Pg(_Db):
 
         Returns
         -------
-
+        pandas.DataFrame
         """
         sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
         sql = (
@@ -587,39 +614,67 @@ class Pg(_Db):
         return self.run(sql)
 
     def list_cons():
-        """ """
+        """
+        List all constraints. Static sql used:
+
+        .. code-block:: sql
+
+            select * from information_schema.constraint_table_usage
+
+        Details:
+
+        https://www.postgresql.org/docs/current/infoschema-constraint-table-usage.html
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
         sql = 'SELECT * FROM information_schema.constraint_table_usage'
         return self.run(sql)
 
     def qry(self,*args,**kwargs):
         """
+        Make postgre query object.
 
         Parameters
         ----------
         *args :
-            
+            Positional arguments of the query object.
         **kwargs :
-            
+            keyword arguments of the query object.
 
         Returns
         -------
-
+        dwops._qry.PgQry
         """
         return PgQry(self,*args,**kwargs)
 
 class Lt(_Db):
     """
-    Sqlite databse operator class.
-
-    Inherits all methods from the parent class dwops.db._Db.
-    Provides sqlite specific methods.
+    Sqlite databse operator class with database specific methods.
 
     See Also
     --------
-    dwops.db._Db : Parent class.
+    dwops.db._Db : Parent class with many generic methods.
     """
     def list_tables(self):
-        """ """
+        """ 
+        List all tables. Static sql used:
+
+        .. code-block:: sql
+
+            select * from sqlite_schema
+            where type ='table'
+            and name NOT LIKE 'sqlite_%'
+
+        Details:
+
+        https://www.sqlite.org/schematab.html
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
         sql = (
             "select * from sqlite_schema "
             "\nwhere type ='table' "
@@ -629,42 +684,53 @@ class Lt(_Db):
 
     def qry(self,*args,**kwargs):
         """
+        Make sqlite query object.
 
         Parameters
         ----------
         *args :
-            
+            Positional arguments of the query object.
         **kwargs :
-            
+            keyword arguments of the query object.
 
         Returns
         -------
-
+        dwops._qry.LtQry
         """
         return LtQry(self,*args,**kwargs)
 
 class Oc(_Db):
     """ 
-    Oracle databse operator class.
-
-    Inherits all methods from the parent class. 
-    Provides oracle specific methods.
+    Oracle databse operator class with database specific methods.
 
     See Also
     --------
-    dwops.db._Db : Parent class.
+    dwops.db._Db : Parent class with many generic methods.
     """
     def list_tables(self,owner):
         """
+        List all tables in a schema. Sql used:
+
+        .. code-block:: sql
+
+            select/*+PARALLEL (4)*/ owner,table_name
+                ,max(column_name),min(column_name)
+            from all_tab_columns
+            where owner = 'owner'
+            group by owner,table_name
+
+        Details:
+
+        https://docs.oracle.com/en/database/oracle/oracle-database/21/refrn/ALL_TAB_COLUMNS.html
 
         Parameters
         ----------
-        owner :
-            
+        owner : str
+            Schema name.
 
         Returns
         -------
-
+        pandas.DataFrame
         """
         sql = (
             "select/*+PARALLEL (4)*/ owner,table_name"
@@ -676,7 +742,25 @@ class Oc(_Db):
         return self.run(sql)
 
     def table_sizes(self):
-        """ """
+        """ 
+        List sizes of all tables in current schema. Static sql used:
+
+        .. code-block:: sql
+
+            select/*+PARALLEL (4)*/
+                tablespace_name,segment_type,segment_name
+                ,sum(bytes)/1024/1024 table_size_mb
+            from user_extents
+            group by tablespace_name,segment_type,segment_name
+
+        Details:
+
+        https://docs.oracle.com/en/database/oracle/oracle-database/21/refrn/USER_EXTENTS.html
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
         sql = (
             "select/*+PARALLEL (4)*/"
             "\n    tablespace_name,segment_type,segment_name"
@@ -688,15 +772,27 @@ class Oc(_Db):
 
     def table_cols(self,sch_tbl_nme):
         """
+        Show columns' information of specified table. Sql used:
+
+        .. code-block:: sql
+
+            select/*+PARALLEL (4)*/ *
+            from all_tab_columns
+            where owner = 'schema_nme'
+            and table_name = 'tbl_nme'
+
+        Details:
+
+        https://docs.oracle.com/en/database/oracle/oracle-database/21/refrn/ALL_TAB_COLUMNS.html
 
         Parameters
         ----------
-        sch_tbl_nme :
-            
+        sch_tbl_nme : str
+            Table name in format: `schema.table`.
 
         Returns
         -------
-
+        pandas.DataFrame
         """
         sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
         sql = (
@@ -709,15 +805,18 @@ class Oc(_Db):
 
     def drop(self,tbl_nme):
         """
+        Make and run a drop table statement. Does not throw error if table
+        not exist. Differ from overiden method by haivng a ``purge`` keyword.
 
-        Parameters
-        ----------
-        tbl_nme :
-            
+        Example sql code:
 
-        Returns
-        -------
+        .. code-block:: sql
 
+            drop tbl_nme purge
+
+        See Also
+        --------
+        dwops.db._Db.drop : Overiden method with same behaviour.
         """
         try:
             self.run(f'drop table {tbl_nme} purge')
@@ -729,17 +828,18 @@ class Oc(_Db):
 
     def qry(self,*args,**kwargs):
         """
+        Make oracle query object.
 
         Parameters
         ----------
         *args :
-            
+            Positional arguments of the query object.
         **kwargs :
-            
+            keyword arguments of the query object.
 
         Returns
         -------
-
+        dwops._qry.OcQry
         """
         return OcQry(self,*args,**kwargs)
 
