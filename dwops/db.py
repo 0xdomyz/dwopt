@@ -39,17 +39,19 @@ def make_meta(eng,schema):
 
 class _Db:
     """
-    Generic database operator class.
-
-    This base class should not be instantiated directly by user
-    , it's child classes relevant to varies databases 
-    should be instantiated and used intead.
-
-    The methods defined here can be grouped into 3 main usages.
+    Generic database operator class. There are 3 main usages:
 
     1. Run sql statment.
     2. Run DDL/DML via the convenience methods.
     3. Create query object, which allows running summary query.
+
+    This base class should not be instantiated directly by user
+    , it's child classes relevant to varies databases 
+    should be instantiated and used instead. Child classes:
+
+    * dwops.db.Pg: Postgre database operator class.
+    * dwops.db.Lt: Sqlite database operator class.
+    * dwops.db.Oc: Oracle database operator class.
 
     Parameters
     ----------
@@ -60,12 +62,6 @@ class _Db:
     ----------
     eng : sqlalchemy engine
         Database connection engine that is used.
-
-    See Also
-    --------
-    dwops.db.Pg : Postgre database operator class.
-    dwops.db.Lt : Sqlite database operator class.
-    dwops.db.Oc : Oracle database operator class.
     """
     def __init__(self,eng):
         self.eng = eng
@@ -73,6 +69,22 @@ class _Db:
 
     def update_meta(self,meta):
         self.meta.update({meta.schema,meta})
+
+    def _parse_sch_tbl_nme(self,sch_tbl_nme):
+        """Resolve schema dot table name name into components"""
+        _ = sch_tbl_nme.split('.')
+        n = len(_)
+        if n == 1:
+            sch = None
+            tbl_nme = _[0]
+        elif n == 2:
+            sch = _[0]
+            tbl_nme = _[1]
+        else:
+            sch = _[0]
+            tbl_nme = '.'.join(_[1:])
+            tbl_nme = f'"{tbl_nme}"'
+        return sch, tbl_nme
 
     def run(self,sql=None,args=None,pth=None,mods=None,**kwargs):
         """
@@ -450,6 +462,12 @@ class _Db:
 
             drop tbl_nme
 
+        Oracle sql code:
+
+        .. code-block:: sql
+
+            drop tbl_nme purge
+
         Parameters
         ----------
         tbl_nme : str
@@ -468,10 +486,6 @@ class _Db:
 
         Does not catch specifically the error related to table not exist in
         this version.
-
-        See Also
-        --------
-        dwops.db.Oc.drop : Oracle databse operator drop method.
 
         Examples
         --------
@@ -527,33 +541,23 @@ class _Db:
         sql = f"alter table {tbl_nme} add primary key ({pkey})"
         return self.run(sql)
 
-    def _parse_sch_tbl_nme(self,sch_tbl_nme):
-        """Resolve schema dot table name name into components"""
-        _ = sch_tbl_nme.split('.')
-        n = len(_)
-        if n == 1:
-            sch = None
-            tbl_nme = _[0]
-        elif n == 2:
-            sch = _[0]
-            tbl_nme = _[1]
-        else:
-            sch = _[0]
-            tbl_nme = '.'.join(_[1:])
-            tbl_nme = f'"{tbl_nme}"'
-        return sch, tbl_nme
-
-class Pg(_Db):
-    """
-    Postgre databse operator class with database specific methods.
-
-    See Also
-    --------
-    dwops.db._Db : Parent class with many generic methods.
-    """
-    def list_tables(self):
+    def list_tables(self,owner):
         """
-        List all tables. Static sql used:
+        List all tables on database or specified schema. 
+
+        Parameters
+        ----------
+        owner : str
+            Only applicable for oracle. Name of the schema.
+
+        Returns
+        -------
+        pandas.DataFrame
+
+        Notes
+        -----
+
+        Postgre sql used:
 
         .. code-block:: sql
 
@@ -564,102 +568,7 @@ class Pg(_Db):
             where table_schema
                not in ('information_schema','pg_catalog')
 
-        Details:
-
-        https://www.postgresql.org/docs/current/infoschema-tables.html
-
-        Returns
-        -------
-        pandas.DataFrame
-        """
-        sql = (
-            "select table_catalog,table_schema,table_name"
-            "\n    ,is_insertable_into,commit_action"
-            "\nfrom information_schema.tables"
-            "\nwhere table_schema"
-            "\n   not in ('information_schema','pg_catalog')"
-        )
-        return self.run(sql)
-
-    def table_cols(self,sch_tbl_nme):
-        """
-        Show columns' information of specified table. Sql used:
-
-        .. code-block:: sql
-
-            select column_name, data_type
-            from information_schema.columns
-            where table_schema = 'schema_nme'
-            and table_name = 'tbl_nme'
-
-        Details:
-
-        https://www.postgresql.org/docs/current/infoschema-columns.html
-
-        Parameters
-        ----------
-        sch_tbl_nme : str
-            Table name in format: `schema.table`.
-
-        Returns
-        -------
-        pandas.DataFrame
-        """
-        sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
-        sql = (
-            "select column_name, data_type from information_schema.columns"
-            f"\nwhere table_schema = '{sch}' "
-            f"\nand table_name = '{tbl_nme}'"
-        )
-        return self.run(sql)
-
-    def list_cons():
-        """
-        List all constraints. Static sql used:
-
-        .. code-block:: sql
-
-            select * from information_schema.constraint_table_usage
-
-        Details:
-
-        https://www.postgresql.org/docs/current/infoschema-constraint-table-usage.html
-
-        Returns
-        -------
-        pandas.DataFrame
-        """
-        sql = 'SELECT * FROM information_schema.constraint_table_usage'
-        return self.run(sql)
-
-    def qry(self,*args,**kwargs):
-        """
-        Make postgre query object.
-
-        Parameters
-        ----------
-        *args :
-            Positional arguments of the query object.
-        **kwargs :
-            keyword arguments of the query object.
-
-        Returns
-        -------
-        dwops._qry.PgQry
-        """
-        return PgQry(self,*args,**kwargs)
-
-class Lt(_Db):
-    """
-    Sqlite databse operator class with database specific methods.
-
-    See Also
-    --------
-    dwops.db._Db : Parent class with many generic methods.
-    """
-    def list_tables(self):
-        """ 
-        List all tables. Static sql used:
+        Sqlite sql used:
 
         .. code-block:: sql
 
@@ -667,83 +576,36 @@ class Lt(_Db):
             where type ='table'
             and name NOT LIKE 'sqlite_%'
 
-        Details:
-
-        https://www.sqlite.org/schematab.html
-
-        Returns
-        -------
-        pandas.DataFrame
-        """
-        sql = (
-            "select * from sqlite_schema "
-            "\nwhere type ='table' "
-            "\nand name NOT LIKE 'sqlite_%' "
-        )
-        return self.run(sql)
-
-    def qry(self,*args,**kwargs):
-        """
-        Make sqlite query object.
-
-        Parameters
-        ----------
-        *args :
-            Positional arguments of the query object.
-        **kwargs :
-            keyword arguments of the query object.
-
-        Returns
-        -------
-        dwops._qry.LtQry
-        """
-        return LtQry(self,*args,**kwargs)
-
-class Oc(_Db):
-    """ 
-    Oracle databse operator class with database specific methods.
-
-    See Also
-    --------
-    dwops.db._Db : Parent class with many generic methods.
-    """
-    def list_tables(self,owner):
-        """
-        List all tables in a schema. Sql used:
+        Oracle sql used:
 
         .. code-block:: sql
 
             select/*+PARALLEL (4)*/ owner,table_name
                 ,max(column_name),min(column_name)
             from all_tab_columns
-            where owner = 'owner'
+            where owner = ':owner'
             group by owner,table_name
 
         Details:
 
+        https://www.postgresql.org/docs/current/infoschema-tables.html
+        https://www.sqlite.org/schematab.html
         https://docs.oracle.com/en/database/oracle/oracle-database/21/refrn/ALL_TAB_COLUMNS.html
+        """
+        raise("Not implemented.")
 
-        Parameters
-        ----------
-        owner : str
-            Schema name.
+    def table_sizes(self):
+        """ 
+        List sizes of all tables in current schema. 
 
         Returns
         -------
         pandas.DataFrame
-        """
-        sql = (
-            "select/*+PARALLEL (4)*/ owner,table_name"
-            "\n    ,max(column_name),min(column_name)"
-            "\nfrom all_tab_columns"
-            f"\nwhere owner = '{owner.upper()}'"
-            "\ngroup by owner,table_name"
-        )
-        return self.run(sql)
 
-    def table_sizes(self):
-        """ 
-        List sizes of all tables in current schema. Static sql used:
+        Notes
+        -----
+
+        Oracle sql used:
 
         .. code-block:: sql
 
@@ -756,33 +618,37 @@ class Oc(_Db):
         Details:
 
         https://docs.oracle.com/en/database/oracle/oracle-database/21/refrn/USER_EXTENTS.html
-
-        Returns
-        -------
-        pandas.DataFrame
         """
-        sql = (
-            "select/*+PARALLEL (4)*/"
-            "\n    tablespace_name,segment_type,segment_name"
-            "\n    ,sum(bytes)/1024/1024 table_size_mb"
-            "\nfrom user_extents"
-            "\ngroup by tablespace_name,segment_type,segment_name"
-        )
-        return self.run(sql)
+        raise("Not implemented.")
 
     def table_cols(self,sch_tbl_nme):
         """
-        Show columns' information of specified table. Sql used:
+        Show columns' information of specified table. 
+
+        Notes
+        -----
+
+        Postgre sql used:
+
+        .. code-block:: sql
+
+            select column_name, data_type
+            from information_schema.columns
+            where table_schema = ':schema_nme'
+            and table_name = ':tbl_nme'
+
+        Oracle sql used:
 
         .. code-block:: sql
 
             select/*+PARALLEL (4)*/ *
             from all_tab_columns
-            where owner = 'schema_nme'
-            and table_name = 'tbl_nme'
+            where owner = ':schema_nme'
+            and table_name = ':tbl_nme'
 
         Details:
 
+        https://www.postgresql.org/docs/current/infoschema-columns.html
         https://docs.oracle.com/en/database/oracle/oracle-database/21/refrn/ALL_TAB_COLUMNS.html
 
         Parameters
@@ -794,41 +660,12 @@ class Oc(_Db):
         -------
         pandas.DataFrame
         """
-        sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
-        sql = (
-            "select/*+PARALLEL (4)*/ *"
-            "\nfrom all_tab_columns"
-            f"\nwhere owner = '{sch.upper()}'"
-            f"\nand table_name = '{tbl_nme.upper()}'"
-        )
-        return self.run(sql)
-
-    def drop(self,tbl_nme):
-        """
-        Make and run a drop table statement. Does not throw error if table
-        not exist. Differ from overiden method by haivng a ``purge`` keyword.
-
-        Example sql code:
-
-        .. code-block:: sql
-
-            drop tbl_nme purge
-
-        See Also
-        --------
-        dwops.db._Db.drop : Overiden method with same behaviour.
-        """
-        try:
-            self.run(f'drop table {tbl_nme} purge')
-        except Exception as ex:
-            _logger.debug(str(ex))
-            return f'{tbl_nme} not exist'
-        else:
-            return f'{tbl_nme} dropped'
+        raise("Not implemented.")
 
     def qry(self,*args,**kwargs):
         """
-        Make oracle query object.
+        Make query object. Different database operator object method returns
+        different query object.
 
         Parameters
         ----------
@@ -839,8 +676,116 @@ class Oc(_Db):
 
         Returns
         -------
-        dwops._qry.OcQry
+        dwops._qry._Qry
         """
+        raise("Not implemented.")
+
+    def list_cons():
+        """
+        List all constraints. 
+
+        Returns
+        -------
+        pandas.DataFrame
+
+        Notes
+        -----
+
+        Postgre sql used:
+
+        .. code-block:: sql
+
+            select * from information_schema.constraint_table_usage
+
+        Details:
+
+        https://www.postgresql.org/docs/current/infoschema-constraint-table-usage.html
+        """
+        raise("Not implemented.")
+
+        raise("Not implemented.")
+
+
+class Pg(_Db):
+    def list_tables(self):
+        sql = (
+            "select table_catalog,table_schema,table_name"
+            "\n    ,is_insertable_into,commit_action"
+            "\nfrom information_schema.tables"
+            "\nwhere table_schema"
+            "\n   not in ('information_schema','pg_catalog')"
+        )
+        return self.run(sql)
+
+    def table_cols(self,sch_tbl_nme):
+        sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
+        sql = (
+            "select column_name, data_type from information_schema.columns"
+            f"\nwhere table_schema = '{sch}' "
+            f"\nand table_name = '{tbl_nme}'"
+        )
+        return self.run(sql)
+
+    def list_cons():
+        sql = 'SELECT * FROM information_schema.constraint_table_usage'
+        return self.run(sql)
+
+    def qry(self,*args,**kwargs):
+        return PgQry(self,*args,**kwargs)
+
+class Lt(_Db):
+    def list_tables(self):
+        sql = (
+            "select * from sqlite_schema "
+            "\nwhere type ='table' "
+            "\nand name NOT LIKE 'sqlite_%' "
+        )
+        return self.run(sql)
+
+    def qry(self,*args,**kwargs):
+        return LtQry(self,*args,**kwargs)
+
+class Oc(_Db):
+    def list_tables(self,owner):
+        sql = (
+            "select/*+PARALLEL (4)*/ owner,table_name"
+            "\n    ,max(column_name),min(column_name)"
+            "\nfrom all_tab_columns"
+            f"\nwhere owner = '{owner.upper()}'"
+            "\ngroup by owner,table_name"
+        )
+        return self.run(sql)
+
+    def table_sizes(self):
+        sql = (
+            "select/*+PARALLEL (4)*/"
+            "\n    tablespace_name,segment_type,segment_name"
+            "\n    ,sum(bytes)/1024/1024 table_size_mb"
+            "\nfrom user_extents"
+            "\ngroup by tablespace_name,segment_type,segment_name"
+        )
+        return self.run(sql)
+
+    def table_cols(self,sch_tbl_nme):
+        sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
+        sql = (
+            "select/*+PARALLEL (4)*/ *"
+            "\nfrom all_tab_columns"
+            f"\nwhere owner = '{sch.upper()}'"
+            f"\nand table_name = '{tbl_nme.upper()}'"
+        )
+        return self.run(sql)
+
+    def drop(self,tbl_nme):
+        try:
+            self.run(f'drop table {tbl_nme} purge')
+        except Exception as ex:
+            _logger.debug(str(ex))
+            return f'{tbl_nme} not exist'
+        else:
+            return f'{tbl_nme} dropped'
+
+    def qry(self,*args,**kwargs):
         return OcQry(self,*args,**kwargs)
 
 

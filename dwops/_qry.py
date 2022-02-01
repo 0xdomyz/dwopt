@@ -1,5 +1,46 @@
 class _Qry:
-    """ """
+    """ 
+    Generic query class. There are 2 main usages:
+
+    1. Make sql query.
+    2. Make and run summary query on top of the generated sql query.
+
+    Query classes should not be instantiated directly by user
+    , the appropriate query object should be returned by the appropriate 
+    database operator object's qry method. Query classes:
+
+    * dwops._qry.PgQry: Postgre query class.
+    * dwops._qry.LtQry: Sqlite query class.
+    * dwops._qry.OcQry: Oracle query class.
+
+    Parameters
+    ----------
+    operator : dwops.db._Db
+        Database operator object to operate on generated queries.
+    from_ : str
+        Query table name str format.
+    select: str
+        Columns in str format.
+    join : str
+        Join clause in str format.
+    where : str
+        Conditions in str format.
+    group_by : str
+        Group by names in str format.
+    having : str
+        Conditions in str format.
+    order_by : str
+        Order by names in str format.
+    sql : str
+        Sql code in str format.
+
+    Notes
+    -----
+    Alternative to initializing the query object by all desired clauses
+    , various convenience methods are given to augment the query. 
+    Use the methods.
+
+    """
     print_ = False
 
     def __init__(self
@@ -27,16 +68,34 @@ class _Qry:
 
     def _args2str(self,args,sep):
         """
+        Parse a tuple of str, or iterator of str, 
+        into a combined str, fit to be used as part of query.
 
         Parameters
         ----------
-        args :
-        sep :
-        
+        args : (str,) or ([str],)
+            Either a tuple of elemental and/or combined str
+            , or a tuple with first and only element 
+            being a iterator of elemental str.
+        sep : str
+            Seperator used to seperate elemental str.
 
         Returns
         -------
+        str
+            The combined str.
 
+        Examples
+        --------
+        >>> import dwops
+        >>> dwops._qry._Qry._args2str(_,('a,b,c',),',')
+            'a,b,c'
+        >>> dwops._qry._Qry._args2str(_,('a','b','c',),',')
+            'a,b,c'
+        >>> dwops._qry._Qry._args2str(_,(['a','b','c'],),',')
+            'a,b,c'
+        >>> dwops._qry._Qry._args2str(_,(('a','b','c'),),',')
+            'a,b,c'
         """
         l = len(args)
         if l == 0:
@@ -53,17 +112,33 @@ class _Qry:
 
     def select(self,*args,sep = ','):
         """
+        Add the select clause to query.
 
         Parameters
         ----------
-        *args :
-            
-        sep :
-            
+        *args : str or [str]
+            Column name str as positional arguments
+            , or an iterator of str column names.
+        sep : str
+            Symbol used for seperating column names, default ``,``.
 
         Returns
         -------
+        dwops._qry._Qry
+            New query object with clause added.
 
+        Examples
+        --------
+        >>> from dwops import lt
+        >>> lt.qry('test').select("id,score,amt").print()
+            select id,score,amt
+            from test
+        >>> lt.qry('test').select(["id","score","amt"]).print()
+            select id,score,amt
+            from test
+        >>> lt.qry('test').select("id","score","amt").print()
+            select id,score,amt
+            from test
         """
         _ = self.__copy__()
         _._select = self._args2str(args,sep)
@@ -71,14 +146,51 @@ class _Qry:
 
     def case(self,col,*args,cond = None,els = 'NULL'):
         """
+        Add a case when statement to select clause in query.
 
         Parameters
         ----------
-        col :
+        col : str
+            Column name of the resulting column.
+        *args : str
+            Positional argument in form 'condition then treatement'.
+        cond : dict
+            Dictionary of condition str to treatment str mappings.
+        els : str
+            Treatment str for else clause, default ``NULL``.
 
         Returns
         -------
+        dwops._qry._Qry
+            New query object with clause added.
 
+        Examples
+        --------
+        >>> from dwops import lt
+        >>> lt.qry("test").case('col',"x>5 then 'A'").print()
+            select *
+                ,case when x>5 then 'A' else NULL end as col
+            from test
+        >>> lt.qry("test").case('col',cond = {'x>5':'A','x<2':'B'}).print()
+            select *
+                ,case
+                    when x>5 then A
+                    when x<2 then B
+                    else NULL
+                end as col
+            from test
+        >>> lt.qry("test").select('a','b') \\
+        ... .case('col'
+        ...     ,'x<2 then B'
+        ...     ,cond = {'x>5':'A'}
+        ...     ,els = 'C').print()
+            select a,b
+                ,case
+                    when x<2 then B
+                    when x>5 then A
+                    else C
+                end as col
+            from test
         """
         _ = self.__copy__()
         if cond is not None:
@@ -104,15 +216,24 @@ class _Qry:
 
     def from_(self,from_):
         """
+        Add the from clause to query. Alternative to simply specifying table
+        name as the only argument of the qry method. Use the qry method.
 
         Parameters
         ----------
-        from_ :
-            
+        from_ : str
+            Table name str.
 
         Returns
         -------
+        dwops._qry._Qry
+            New query object with clause added.
 
+        Examples
+        --------
+        >>> from dw import lt
+        >>> lt.qry().from_("test").print()
+            select * from test
         """
         _ = self.__copy__()
         _._from_ = from_
@@ -120,17 +241,39 @@ class _Qry:
 
     def join(self,tbl,*args,how = 'left'):
         """
+        Add a join clause to query.
 
         Parameters
         ----------
-        tbl :
-        how :
-        *args :
-            
+        tbl : str
+            Table name to join to in str format.
+        *args : str
+            Joining conditions in str format.
+        how : str
+            The join keyword in str format, for example: ``inner``, ``cross``.
+            Default ``left``.
 
         Returns
         -------
+        dwops._qry._Qry
+            New query object with clause added.
 
+        Examples
+        --------
+        >>> from dw import lt
+        >>> lt.qry('test x') \\
+        ... .select('x.id','y.id as yid','x.score','z.score as zscore') \\
+        ... .join("test y","x.id = y.id+1","x.id <= y.id+1") \\
+        ... .join("test z","x.id = z.id+2","x.id >= z.id+1") \\
+        ... .print()
+            select x.id,y.id as yid,x.score,z.score as zscore
+            from test x
+            left join test y
+                on x.id = y.id+1
+                and x.id <= y.id+1
+            left join test z
+                on x.id = z.id+2
+                and x.id >= z.id+1
         """
         _ = self.__copy__()
         on = self._args2str(args,'\n    and ')
@@ -146,15 +289,30 @@ class _Qry:
 
     def where(self,*args):
         """
+        Add the where clause to query.
 
         Parameters
         ----------
-        *args :
-            
+        *args : str or [str]
+            Conditions in str format, or iterator of condition str.
 
         Returns
         -------
+        dwops._qry._Qry
+            New query object with clause added.
 
+        Examples
+        --------
+        >>> from dw import lt
+        >>> lt.qry('test').where('x>5','x<10').print()
+            select * from test
+            where x>5
+                and x<10
+        >>> lt.qry('test').where(['x>5','x<10','y <> 5']).print()
+            select * from test
+            where x>5
+                and x<10
+                and y <> 5
         """
         _ = self.__copy__()
         _._where = self._args2str(args,'\n    and ')
@@ -162,15 +320,29 @@ class _Qry:
 
     def group_by(self,*args):
         """
+        Add the group by clause to query.
 
         Parameters
         ----------
-        *args :
-            
+        *args : str or [str]
+            Group by columns in str format, or iterator of them.
 
         Returns
         -------
+        dwops._qry._Qry
+            New query object with clause added.
 
+        Examples
+        --------
+        >>> from dw import lt
+        >>> lt.qry('test').select('a,count(1) n').group_by('a').print()
+            select a,count(1) n
+            from test
+            group by a
+        >>> lt.qry('test').select('a,b,count(1) n').group_by(['a','b']).print()
+            select a,b,count(1) n
+            from test
+            group by a,b
         """
         _ = self.__copy__()
         _._group_by = self._args2str(args,',')
@@ -178,15 +350,27 @@ class _Qry:
 
     def having(self,*args):
         """
+        Add the having clause to query.
 
         Parameters
         ----------
-        *args :
-            
+        *args : str or [str]
+            Conditions in str format, or iterator of them.
 
         Returns
         -------
+        dwops._qry._Qry
+            New query object with clause added.
 
+        Examples
+        --------
+        >>> from dw import lt
+        >>> lt.qry('test').select('a,count(1) n').group_by('a') \\
+        ... .having("count(1)>5").print()
+            select a,count(1) n
+            from test
+            group by a
+            having count(1)>5
         """
         _ = self.__copy__()
         _._having = self._args2str(args,'\n    and ')
@@ -194,15 +378,28 @@ class _Qry:
 
     def order_by(self,*args):
         """
+        Add the order by clause to query.
 
         Parameters
         ----------
-        *args :
-            
+        *args : str or [str]
+            Order by names in str format, or iterator of them.
 
         Returns
         -------
+        dwops._qry._Qry
+            New query object with clause added.
 
+        Examples
+        --------
+        >>> from dw import lt
+        >>> lt.qry('test').select('a,count(1) n').group_by('a') \\
+        ... .having("count(1)>5").order_by('a','n desc').print()
+            select a,count(1) n
+            from test
+            group by a
+            having count(1)>5
+            order by a,n desc
         """
         _ = self.__copy__()
         _._order_by = self._args2str(args,',')
@@ -210,38 +407,37 @@ class _Qry:
 
     def sql(self,sql):
         """
+        Replace entire query by specified sql.
+
+        This allows arbituary advanced sql to be incorporated into framework.
 
         Parameters
         ----------
-        sql :
-            
+        sql : str
+            Sql code in str format.
 
         Returns
         -------
+        dwops._qry._Qry
+            New query object with clause added.
 
+        Examples
+        --------
+        >>> from dw import lt
+        >>> lt.qry().sql("select * from test \\nconnect by level <= 5").print()
+            select * from test
+            connect by level <= 5
         """
         _ = self.__copy__()
         _._sql = sql
         return _
 
     def _make_cls(self,key,load,na = ''):
-        """
-
-        Parameters
-        ----------
-        key :
-        na :
-        load :
-            
-
-        Returns
-        -------
-
-        """
+        """Add keyword to clause payload"""
         return f"{key}{load}" if load is not None else na
 
     def _make_qry(self):
-        """ """
+        """Stitch together query components."""
         if self._sql is not None:
             self._qry = self._sql
         else:
@@ -268,7 +464,7 @@ class _Qry:
         return self._qry
 
     def print(self):
-        """ """
+        """Print the underlying query."""
         self._make_qry()
         print(self)
 
@@ -279,13 +475,18 @@ class _Qry:
         ----------
         sql :
         *args :
-            
+            Positional arguments to pass on to database operator's run method.
         **kwargs :
-            
+            Keyword arguments to pass on to database operator's run method.
 
         Returns
         -------
+        pandas.DataFrame or None
+            Returned by the database operator's run method.
 
+        Examples
+        --------
+        >>> 
         """
         self._make_qry()
         if sql is not None:
@@ -300,33 +501,29 @@ class _Qry:
             qry = self._qry
         return self._ops.run(qry,*args,**kwargs)
 
-    from dw._sqls.base import head
-    from dw._sqls.base import top
-    from dw._sqls.base import cols
-    from dw._sqls.base import len
-    from dw._sqls.base import dist
-    from dw._sqls.base import mimx
-    from dw._sqls.base import valc
+    from dwops._sqls.base import head
+    from dwops._sqls.base import top
+    from dwops._sqls.base import cols
+    from dwops._sqls.base import len
+    from dwops._sqls.base import dist
+    from dwops._sqls.base import mimx
+    from dwops._sqls.base import valc
+    from dwops._sqls.base import hash
 
 class PgQry(_Qry):
-    """ """
     pass
 
 class LtQry(_Qry):
-    """ """
     pass
 
 class OcQry(_Qry):
-    """ """
-
     def _make_qry(self):
-        """ """
         super()._make_qry()
         self._qry = self._qry.replace('select','select /*+PARALLEL (4)*/')
 
-    from dw._sqls.oc import head
-    from dw._sqls.oc import top
-    from dw._sqls.oc import hash
+    from dwops._sqls.oc import head
+    from dwops._sqls.oc import top
+    from dwops._sqls.oc import hash
 
 
 

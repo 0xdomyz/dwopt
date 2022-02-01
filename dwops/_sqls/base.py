@@ -104,8 +104,20 @@ def valc(self,group_by,agg = None,order_by = None,n = True):
     )
     return self.run(_)
 
-def piv(self):
-    """ """
-    pass
+def hash(self,*args):
+    """
 
+    Parameters
+    ----------
+    *args :
+        
+
+    Returns
+    -------
+
+    """
+    raise('Not Implemented.')
+
+def piv(self):
+    pass
 
