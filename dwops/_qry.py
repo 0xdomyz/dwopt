@@ -3,7 +3,33 @@ class _Qry:
     Generic query class. There are 2 main usages:
 
     1. Make sql query.
-    2. Make and run summary query on top of the generated sql query.
+    2. Make and run summary query on top of the generated sql query. 
+       In particular, the sql query is placed into a sub query clause
+       , and the summary query operates on the intermediate result 
+       that would be arrived by the query.
+
+    These usages work in the conext of a common program pattern 
+    where the summary query has preprocessing steps such as a case 
+    statement or a where clause. The intermediate tables are often not usefull
+    on it's own, thus avoiding explicitly materilising it gives performance
+    gain. A example as below:
+
+    .. code-block:: sql
+
+        with x as (
+            select 
+                a.*
+                ,case when amt < 1000 then amt*1.2 else amt end as amt
+            from test a
+            where score > 0.5
+        )
+        select
+            time,cat
+            ,count(1) n
+            ,avg(score) avgscore, round(sum(amt)/1e3,2) total
+        from x
+        group by time,cat
+        order by n desc
 
     Query classes should not be instantiated directly by user
     , the appropriate query object should be returned by the appropriate 
@@ -39,7 +65,6 @@ class _Qry:
     Alternative to initializing the query object by all desired clauses
     , various convenience methods are given to augment the query. 
     Use the methods.
-
     """
     print_ = False
 
@@ -147,6 +172,7 @@ class _Qry:
     def case(self,col,*args,cond = None,els = 'NULL'):
         """
         Add a case when statement to select clause in query.
+        Calling this method multiple times would add multiple statements.
 
         Parameters
         ----------
@@ -231,7 +257,7 @@ class _Qry:
 
         Examples
         --------
-        >>> from dw import lt
+        >>> from dwops import lt
         >>> lt.qry().from_("test").print()
             select * from test
         """
@@ -241,7 +267,8 @@ class _Qry:
 
     def join(self,tbl,*args,how = 'left'):
         """
-        Add a join clause to query.
+        Add a join clause to query. 
+        Calling this method multiple times would add multiple clauses.
 
         Parameters
         ----------
@@ -260,7 +287,7 @@ class _Qry:
 
         Examples
         --------
-        >>> from dw import lt
+        >>> from dwops import lt
         >>> lt.qry('test x') \\
         ... .select('x.id','y.id as yid','x.score','z.score as zscore') \\
         ... .join("test y","x.id = y.id+1","x.id <= y.id+1") \\
@@ -303,7 +330,7 @@ class _Qry:
 
         Examples
         --------
-        >>> from dw import lt
+        >>> from dwops import lt
         >>> lt.qry('test').where('x>5','x<10').print()
             select * from test
             where x>5
@@ -334,7 +361,7 @@ class _Qry:
 
         Examples
         --------
-        >>> from dw import lt
+        >>> from dwops import lt
         >>> lt.qry('test').select('a,count(1) n').group_by('a').print()
             select a,count(1) n
             from test
@@ -364,7 +391,7 @@ class _Qry:
 
         Examples
         --------
-        >>> from dw import lt
+        >>> from dwops import lt
         >>> lt.qry('test').select('a,count(1) n').group_by('a') \\
         ... .having("count(1)>5").print()
             select a,count(1) n
@@ -392,7 +419,7 @@ class _Qry:
 
         Examples
         --------
-        >>> from dw import lt
+        >>> from dwops import lt
         >>> lt.qry('test').select('a,count(1) n').group_by('a') \\
         ... .having("count(1)>5").order_by('a','n desc').print()
             select a,count(1) n
@@ -407,8 +434,7 @@ class _Qry:
 
     def sql(self,sql):
         """
-        Replace entire query by specified sql.
-
+        Replace entire query by specified sql. 
         This allows arbituary advanced sql to be incorporated into framework.
 
         Parameters
@@ -423,7 +449,7 @@ class _Qry:
 
         Examples
         --------
-        >>> from dw import lt
+        >>> from dwops import lt
         >>> lt.qry().sql("select * from test \\nconnect by level <= 5").print()
             select * from test
             connect by level <= 5
@@ -464,12 +490,21 @@ class _Qry:
         return self._qry
 
     def print(self):
-        """Print the underlying query."""
+        """Print the underlying query.
+
+        Examples
+        --------
+        >>> from dwops import lt
+        >>> lt.qry().print()
+            select * from test
+        """
         self._make_qry()
         print(self)
 
     def run(self,sql = None,*args,**kwargs):
         """
+        Run the underlying query directly, without using it to make summary
+        queries.
 
         Parameters
         ----------
@@ -486,7 +521,16 @@ class _Qry:
 
         Examples
         --------
+        >>> import pandas as pd
+        >>> from dw import lt
         >>> 
+        >>> tbl = pd.DataFrame({'col1': [1, 2], 'col2': ['a', 'b']})
+        >>> lt.drop('test')
+        >>> lt.create('test',{'col1':'int','col2':'text'})
+        >>> lt.write(tbl,'test')
+        >>> lt.qry("test").where("col2 = 'b'").run()
+            col1  col2
+        0     2     b
         """
         self._make_qry()
         if sql is not None:
@@ -524,6 +568,3 @@ class OcQry(_Qry):
     from dwops._sqls.oc import head
     from dwops._sqls.oc import top
     from dwops._sqls.oc import hash
-
-
-

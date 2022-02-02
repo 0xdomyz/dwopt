@@ -1,8 +1,44 @@
 DWOPS - Datawarehouse Operator Package
 ======================================
 
+**Dwops** is a package that streamlines insight generation on 
+large database tables in python.
+
+An issue when working with large database tables is the dilemma of does one
+read in a chunky set of data to python then work with them, or does one 
+use sql queries to get intermediate results than work with those in python?
+
+It doesn't seem efficient or worth the wait to read in a million rows 
+just to summaries them into a dozen numbers. Working with sql to preprocess
+solves that issue, but copying the sql and intermediate results csv around
+doesn't sound very robust or efficient either.
+
+Dwops helps by providing methods to flexibly generate common 
+sql summary query, run it, log the sql used, and expose the results in python
+, ready to be pumped to all the other python machineries.
+
+.. end-of-readme-intro
+
+Installation
+------------
+
+::
+
+    pip install dwops
+
+
 Features
 --------
+
+* `Run sql statement in python`_
+* `Programmatically generate simple sql query`_
+* `Generate and run summary queries`_
+* `Excel pivot table - like experience on database tables`_
+* `Setting up default and/or specific database connections`_
+
+
+Walk Through
+------------
 
 Run sql statement in python
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -25,20 +61,6 @@ large raw data to python.
 Summary query results as pandas dataframe for access to python toolkit.
 
 Aim to cater for sqlite, postgre and oracle dialects.
-
-.. end-of-readme-intro
-
-
-Installation
-------------
-
-::
-
-    pip install dwops
-
-
-Usage
------
 
 Excel pivot table - like experience on database tables
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -141,4 +163,7 @@ the \_\_init\_\_.py file to cater to their own password management strategy.
 
 .. end-of-readme-usage
 
-links
+Documentation
+-------------
+
+* `API`_

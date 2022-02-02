@@ -1,28 +1,22 @@
 API
----
+===
 
-.. autofunction:: dwops.db.make_eng
+.. toctree::
+   :hidden:
+   :includehidden:
 
-.. autoclass:: dwops.db._Db
-   :members: 
+   db.rst
+   qry.rst
 
-.. autoclass:: dwops.db.Pg
-   :members: 
+* :class:`dwops.db._Db`
 
-.. autoclass:: dwops.db.Lt
-   :members: 
+    * :meth:`dwops.db._Db.run`
+    * :meth:`dwops.db._Db.create`
+    * :meth:`dwops.db._Db.drop`
+    * :meth:`dwops.db._Db.qry`
 
-.. autoclass:: dwops.db.Oc
-   :members: 
+* :class:`dwops._qry._Qry`
 
-.. autoclass:: dwops._qry._Qry
-   :members: 
-
-.. autoclass:: dwops._qry.PgQry
-   :members: 
-
-.. autoclass:: dwops._qry.LtQry
-   :members: 
-
-.. autoclass:: dwops._qry.OcQry
-   :members: 
+    * :meth:`dwops._qry._Qry.select`
+    * :meth:`dwops._qry._Qry.where`
+    * :meth:`dwops._qry._Qry.valc`
