@@ -141,7 +141,6 @@ to the summary query.
 Example:
 
 .. code-block:: python
-    :linenos:
 
     from dwops import lt
     lt.qry('test').where("score > 0.5") \
