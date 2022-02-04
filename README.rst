@@ -1,25 +1,21 @@
 DWOPS - Datawarehouse Operator Package
 ======================================
 
-The **Dwops** python package aims to streamline 
-the summary insight generation workflow on large database tables. 
+**Dwops** aims to streamline insight generation on large database tables
+by giving ability to make and run summary queries efficiently.
 It also allows automated running of sql scripts.
 
-An issue when trying to get insight out of large database tables 
-is the dilemma of does one read in the chunky set of data to python
-then work with them, or does one use sql queries to get 
-a smaller intermediate set than pass those to python?
+The interface between database (lifeblood) and analytics environment (brain)
+is often unstreamlined.
+Does one inefficiently read in millions of rows just to summaries them
+into a dozen numbers, does one run some sql elsewhere and copy
+some intermediate csv around, or dose one write up some
+unwieldy sql at the start of a python script?
 
-It could be inefficient and time-consuming to read in millions of rows into ram
-just to summaries them into a dozen numbers. 
-Using sql to preprocess/pre-summary solves this issue
-, but passing the intermediate csv around and saving the sql
-somewhere for record keeping doesn't sound very robust or efficient either.
-
-**Dwops** helps by flexibly generate common sql summary query, run it
-and log the sql used behind the scene, then expose the results in python
-, ready to be pumped to all the other python machineries. 
-Thus, the end-to-end process is in one environment,
+**Dwops** helps by flexibly generate common sql summary query, run it,
+automatically log the sql used, then expose the results as pandas dataframe,
+ready for other python machineries.
+Thus, end-to-end within python, the interface is smooth,
 and it gives a Excel-pivot table like experience with large database tables.
 
 .. end-of-readme-intro
@@ -35,101 +31,131 @@ Installation
 Features
 --------
 
-* `Run query in console frictionlessly with default credentials`_
-* `Automate processes with run from sql file, text replacement`_
-* `Make and run common summary queries flexibly and quickly`_
-* `Set up default credentials or ask for it on use`_
+* `Run query with less friction using default credentials`_
+* `Automate processes with run sql from file, text replacement`_
+* `Programatically make and run simple sql query`_
+* `Make and run common summary queries efficiently and flexibly`_
 * `Automatic logging with fully reproducible sql`_
 
 
 Walk Through
 ------------
 
-Run query in console frictionlessly with default credentials
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Run query with less friction using default credentials
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The package pre-instantiates database operator objects, with your default
-credential (after they've set up prior). This gives ability to run queries 
-from any console window or python program with few boilerplates.
+On import, the package gives the operator objects with default credentials
+(need to be set up prior). 
+This allows running queries from any console window
+or python program with few boilerplates.
 
-Less friction = faster insights.
+>>> from dwops import pg
+>>> pg.run('select count(1) from test')
+    42
+>>> pg.qry('test').len()
+    42
 
-.. code-block:: console
+Alternatively, use the make_eng function and the operator constructors
+to access database.
 
-    python
-    Python 3.9.6 ...
-    >>> from dwops import lt
-    >>> lt.run('select count(1) from test')
-        42
+>>> from dwops import make_eng, Pg
+>>> url = "postgresql://scott:tiger@localhost/mydatabase"
+>>> pg = Pg(make_eng(url))
+>>> pg.run('select count(1) from test')
+    42
 
-
-Automate processes with run from sql file, text replacement
+Automate processes with run sql from file, text replacement
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The run method allows run sql stored on a file
-, automating parameter replacement via a mapping dictionary
-, or simply supply the replacements as new parameters.
+The operator object's run method also allows running sql stored on a file.
+One could then replace parameters via a mapping dictionary,
+or simply supply the mappings to the function directly.
 
-E:/projects/my_sql_script.sql:
+>>> from dwops import oc
+>>> oc.run(pth = "E:/projects/my_sql_script.sql"
+...     , my_run_date = '2022-01-31'
+...     , my_label = '20220131'
+...     , threshold = 10.5)
+
+Above code runs the sql from the file E:/projects/my_sql_script.sql:
 
 .. code-block:: sql
 
     create table monthly_extract_:my_label as
-    select date,count(1)
-    from test
+    select * from test
     where 
         date = to_date(':my_run_date','YYYY-MM-DD')
         and measurement > :threshold
 
-In python application:
+Programatically make and run simple sql query
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-::
-
-    from dwops import pg
-    pg.run(pth = "E:/projects/my_sql_script.sql"
-        , my_run_date = '2022-01-31'
-        , my_label = '20220131'
-        , threshold = 10.5)
-
-Make and run common summary queries flexibly and quickly
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Key concept of package is that a flexible but common summary query is made
-up of a simple sql query on a with clause, and a summary query works on the 
-sub-query defined by the result of the with clause.
-
-Allow building of select, case when, join, where, group by, having
-, order by clauses.
-
-Utlise data manipulation capability of database instead of passing
-large raw data to python.
-Summary query results as pandas dataframe for access to python toolkit.
-
-Aim to cater for sqlite, postgre and oracle dialects.
+The operator object's qry method returns the query object.
+Use it's clause methods to make a simple sql query,
+as the query object's underlying query.
+It can be run directly, but the main usage is to act as
+the preprocessing step of the summary query methods.
 
 ::
 
     from dwops import lt
+    (   
+        lt.qry('test a').select('a.id', 'a.time')
+        .case('amt', cond = {'amt < 1000':500,'amt < 2000':1500}, els = 'amt')
+        .join('test2 b', 'a.id = b.id')
+        .where("score > 0.5", "cat = 'test'")
+        .print()#.run()
+    )
+
+Above code prints:
+
+.. code-block:: sql
+
+    select a.id,a.time
+        ,case
+            when amt < 1000 then 500
+            when amt < 2000 then 1500
+            else amt
+        end as amt
+    from test a
+    left join test2 b
+        on a.id = b.id
+    where score > 0.5
+        and cat = 'test'
+
+Note no ink is saved when comparing to simply write out the sql,
+the efficiency gain comes from the summary methods, which follows this step,
+instead.
+
+Make and run common summary queries efficiently and flexibly
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The operator object's qry method returns the query object.
+Use it's summary methods to make and run a summary query.
+The summary query operates on top of the underlying query,
+which is placed into a with clause, forming a pre-processing step
+to the summary query.
+
+Example:
+
+.. code-block:: python
+    :linenos:
+
+    from dwops import lt
     lt.qry('test').where("score > 0.5") \
-    .valc('time,cat',"avg(score) avgscore,round(sum(amt)/1e3,2) total") \
+    .valc('time, cat',"avg(score) avgscore, round(sum(amt)/1e3,2) total") \
     .pivot('time','cat',['n','avgscore','total'])
 
+Explanation of lines:
 
-Code is doing 3 things:
+#. Get default sqlite operator object.
+#. Make, but do not run, an underlying sub query.
+#. Make and run a value counts summary query with 2 groups, custom calcs,
+   with the previous step's underlying query placed inside a with clause.
+#. Query result comes back to python as a standard pandas dataframe,
+   call it's pivot method.
 
-1. Generate a query with a where clause to be used as the base table 
-   for next stage.
-2. Generate and run a summary query grouping 2 columns
-   , and with 2 aggregation calcs, results as pandas dataframe.
-3. Call pandas dataframe's pivot method to make pivot table from 
-   the database generated intermediate results.
-
-By orchastrating the data heavy step to the database
-, only minimal amount of data is passed between systems.
-This allows quick summary results on large database tables
-, programmatically made in one environment.
-
-Logging messages:
+Automatic logs showing the sql that was ran on line 3:
 
 .. code-block:: sql
 
@@ -139,11 +165,11 @@ Logging messages:
         where score > 0.5
     )
     select 
-        time,cat
+        time, cat
         ,count(1) n
         ,avg(score) avgscore, round(sum(amt)/1e3,2) total
     from x
-    group by time,cat
+    group by time, cat
     order by n desc
     2022-01-23 01:08:13,413 [INFO] done
 
@@ -162,52 +188,59 @@ time         test  train    test     train     test   train
 Automatic logging with fully reproducible sql
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-asdf
+Many of the package methods are wired through the standard logging package.
 
-Set up default credentials or ask for it on use
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In particular, the run method emits sql used as INFO level message.
+The relevant logger object has standard naming and is called 'dwops.db'.
+Configure the logging package or the logger at the start of application code.
 
-The package provides 3 database operator classes for 3 dialects: 
-Lt for sqlite, Pg for postgre, Oc for oracle.
-
-Database operator objects are initiated via sqlalchemy engine objects
-, which are generated via sqlalchemy engine urls.
-Format of url and details, see: 
-https://docs.sqlalchemy.org/en/14/core/engines.html
-
-The function dw.make_eng makes engine from url.
-The package provides a folder within the package installation directory 
-called "urls" to store default urls in txt file,
-this is also supported via dw.get_url function to retrieve url 
-via file name of the text file.
-
-example usage where "my_pg_url.txt" in the url folder stores user defined url:
+Example configuration to show logs in console:
 
 ::
 
-    from dw import Pg,make_eng,get_url
-    pg = Pg(make_eng(get_url('my_pg_url')))
+    import logging
+    logging.basicConfig(level = logging.INFO)
 
-
-example usage where url is provided:
+Alternatively, to avoid logging info messages from other packages:
 
 ::
 
-    from dw import Pg,make_eng
-    url = "postgresql://scott:tiger@localhost/mydatabase"
-    pg = Pg(make_eng(url))
+    import logging
+    logging.basicConfig()
+    logging.getLogger('dwops.db').setLevel(logging.INFO)
 
-For convenience, the package pre-instantiate 3 database operator objects: 
-lt, pg, and oc.
-The sqlite operator, lt, is coded to connect to the in-memory databse 
-for illustration purpose.
-The postgre operator, pg, uses the placeholder url txt file 
-called "psql_default".
-The oracle operator, oc, uses the placeholder url txt file called "oc_default".
 
-User should consider to rewrite these implementations on 
-the \_\_init\_\_.py file to cater to their own password management strategy.
+Example configuration to show in console and store on file, with timestamps:
 
+::
+
+    import logging
+    logging.basicConfig(
+        format = "%(asctime)s [%(levelname)s] %(message)s"
+        ,handlers=[
+            logging.FileHandler("E:/projects/logs.log"),
+            logging.StreamHandler()
+        ]
+    )
+    logging.getLogger('dwops.db').setLevel(logging.INFO)
+
+Example logs:
+
+.. code-block:: sql
+
+    2022-01-23 01:08:13,407 [INFO] running:
+    with x as (
+        select * from test
+        where score > 0.5
+    )
+    select 
+        time, cat
+        ,count(1) n
+        ,avg(score) avgscore, round(sum(amt)/1e3,2) total
+    from x
+    group by time, cat
+    order by n desc
+    2022-01-23 01:08:13,413 [INFO] done
 
 .. end-of-readme-usage
 
