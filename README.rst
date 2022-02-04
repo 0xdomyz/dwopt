@@ -23,7 +23,7 @@ and it gives a Excel-pivot table like experience with large database tables.
 Installation
 ------------
 
-::
+.. code-block:: console
 
     pip install dwops
 
@@ -71,11 +71,13 @@ The operator object's run method also allows running sql stored on a file.
 One could then replace parameters via a mapping dictionary,
 or simply supply the mappings to the function directly.
 
->>> from dwops import oc
->>> oc.run(pth = "E:/projects/my_sql_script.sql"
-...     , my_run_date = '2022-01-31'
-...     , my_label = '20220131'
-...     , threshold = 10.5)
+.. code-block:: python
+
+    from dwops import oc
+    oc.run(pth = "E:/projects/my_sql_script.sql"
+        , my_run_date = '2022-01-31'
+        , my_label = '20220131'
+        , threshold = 10.5)
 
 Above code runs the sql from the file E:/projects/my_sql_script.sql:
 
@@ -96,7 +98,7 @@ as the query object's underlying query.
 It can be run directly, but the main usage is to act as
 the preprocessing step of the summary query methods.
 
-::
+.. code-block:: python
 
     from dwops import lt
     (   
@@ -196,14 +198,14 @@ Configure the logging package or the logger at the start of application code.
 
 Example configuration to show logs in console:
 
-::
+.. code-block:: python
 
     import logging
     logging.basicConfig(level = logging.INFO)
 
 Alternatively, to avoid logging info messages from other packages:
 
-::
+.. code-block:: python
 
     import logging
     logging.basicConfig()
@@ -212,7 +214,7 @@ Alternatively, to avoid logging info messages from other packages:
 
 Example configuration to show in console and store on file, with timestamps:
 
-::
+.. code-block:: python
 
     import logging
     logging.basicConfig(
