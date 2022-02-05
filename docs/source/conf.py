@@ -14,7 +14,7 @@ import sys
 import os
 #import pathlib
 #sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Project information -----------------------------------------------------
 
