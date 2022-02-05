@@ -1,2 +1,0 @@
-postgresql://scott:tiger@localhost/mydatabase
-

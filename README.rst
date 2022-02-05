@@ -160,7 +160,7 @@ Automatic logs showing the sql that was ran on line 3:
 
 .. code-block:: sql
 
-    2022-01-23 01:08:13,407 [INFO] running:
+    2022-01-23 11:08:13,407 [INFO] running:
     with x as (
         select * from test
         where score > 0.5
@@ -172,7 +172,7 @@ Automatic logs showing the sql that was ran on line 3:
     from x
     group by time, cat
     order by n desc
-    2022-01-23 01:08:13,413 [INFO] done
+    2022-01-23 11:08:13,413 [INFO] done
 
 Results:
 
@@ -192,8 +192,11 @@ Automatic logging with fully reproducible sql
 Many of the package methods are wired through the standard logging package.
 
 In particular, the run method emits sql used as INFO level message.
-The relevant logger object has standard naming and is called 'dwops.db'.
+The relevant logger object has standard naming and is called ``dwops.db``.
 Configure the logging package or the logger at the start of application code.
+
+See below link for details on the logging package:
+https://docs.python.org/3/howto/logging.html#logging-from-multiple-modules
 
 Example configuration to show logs in console:
 
@@ -201,6 +204,9 @@ Example configuration to show logs in console:
 
     import logging
     logging.basicConfig(level = logging.INFO)
+
+    from dwops import lt
+    lt.list_tables()
 
 Alternatively, to avoid logging info messages from other packages:
 
@@ -244,7 +250,6 @@ Example logs:
     2022-01-23 01:08:13,413 [INFO] done
 
 .. end-of-readme-usage
-
 
 Documentation
 -------------

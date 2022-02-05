@@ -1,23 +1,13 @@
-from .db import make_eng,Pg,Lt,Oc
+from .db import Pg, Lt, Oc
+from .urls import (
+    _make_wallet_if_not_exist
+    ,_get_default_url
+    ,save_default_url
+    ,make_eng
+)
 
-import os
-_pth = os.path.dirname(__file__)
-def get_url(nme):
-    """
+_make_wallet_if_not_exist()
 
-    Parameters
-    ----------
-    nme :
-        
-
-    Returns
-    -------
-
-    """
-    fp = f'{_pth}\\urls\\{nme}.txt'
-    with open(fp,"r") as f:
-        return f.readline().rstrip()
-
-lt = Lt(make_eng('sqlite://'))
-pg = Pg(make_eng(get_url('psql_default')))
-oc = Oc(make_eng(get_url('oc_default')))
+pg = Pg(make_eng(_get_default_url('postgre')))
+lt = Lt(make_eng(_get_default_url('sqlite')))
+oc = Oc(make_eng(_get_default_url('oracle')))

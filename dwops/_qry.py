@@ -66,8 +66,6 @@ class _Qry:
     , various convenience methods are given to augment the query. 
     Use the methods.
     """
-    print_ = False
-
     def __init__(self
             ,operator
             ,from_ = None,select = None,join = None

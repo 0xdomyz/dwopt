@@ -1,41 +1,10 @@
-import sqlalchemy as alc
-from sqlalchemy.sql import text
+from sqlalchemy.sql import text as _text
 import pandas as pd
 import numpy as np
 import logging
 import re
 from dwops._qry import PgQry, LtQry, OcQry
 _logger = logging.getLogger(__name__)
-
-def make_eng(url):
-    """
-    Make database connection engine.
-    
-    Engine object best to be created once per application.
-
-    Parameters
-    ----------
-    url : str
-        Sqlalchemy engine url. Format varies from database to database
-        , typically have user name, password, and location or host address 
-        or tns of database.
-
-    Returns
-    -------
-    sqlalchemy engine
-
-    Notes
-    -----
-
-    Details on sqlalchemy engine and url syntax:
-    https://docs.sqlalchemy.org/en/14/core/engines.html#database-urls
-    """
-    _logger.debug('making sqlalchemy engine')
-    return alc.create_engine(url)
-
-def make_meta(eng,schema):
-    _logger.debug('making sqlalchemy meta')
-    pass
 
 class _Db:
     """
@@ -194,7 +163,7 @@ class _Db:
             _logger.info(f'running:\n{sql}')
             if args is not None:
                 _logger.info(f'{len(args) = }')
-                r = c.execute(text(sql), args)
+                r = c.execute(_text(sql), args)
             else:
                 r = c.execute(sql)
             _logger.info('done')
