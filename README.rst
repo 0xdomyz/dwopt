@@ -10,7 +10,7 @@ embedded sql in the middle of a python script?
 
 **Dwops** helps by allowing frictionless running of sql codes & scripts
 in python, generation of simple sql query via code,
-and flexible making and running of common summary queries.
+and flexible making & running of common summary queries.
 It also automatically and properly logs the sql used along the way.
 
 All together, an Excel-pivot table like experience with large database tables
