@@ -1,22 +1,21 @@
 DWOPS - Datawarehouse Operator Package
 ======================================
 
-**Dwops** aims to streamline insight generation on large database tables
-by giving ability to make and run summary queries efficiently.
-It also allows automated running of sql scripts.
-
-The interface between database (lifeblood) and analytics environment (brain)
-is often unstreamlined.
+Have you ever felt how the interface between the database
+and the analytics environment is often unstreamlined?
 Does one inefficiently read in millions of rows just to summaries them
-into a dozen numbers, does one run some sql elsewhere and copy
-some intermediate csv around, or dose one write up some
-unwieldy sql at the start of a python script?
+into a dozen numbers, or running some sql elsewhere and copying
+some intermediate csvs around, or writing up some
+embedded sql in the middle of a python script?
 
-**Dwops** helps by flexibly generate common sql summary query, run it,
-automatically log the sql used, then expose the results as pandas dataframe,
-ready for other python machineries.
-Thus, end-to-end within python, the interface is smooth,
-and it gives a Excel-pivot table like experience with large database tables.
+**Dwops** helps by allowing frictionless running of sql codes & scripts
+in python, generation of simple sql query via code,
+and flexible making and running of common summary queries.
+It also automatically and properly logs the sql used along the way.
+
+All together, an Excel-pivot table like experience with large database tables
+could be achieved, take a look at the features & the walk through section for
+some examples.
 
 .. end-of-readme-intro
 
