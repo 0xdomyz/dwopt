@@ -9,9 +9,9 @@ API Reference
    db.rst
    qry.rst
 
-**The set-up functions**
-    * :func:`dwops.save_default_url`
-    * :func:`dwops.make_eng`
+**The Set-up functions**
+        * :func:`dwops.save_default_url`
+        * :func:`dwops.make_eng`
 
 **The Database Operator Class** :class:`dwops.db._Db`
 
@@ -22,10 +22,10 @@ API Reference
         * :meth:`dwops.db._Db.drop`
         * :meth:`dwops.db._Db.write`
         * :meth:`dwops.db._Db.write_nodup`
-
+    
     The query method:
         * :meth:`dwops.db._Db.qry`
-
+    
     The metadata methods:
         * :meth:`dwops.db._Db.list_tables`
         * :meth:`dwops.db._Db.table_cols`
@@ -35,7 +35,7 @@ API Reference
 
 **The Query Class** :class:`dwops._qry._Qry`
 
-    The query making methods:
+    The clause methods:
         * :meth:`dwops._qry._Qry.select`
         * :meth:`dwops._qry._Qry.case`
         * :meth:`dwops._qry._Qry.from_`
@@ -45,12 +45,12 @@ API Reference
         * :meth:`dwops._qry._Qry.having`
         * :meth:`dwops._qry._Qry.order_by`
         * :meth:`dwops._qry._Qry.sql`
-
+    
     The operation methods:
         * :meth:`dwops._qry._Qry.print`
         * :meth:`dwops._qry._Qry.run`
-
-    The summary query methods:
+    
+    The summary methods:
         * :meth:`dwops._qry._Qry.top`
         * :meth:`dwops._qry._Qry.cols`
         * :meth:`dwops._qry._Qry.head`
