@@ -253,4 +253,4 @@ Example logs:
 Documentation
 -------------
 
-* `API`_
+* `API <https://dwops.readthedocs.io/en/latest/api.html>`_
