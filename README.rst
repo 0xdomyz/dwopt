@@ -33,18 +33,53 @@ Features
 * `Run query with less friction using default credentials`_
 * `Automate processes with run sql from file, text replacement`_
 * `Programatically make and run simple sql query`_
-* `Make and run common summary queries efficiently and flexibly`_
+* `Make and run common summary queries from template`_
 * `Automatic logging with fully reproducible sql`_
 
 
 Walk Through
 ------------
 
+.. highlight:: python
+
+.. |save_default_url| replace:: ``save_default_url``
+.. _save_default_url: https://dwops.readthedocs.io/en/latest/urls.html#dwops.save_default_url
+
+.. |make_eng| replace:: ``make_eng``
+.. _make_eng: https://dwops.readthedocs.io/en/latest/urls.html#dwops.make_eng
+
+.. |run| replace:: ``run``
+.. _run: https://dwops.readthedocs.io/en/latest/db.html#dwops.db._Db.run
+
+.. |qry| replace:: ``qry``
+.. _qry: https://dwops.readthedocs.io/en/latest/db.html#dwops.db._Db.qry
+
+.. |valc| replace:: ``valc``
+.. _valc: https://dwops.readthedocs.io/en/latest/qry.html#dwops._qry._Qry.valc
+
+.. |dataframe| replace:: ``dataframe``
+.. _dataframe: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
+
+.. |pivot| replace:: ``pivot``
+.. _pivot: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.pivot.html
+
+.. |logging| replace:: ``logging``
+.. _logging: https://docs.python.org/3/library/logging.html#module-logging
+
+.. |INFO| replace:: ``INFO``
+.. _INFO: https://docs.python.org/3/howto/logging.html#when-to-use-logging
+
+.. _operator object: https://dwops.readthedocs.io/en/latest/db.html#dwops.db._Db
+.. _operator constructors: https://dwops.readthedocs.io/en/latest/db.html#dwops.db._Db
+.. _query object: https://dwops.readthedocs.io/en/latest/qry.html#dwops._qry._Qry
+.. _clause methods: https://dwops.readthedocs.io/en/latest/api.html
+.. _summary methods: https://dwops.readthedocs.io/en/latest/api.html
+
 Run query with less friction using default credentials
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-On import, the package gives the operator objects with default credentials
-(need to be set up prior). 
+On import, the package gives the `operator object`_'s with default credentials
+(Use the |save_default_url|_ function to set up).
 This allows running queries from any console window
 or python program with few boilerplates.
 
@@ -54,7 +89,7 @@ or python program with few boilerplates.
 >>> pg.qry('test').len()
     42
 
-Alternatively, use the make_eng function and the operator constructors
+Alternatively, use the |make_eng|_ function and the `operator constructors`_
 to access database.
 
 >>> from dwops import make_eng, Pg
@@ -66,7 +101,7 @@ to access database.
 Automate processes with run sql from file, text replacement
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The operator object's run method also allows running sql stored on a file.
+The `operator object`_'s |run|_ method also allows running sql stored on a file.
 One could then replace parameters via a mapping dictionary,
 or simply supply the mappings to the function directly.
 
@@ -91,11 +126,11 @@ Above code runs the sql from the file E:/projects/my_sql_script.sql:
 Programatically make and run simple sql query
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The operator object's qry method returns the query object.
-Use it's clause methods to make a simple sql query,
-as the query object's underlying query.
+The `operator object`_'s |qry|_ method returns the `query object`_.
+Use it's `clause methods`_ to make a simple sql query,
+as the `query object`_'s underlying query.
 It can be run directly, but the main usage is to act as
-the preprocessing step of the summary query methods.
+the preprocessing step of the `summary methods`_.
 
 .. code-block:: python
 
@@ -125,17 +160,17 @@ Above code prints:
         and cat = 'test'
 
 Note no ink is saved when comparing to simply write out the sql,
-the efficiency gain comes from the summary methods, which follows this step,
+the efficiency gain comes from the `summary methods`_, which follows this step,
 instead.
 
-Make and run common summary queries efficiently and flexibly
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Make and run common summary queries from template
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The operator object's qry method returns the query object.
-Use it's summary methods to make and run a summary query.
-The summary query operates on top of the underlying query,
+The `operator object`_'s |qry|_ method returns the `query object`_.
+Use it's `summary methods`_ to make and run summary queries.
+The `summary methods`_ operate on top of the underlying query,
 which is placed into a with clause, forming a pre-processing step
-to the summary query.
+to the final summary query.
 
 Example:
 
@@ -148,12 +183,13 @@ Example:
 
 Explanation of lines:
 
-#. Get default sqlite operator object.
+#. Get the default sqlite `operator object`_.
 #. Make, but do not run, an underlying sub query.
-#. Make and run a value counts summary query with 2 groups, custom calcs,
-   with the previous step's underlying query placed inside a with clause.
-#. Query result comes back to python as a standard pandas dataframe,
-   call it's pivot method.
+#. Make and run a value counts summary query (|valc|_) with 2 groups,
+   custom calcs, with the previous step's underlying query placed
+   inside a with clause.
+#. Query result comes back to python as a standard pandas |dataframe|_,
+   call it's |pivot|_ method.
 
 Automatic logs showing the sql that was ran on line 3:
 
@@ -188,9 +224,9 @@ time         test  train    test     train     test   train
 Automatic logging with fully reproducible sql
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Many of the package methods are wired through the standard logging package.
+Many of the package methods are wired through the standard |logging|_ package.
 
-In particular, the run method emits sql used as INFO level message.
+In particular, the |run|_ method emits sql used as |INFO|_ level message.
 The relevant logger object has standard naming and is called ``dwops.db``.
 Configure the logging package or the logger at the start of application code.
 
@@ -234,7 +270,7 @@ Example logs:
 
 .. code-block:: sql
 
-    2022-01-23 01:08:13,407 [INFO] running:
+    2022-01-23 11:08:13,407 [INFO] running:
     with x as (
         select * from test
         where score > 0.5
@@ -246,7 +282,7 @@ Example logs:
     from x
     group by time, cat
     order by n desc
-    2022-01-23 01:08:13,413 [INFO] done
+    2022-01-23 11:08:13,413 [INFO] done
 
 .. end-of-readme-usage
 
