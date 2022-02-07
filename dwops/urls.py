@@ -30,12 +30,11 @@ def _make_wallet_if_not_exist(pth = _PTH):
 def save_default_url(db_nme,url):
     """
     Save obfuscated database engine url to wallet file.
+    See examples for quick-start.
 
     A database engine url combines the user name, password, database names, etc
-    into a single string. See details and syntax for each databases:
-    https://docs.sqlalchemy.org/en/14/core/engines.html#database-urls
-
-    See the examples section for usage.
+    into a single string. Details & examples for each database see
+    `sqlalchemy engine url documentation <https://docs.sqlalchemy.org/en/14/core/engines.html#database-urls>`_.
 
     Parameters
     ----------
@@ -53,27 +52,23 @@ def save_default_url(db_nme,url):
     Notes
     -----
 
-    Obfuscation is done via simple base 64 and UTF-8 encoding.
+    Obfuscation is done via simple base 64 encoding.
     The Wallet file is automatically created in the user's home directory,
     with the name ``.dwops``. For example: ``C:/Users/scott/.dwops``.
-
-    Consider re-implement these features via modifying the ``urls.py`` file,
-    in order to cater to the user's password management strategy.
-    For inspirations: https://stackoverflow.com/questions/7014953
 
     Examples
     --------
 
-    Save connection urls for varies databases.
+    Save connection urls for various databases.
 
     >>> import dwops
     >>> dwops.save_default_url('postgre'
     ...     ,'postgresql://tiger:scott@localhost/mydatabase')
-        'Saved postgre url to C:\\Users\\scott\\.dwops'
+        Saved postgre url to C:\\Users\\scott\\.dwops
     >>> dwops.save_default_url('sqlite','sqlite:///foo.db')
-        'Saved sqlite url to C:\\Users\\scott\\.dwops'
+        Saved sqlite url to C:\\Users\\scott\\.dwops
     >>> dwops.save_default_url('oracle','oracle://tiger:scott@tnsname')
-        'Saved oracle url to C:\\Users\\scott\\.dwops'
+        Saved oracle url to C:\\Users\\scott\\.dwops
 
     Exit and re-enter python for it to take effect.
 

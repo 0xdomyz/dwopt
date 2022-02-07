@@ -1,17 +1,17 @@
-DWOPS - Datawarehouse Operator Package
-======================================
+DWOPS - Datawarehouse Operator Python Package
+=============================================
 
 Have you ever felt how the interface between the database
 and the analytics environment is often unstreamlined?
-Does one inefficiently read in millions of rows just to summaries them
-into a dozen numbers, or running some sql elsewhere and copying
-some intermediate csvs around, or writing up some
-embedded sql in the middle of a python script?
+Does one inefficiently read in millions of rows before doing anything,
+or running sql elsewhere and copy some CSVs around,
+or writing up some embedded sql in the middle of a python script?
 
-**Dwops** helps by allowing frictionless running of sql codes & scripts
-in python, generation of simple sql query via code,
-and flexible making & running of common summary queries.
-It also automatically and properly logs the sql used along the way.
+**Dwops** helps by allowing frictionless running of sql codes & scripts,
+generation of simple sql query via code,
+and making & running of common summary queries & DDL/DML statement
+via template functions.
+It also automatically logs the sql used along the way.
 
 All together, an Excel-pivot table like experience with large database tables
 could be achieved, take a look at the features & the walk through section for
@@ -78,8 +78,9 @@ Walk Through
 Run query with less friction using default credentials
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-On import, the package gives the `operator object`_'s with default credentials
-(Use the |save_default_url|_ function to set up).
+On import, the package gives 3 different `operator object`_
+(``pg``, ``lt``, ``oc``, one for each supported database),
+with default credentials (Use the |save_default_url|_ function to set up).
 This allows running queries from any console window
 or python program with few boilerplates.
 
@@ -90,7 +91,7 @@ or python program with few boilerplates.
     42
 
 Alternatively, use the |make_eng|_ function and the `operator constructors`_
-to access database.
+(``Pg``, ``Lt``, ``Oc``) to access database.
 
 >>> from dwops import make_eng, Pg
 >>> url = "postgresql://scott:tiger@localhost/mydatabase"
@@ -113,7 +114,7 @@ or simply supply the mappings to the function directly.
         , my_label = '20220131'
         , threshold = 10.5)
 
-Above code runs the sql from the file E:/projects/my_sql_script.sql:
+Above runs the sql stored on ``E:/projects/my_sql_script.sql`` as below:
 
 .. code-block:: sql
 
@@ -127,10 +128,9 @@ Programatically make and run simple sql query
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The `operator object`_'s |qry|_ method returns the `query object`_.
-Use it's `clause methods`_ to make a simple sql query,
-as the `query object`_'s underlying query.
-It can be run directly, but the main usage is to act as
-the preprocessing step of the `summary methods`_.
+Use it's `clause methods`_ to make a simple sql query, as it's underlying query.
+The underlying query can be run directly, but the main usage is to act as
+the preprocessing step of the `summary methods`_ explained in next section.
 
 .. code-block:: python
 
@@ -143,7 +143,7 @@ the preprocessing step of the `summary methods`_.
         .print()#.run()
     )
 
-Above code prints:
+Above prints:
 
 .. code-block:: sql
 
@@ -159,27 +159,34 @@ Above code prints:
     where score > 0.5
         and cat = 'test'
 
-Note no ink is saved when comparing to simply write out the sql,
-the efficiency gain comes from the `summary methods`_, which follows this step,
-instead.
-
 Make and run common summary queries from template
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The `operator object`_'s |qry|_ method returns the `query object`_.
 Use it's `summary methods`_ to make and run summary queries.
-The `summary methods`_ operate on top of the underlying query,
-which is placed into a with clause, forming a pre-processing step
-to the final summary query.
+These methods operate on top of the underlying query
+as explained in previous section.
 
 Example:
 
 .. code-block:: python
 
-    from dwops import lt
-    lt.qry('test').where("score > 0.5") \
-    .valc('time, cat',"avg(score) avgscore, round(sum(amt)/1e3,2) total") \
-    .pivot('time','cat',['n','avgscore','total'])
+    from dwops import lt #1
+    lt.qry('test').where("score > 0.5") \ #2
+    .valc('time, cat',"avg(score) avgscore, round(sum(amt)/1e3,2) total") \ #3
+    .pivot('time','cat',['n','avgscore','total']) #4
+
+Results:
+
+==========  =====  =====  ========  ========  ======  ======
+cat           n           avgscore             total
+----------  -----  -----  --------  --------  ------  ------
+time         test  train    test     train     test   train 
+==========  =====  =====  ========  ========  ======  ======
+2013-01-02  816.0  847.0  0.746747  0.750452  398.34  417.31
+2013-02-02  837.0  858.0  0.748214  0.743094  419.11  447.04
+2013-03-02  805.0  860.0  0.756775  0.739017  394.89  422.35
+==========  =====  =====  ========  ========  ======  ======
 
 Explanation of lines:
 
@@ -209,29 +216,22 @@ Automatic logs showing the sql that was ran on line 3:
     order by n desc
     2022-01-23 11:08:13,413 [INFO] done
 
-Results:
+Note the sql shows how the summary query operates on the pre-processing query,
+which is placed inside a with block.
 
-==========  =====  =====  ========  ========  ======  ======
-cat           n           avgscore             total
-----------  -----  -----  --------  --------  ------  ------
-time         test  train    test     train     test   train 
-==========  =====  =====  ========  ========  ======  ======
-2013-01-02  816.0  847.0  0.746747  0.750452  398.34  417.31
-2013-02-02  837.0  858.0  0.748214  0.743094  419.11  447.04
-2013-03-02  805.0  860.0  0.756775  0.739017  394.89  422.35
-==========  =====  =====  ========  ========  ======  ======
 
 Automatic logging with fully reproducible sql
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Many of the package methods are wired through the standard |logging|_ package.
+Many of the package's methods are wired through the standard |logging|_ package.
 
 In particular, the |run|_ method emits sql used as |INFO|_ level message.
 The relevant logger object has standard naming and is called ``dwops.db``.
-Configure the logging package or the logger at the start of application code.
+Configure the logging package or the logger at the start of application code
+for logs.
+See the `logging package documentation <https://docs.python.org/3/howto/logging.html#logging-from-multiple-modules>`_
+for details.
 
-See below link for details on the logging package:
-https://docs.python.org/3/howto/logging.html#logging-from-multiple-modules
 
 Example configuration to show logs in console:
 
