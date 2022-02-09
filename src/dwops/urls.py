@@ -62,8 +62,9 @@ def _get_url(db_nme):
 
 def _get_url_default_lt(db_nme):
     '''Make sqlite memory db url if keyring not available'''
+    #used for read the doc build environment.
     if _get_url(db_nme) is None:
-        _logger.info("Keyring not available")
+        _logger.warn("Keyring not available")
         return 'sqlite://'
     return _get_url(db_nme)
 
