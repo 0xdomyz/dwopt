@@ -30,3 +30,4 @@ python:
     - method: pip
       path: .
 #  - requirements: docs/requirements.txt
+    - requirements: keyring_jeepney
