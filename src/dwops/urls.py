@@ -1,6 +1,8 @@
 import sqlalchemy
 import keyring
 import os
+import logging
+_logger = logging.getLogger(__name__)
 
 _SERV_ID = f"{os.path.dirname(__file__)}"
 
@@ -57,6 +59,13 @@ def save_url(db_nme,url):
 
 def _get_url(db_nme):
     return keyring.get_password(_SERV_ID, db_nme)
+
+def _get_url_default_lt(db_nme):
+    '''Make sqlite memory db url if keyring not available'''
+    if _get_url(db_nme) is None:
+        _logger.info("Keyring not available")
+        return 'sqlite://'
+    return _get_url(db_nme)
 
 def _save_dummy_url_if_not_exist():
     if _get_url('pg') is None:
