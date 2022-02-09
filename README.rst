@@ -1,21 +1,21 @@
 DWOPS - Datawarehouse Operator Python Package
 =============================================
 
-Have you ever felt how the interface between the database
-and the analytics environment is often unstreamlined?
-Does one inefficiently read in millions of rows before doing anything,
-or running sql elsewhere and copy some CSVs around,
-or writing up some embedded sql in the middle of a python script?
+The interface between databases and the analytics environment
+can often be unstreamlined.
+Does one read in millions of rows before doing anything,
+or run sql elsewhere and copy some CSVs around,
+or write up some embedded sql in the middle of a python script?
 
-**Dwops** helps by allowing frictionless running of sql codes & scripts,
-generation of simple sql query via code,
-and making & running of common summary queries & DDL/DML statement
-via template functions.
-It also automatically logs the sql used along the way.
+**Dwops** allows frictionless running of sql codes & scripts,
+generation of simple query via code,
+and making & running of common summary queries, DDL, DML statement
+via templates. It also logs the sql used along the way.
 
-All together, an Excel-pivot table like experience with large database tables
-could be achieved, take a look at the features & the walk through section for
-some examples.
+All together, for common usages,
+an Excel-pivot table or pandas dataframe like experience
+on large database tables could be achieved,
+see examples in the Features & the Walk Through section.
 
 .. end-of-readme-intro
 
@@ -32,8 +32,10 @@ Features
 
 * `Run query with less friction using default credentials`_
 * `Automate processes with run sql from file, text replacement`_
-* `Programatically make and run simple sql query`_
-* `Make and run common summary queries from template`_
+* `Programatically make and run simple query`_
+* `Sql from template: Excel-pivot table experience`_
+* `Sql from template: Dataframe summary function experience`_
+* `Sql from template: Run DDL/DML statement, metadata queries`_
 * `Automatic logging with fully reproducible sql`_
 
 
@@ -42,8 +44,8 @@ Walk Through
 
 .. highlight:: python
 
-.. |save_default_url| replace:: ``save_default_url``
-.. _save_default_url: https://dwops.readthedocs.io/en/latest/urls.html#dwops.save_default_url
+.. |save_url| replace:: ``save_url``
+.. _save_url: https://dwops.readthedocs.io/en/latest/urls.html#dwops.save_url
 
 .. |make_eng| replace:: ``make_eng``
 .. _make_eng: https://dwops.readthedocs.io/en/latest/urls.html#dwops.make_eng
@@ -74,15 +76,17 @@ Walk Through
 .. _query object: https://dwops.readthedocs.io/en/latest/qry.html#dwops._qry._Qry
 .. _clause methods: https://dwops.readthedocs.io/en/latest/api.html
 .. _summary methods: https://dwops.readthedocs.io/en/latest/api.html
+.. _operation methods: https://dwops.readthedocs.io/en/latest/api.html
+.. _metadata methods: https://dwops.readthedocs.io/en/latest/api.html
 
 Run query with less friction using default credentials
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 On import, the package gives 3 different `operator object`_
 (``pg``, ``lt``, ``oc``, one for each supported database),
-with default credentials (Use the |save_default_url|_ function to set up).
-This allows running queries from any console window
-or python program with few boilerplates.
+with default credentials
+(Use the |save_url|_ function to save to the system keyring).
+This allows frictionless running of sql.
 
 >>> from dwops import pg
 >>> pg.run('select count(1) from test')
@@ -124,13 +128,14 @@ Above runs the sql stored on ``E:/projects/my_sql_script.sql`` as below:
         date = to_date(':my_run_date','YYYY-MM-DD')
         and measurement > :threshold
 
-Programatically make and run simple sql query
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Programatically make and run simple query
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The `operator object`_'s |qry|_ method returns the `query object`_.
 Use it's `clause methods`_ to make a simple sql query, as it's underlying query.
 The underlying query can be run directly, but the main usage is to act as
-the preprocessing step of the `summary methods`_ explained in next section.
+the preprocessing step of the `summary methods`_
+explained in the following sections.
 
 .. code-block:: python
 
@@ -159,15 +164,19 @@ Above prints:
     where score > 0.5
         and cat = 'test'
 
-Make and run common summary queries from template
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Sql from template: Excel-pivot table experience
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A few lines of code specifying minimal information could produce a summary
+table similiar to what could be achieved in Excel. Difference being
+it is the efficient database engine doing the data processing work,
+and the flexible python machineries doing the presentation work.
 
 The `operator object`_'s |qry|_ method returns the `query object`_.
 Use it's `summary methods`_ to make and run summary queries.
-These methods operate on top of the underlying query
-as explained in previous section.
+These methods operate on top of the underlying query.
 
-Example:
+For example:
 
 .. code-block:: python
 
@@ -216,8 +225,79 @@ Automatic logs showing the sql that was ran on line 3:
     order by n desc
     2022-01-23 11:08:13,413 [INFO] done
 
-Note the sql shows how the summary query operates on the pre-processing query,
-which is placed inside a with block.
+Sql from template: Dataframe summary function experience
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It is possible to mimic what some of the dataframe summary functions
+would return, but implement via sql.
+Difference being
+it is the efficient database engine doing the data processing work,
+and the flexible python machineries doing the presentation work.
+
+The `operator object`_'s |qry|_ method returns the `query object`_.
+Use it's `summary methods`_ to make and run summary queries.
+These methods operate on top of the underlying query.
+
+For example:
+
+.. code-block:: python
+
+    from dwops import lt #1
+    tbl = lt.qry('test').where("score > 0.5") #2
+    tbl.top()   #show top row to understand shape of data
+    tbl.head()  #as expected
+    tbl.cols()  #as expected
+    tbl.len()   #as expected
+    tbl.mimx('time')  #min and max of the column
+    tbl.dist('time', 'time, cat') #count distinct on the column or columns
+
+Explanation of lines:
+
+#. Get the default sqlite `operator object`_.
+#. Make, but do not run, an underlying sub query.
+#. See the `summary methods`_ section for list of methods and
+   their descriptions, examples, underlying sql shown in logs.
+
+Sql from template: Run DDL/DML statement, metadata queries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The `operator object`_'s `operation methods`_ allows running of
+DDL/DML statements programatically, and enhances functionalities 
+where desirable. 
+
+Also, the `operator object`_'s `metadata methods`_ makes some useful
+metadata queries available.
+
+Operation methods example:
+
+.. code-block:: python
+
+    from dwops import lt
+    lt.drop('test')
+    lt.drop('test') #alter return instead of raising error if table not exist
+    lt.create(
+            tbl_nme = 'test'
+            ,dtypes = {
+                'id':'integer'
+                ,'score':'real'
+                ,'amt':'integer'
+                ,'cat':'text'
+                ,'time':'text'
+                ,'constraint df_pk':
+                    'primary key (id)'
+            }
+        )
+    lt.write(df,'test')
+    lt.write_nodup(df,'test',['id']) #remove duplicates before inserting
+
+Metadata methods example:
+
+.. code-block:: python
+
+    from dwops import pg
+    pg.list_tables() #list all tables
+    pg.table_cols('test.test') #examine columns
+    pg.table_cons() #list constraints
 
 
 Automatic logging with fully reproducible sql
