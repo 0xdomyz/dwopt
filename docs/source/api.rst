@@ -10,7 +10,7 @@ API Reference
    qry.rst
 
 **The Set-up functions**
-        * :func:`dwops.save_default_url`
+        * :func:`dwops.save_url`
         * :func:`dwops.make_eng`
 
 **The Database Operator Class** :class:`dwops.db._Db`
