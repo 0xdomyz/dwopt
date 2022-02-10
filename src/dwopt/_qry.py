@@ -65,6 +65,67 @@ class _Qry:
     Alternative to initializing the query object by all desired clauses
     , various convenience methods are given to augment the query. 
     Use the methods.
+
+    Examples
+    --------
+
+    Example of multiple join statements, and the underlying sql.
+
+    .. code-block:: python
+
+        (
+            lt.qry('test x')
+            .select('x.id','y.id as yid','x.score','z.score as zscore')
+            .join("test y","x.id = y.id+1","x.id <= y.id+1")
+            .join("test z","x.id = z.id+2","x.id >= z.id+1")
+            .where('x.id < 10','z.id < 10')
+            .head()
+        )
+
+    .. code-block:: sql
+
+        with x as (
+            select x.id,y.id as yid,x.score,z.score as zscore
+            from test x
+            left join test y
+                on x.id = y.id+1
+                and x.id <= y.id+1
+            left join test z
+                on x.id = z.id+2
+                and x.id >= z.id+1
+            where x.id < 10
+                and z.id < 10
+        )
+        select * from x limit 5
+
+    Example of group by and related clauses, and the underlying sql.
+
+    .. code-block:: python
+
+        (
+            lt.qry('test x')
+            .select('x.cat,y.cat as bcat'
+                ,'sum(x.score) bscore','sum(y.score) yscore','count(1) n')
+            .join("test y","x.id = y.id+1")
+            .where('x.id < 1000')
+            .group_by('x.cat,y.cat')
+            .having('count(1) > 50','sum(y.score) > 100')
+            .order_by('x.cat desc','sum(y.score) desc')
+            .run()
+        )
+
+    .. code-block:: sql
+
+        select x.cat,y.cat as bcat,sum(x.score) bscore,sum(y.score) yscore,count(1) n
+        from test x
+        left join test y
+            on x.id = y.id+1
+        where x.id < 1000
+        group by x.cat,y.cat
+        having count(1) > 50
+            and sum(y.score) > 100
+        order by x.cat desc,sum(y.score) desc
+
     """
     def __init__(self
             ,operator

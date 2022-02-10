@@ -10,7 +10,7 @@ or run sql elsewhere and copy some CSVs around,
 or write up some embedded sql in the middle of a python script?
 
 **Dwopt** allows frictionless running of sql codes/scripts,
-credentials management on system keyring,
+default credentials on the system keyring,
 simple query generation via code,
 making & running common summary queries, DDL, DML statement
 via pre-built templates. It also logs the sql used along the way.
@@ -89,7 +89,7 @@ On import, the package gives 3 different `operator object`_
 (``pg``, ``lt``, ``oc``, one for each supported database),
 with default credentials
 (Use the |save_url|_ function to save to the system keyring).
-These allow frictionless running of sql from any python program.
+These allow frictionless running of sql from any python window.
 
 >>> from dwopt import pg
 >>> pg.run('select count(1) from test')
@@ -176,7 +176,7 @@ be improved from text manipulation to the
 `sqlalchemy <https://www.sqlalchemy.org/>`_ pakage's toolkit.
 
 Sql template: Excel-pivot table experience
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A few lines of code specifying minimal information could produce a summary
 table similiar to what could be achieved in Excel. Difference being
@@ -242,7 +242,7 @@ driven by the
 package.
 
 Sql template: Dataframe summary function experience
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is possible to mimic what some of the dataframe summary functions
 would return, but implement via running sql templates.
@@ -274,8 +274,8 @@ Explanation of lines:
 #. See the `summary methods`_ section for list of methods and
    their descriptions, examples, underlying sql shown in logs.
 
-Sql template: Run DDL/DML statement, metadata queries
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Sql template: DDL/DML statement, metadata queries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The `operator object`_'s `operation methods`_ allows running of
 DDL/DML statements programatically, and enhances functionalities 
