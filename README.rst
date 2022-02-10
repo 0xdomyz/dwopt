@@ -45,22 +45,20 @@ Features
 Walk Through
 ------------
 
-.. highlight:: python
-
 .. |save_url| replace:: ``save_url``
-.. _save_url: https://dwopt.readthedocs.io/en/latest/urls.html#dwopt.save_url
+.. _save_url: https://dwopt.readthedocs.io/en/stable/urls.html#dwopt.save_url
 
 .. |make_eng| replace:: ``make_eng``
-.. _make_eng: https://dwopt.readthedocs.io/en/latest/urls.html#dwopt.make_eng
+.. _make_eng: https://dwopt.readthedocs.io/en/stable/urls.html#dwopt.make_eng
 
 .. |run| replace:: ``run``
-.. _run: https://dwopt.readthedocs.io/en/latest/db.html#dwopt.db._Db.run
+.. _run: https://dwopt.readthedocs.io/en/stable/db.html#dwopt.db._Db.run
 
 .. |qry| replace:: ``qry``
-.. _qry: https://dwopt.readthedocs.io/en/latest/db.html#dwopt.db._Db.qry
+.. _qry: https://dwopt.readthedocs.io/en/stable/db.html#dwopt.db._Db.qry
 
 .. |valc| replace:: ``valc``
-.. _valc: https://dwopt.readthedocs.io/en/latest/qry.html#dwopt._qry._Qry.valc
+.. _valc: https://dwopt.readthedocs.io/en/stable/qry.html#dwopt._qry._Qry.valc
 
 .. |dataframe| replace:: ``dataframe``
 .. _dataframe: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
@@ -74,13 +72,13 @@ Walk Through
 .. |INFO| replace:: ``INFO``
 .. _INFO: https://docs.python.org/3/howto/logging.html#when-to-use-logging
 
-.. _operator object: https://dwopt.readthedocs.io/en/latest/db.html#dwopt.db._Db
-.. _operator constructors: https://dwopt.readthedocs.io/en/latest/db.html#dwopt.db._Db
-.. _query object: https://dwopt.readthedocs.io/en/latest/qry.html#dwopt._qry._Qry
-.. _clause methods: https://dwopt.readthedocs.io/en/latest/api.html
-.. _summary methods: https://dwopt.readthedocs.io/en/latest/api.html
-.. _operation methods: https://dwopt.readthedocs.io/en/latest/api.html
-.. _metadata methods: https://dwopt.readthedocs.io/en/latest/api.html
+.. _operator object: https://dwopt.readthedocs.io/en/stable/db.html#dwopt.db._Db
+.. _operator constructors: https://dwopt.readthedocs.io/en/stable/db.html#dwopt.db._Db
+.. _query object: https://dwopt.readthedocs.io/en/stable/qry.html#dwopt._qry._Qry
+.. _clause methods: https://dwopt.readthedocs.io/en/stable/api.html
+.. _summary methods: https://dwopt.readthedocs.io/en/stable/api.html
+.. _operation methods: https://dwopt.readthedocs.io/en/stable/api.html
+.. _metadata methods: https://dwopt.readthedocs.io/en/stable/api.html
 
 Run query with less friction using default credentials
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -385,4 +383,4 @@ Example logs:
 Documentation
 -------------
 
-* `API <https://dwopt.readthedocs.io/en/latest/api.html>`_
+* `API <https://dwopt.readthedocs.io/en/stable/api.html>`_
