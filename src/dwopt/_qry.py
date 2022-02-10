@@ -35,13 +35,13 @@ class _Qry:
     , the appropriate query object should be returned by the appropriate 
     database operator object's qry method. Query classes:
 
-    * dwops._qry.PgQry: Postgre query class.
-    * dwops._qry.LtQry: Sqlite query class.
-    * dwops._qry.OcQry: Oracle query class.
+    * dwopt._qry.PgQry: Postgre query class.
+    * dwopt._qry.LtQry: Sqlite query class.
+    * dwopt._qry.OcQry: Oracle query class.
 
     Parameters
     ----------
-    operator : dwops.db._Db
+    operator : dwopt.db._Db
         Database operator object to operate on generated queries.
     from_ : str
         Query table name str format.
@@ -110,14 +110,14 @@ class _Qry:
 
         Examples
         --------
-        >>> import dwops
-        >>> dwops._qry._Qry._args2str(_,('a,b,c',),',')
+        >>> import dwopt
+        >>> dwopt._qry._Qry._args2str(_,('a,b,c',),',')
             'a,b,c'
-        >>> dwops._qry._Qry._args2str(_,('a','b','c',),',')
+        >>> dwopt._qry._Qry._args2str(_,('a','b','c',),',')
             'a,b,c'
-        >>> dwops._qry._Qry._args2str(_,(['a','b','c'],),',')
+        >>> dwopt._qry._Qry._args2str(_,(['a','b','c'],),',')
             'a,b,c'
-        >>> dwops._qry._Qry._args2str(_,(('a','b','c'),),',')
+        >>> dwopt._qry._Qry._args2str(_,(('a','b','c'),),',')
             'a,b,c'
         """
         l = len(args)
@@ -147,12 +147,12 @@ class _Qry:
 
         Returns
         -------
-        dwops._qry._Qry
+        dwopt._qry._Qry
             New query object with clause added.
 
         Examples
         --------
-        >>> from dwops import lt
+        >>> from dwopt import lt
         >>> lt.qry('test').select("id,score,amt").print()
             select id,score,amt
             from test
@@ -185,12 +185,12 @@ class _Qry:
 
         Returns
         -------
-        dwops._qry._Qry
+        dwopt._qry._Qry
             New query object with clause added.
 
         Examples
         --------
-        >>> from dwops import lt
+        >>> from dwopt import lt
         >>> lt.qry("test").case('col',"x>5 then 'A'").print()
             select *
                 ,case when x>5 then 'A' else NULL end as col
@@ -250,12 +250,12 @@ class _Qry:
 
         Returns
         -------
-        dwops._qry._Qry
+        dwopt._qry._Qry
             New query object with clause added.
 
         Examples
         --------
-        >>> from dwops import lt
+        >>> from dwopt import lt
         >>> lt.qry().from_("test").print()
             select * from test
         """
@@ -280,12 +280,12 @@ class _Qry:
 
         Returns
         -------
-        dwops._qry._Qry
+        dwopt._qry._Qry
             New query object with clause added.
 
         Examples
         --------
-        >>> from dwops import lt
+        >>> from dwopt import lt
         >>> lt.qry('test x') \\
         ... .select('x.id','y.id as yid','x.score','z.score as zscore') \\
         ... .join("test y","x.id = y.id+1","x.id <= y.id+1") \\
@@ -323,12 +323,12 @@ class _Qry:
 
         Returns
         -------
-        dwops._qry._Qry
+        dwopt._qry._Qry
             New query object with clause added.
 
         Examples
         --------
-        >>> from dwops import lt
+        >>> from dwopt import lt
         >>> lt.qry('test').where('x>5','x<10').print()
             select * from test
             where x>5
@@ -354,12 +354,12 @@ class _Qry:
 
         Returns
         -------
-        dwops._qry._Qry
+        dwopt._qry._Qry
             New query object with clause added.
 
         Examples
         --------
-        >>> from dwops import lt
+        >>> from dwopt import lt
         >>> lt.qry('test').select('a,count(1) n').group_by('a').print()
             select a,count(1) n
             from test
@@ -384,12 +384,12 @@ class _Qry:
 
         Returns
         -------
-        dwops._qry._Qry
+        dwopt._qry._Qry
             New query object with clause added.
 
         Examples
         --------
-        >>> from dwops import lt
+        >>> from dwopt import lt
         >>> lt.qry('test').select('a,count(1) n').group_by('a') \\
         ... .having("count(1)>5").print()
             select a,count(1) n
@@ -412,12 +412,12 @@ class _Qry:
 
         Returns
         -------
-        dwops._qry._Qry
+        dwopt._qry._Qry
             New query object with clause added.
 
         Examples
         --------
-        >>> from dwops import lt
+        >>> from dwopt import lt
         >>> lt.qry('test').select('a,count(1) n').group_by('a') \\
         ... .having("count(1)>5").order_by('a','n desc').print()
             select a,count(1) n
@@ -442,12 +442,12 @@ class _Qry:
 
         Returns
         -------
-        dwops._qry._Qry
+        dwopt._qry._Qry
             New query object with clause added.
 
         Examples
         --------
-        >>> from dwops import lt
+        >>> from dwopt import lt
         >>> lt.qry().sql("select * from test \\nconnect by level <= 5").print()
             select * from test
             connect by level <= 5
@@ -492,7 +492,7 @@ class _Qry:
 
         Examples
         --------
-        >>> from dwops import lt
+        >>> from dwopt import lt
         >>> lt.qry().print()
             select * from test
         """
@@ -543,14 +543,14 @@ class _Qry:
             qry = self._qry
         return self._ops.run(qry,*args,**kwargs)
 
-    from dwops._sqls.base import head
-    from dwops._sqls.base import top
-    from dwops._sqls.base import cols
-    from dwops._sqls.base import len
-    from dwops._sqls.base import dist
-    from dwops._sqls.base import mimx
-    from dwops._sqls.base import valc
-    from dwops._sqls.base import hash
+    from dwopt._sqls.base import head
+    from dwopt._sqls.base import top
+    from dwopt._sqls.base import cols
+    from dwopt._sqls.base import len
+    from dwopt._sqls.base import dist
+    from dwopt._sqls.base import mimx
+    from dwopt._sqls.base import valc
+    from dwopt._sqls.base import hash
 
 class PgQry(_Qry):
     pass
@@ -563,6 +563,6 @@ class OcQry(_Qry):
         super()._make_qry()
         self._qry = self._qry.replace('select','select /*+PARALLEL (4)*/')
 
-    from dwops._sqls.oc import head
-    from dwops._sqls.oc import top
-    from dwops._sqls.oc import hash
+    from dwopt._sqls.oc import head
+    from dwopt._sqls.oc import top
+    from dwopt._sqls.oc import hash

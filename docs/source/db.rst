@@ -1,5 +1,5 @@
 ``The Database Operator Class``
 ===============================
 
-.. autoclass:: dwops.db._Db
+.. autoclass:: dwopt.db._Db
    :members: 

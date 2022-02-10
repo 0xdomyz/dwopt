@@ -1,4 +1,4 @@
-from dwops import lt
+from dwopt import lt
 import pandas as pd
 import random
 import pytest

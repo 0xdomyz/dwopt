@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import logging
 import re
-from dwops._qry import PgQry, LtQry, OcQry
+from dwopt._qry import PgQry, LtQry, OcQry
 _logger = logging.getLogger(__name__)
 
 class _Db:
@@ -18,9 +18,9 @@ class _Db:
     , it's child classes relevant to varies databases 
     should be instantiated and used instead. Child classes:
 
-    * dwops.db.Pg: Postgre database operator class.
-    * dwops.db.Lt: Sqlite database operator class.
-    * dwops.db.Oc: Oracle database operator class.
+    * dwopt.db.Pg: Postgre database operator class.
+    * dwopt.db.Lt: Sqlite database operator class.
+    * dwopt.db.Oc: Oracle database operator class.
 
     Parameters
     ----------
@@ -524,38 +524,38 @@ class _Db:
     
         Returns
         -------
-        dwops._qry._Qry
+        dwopt._qry._Qry
 
         Examples
         --------
 
         Make query object from sqlite database operator object.
 
-        >>> from dwops import lt
+        >>> from dwopt import lt
         >>> lt.qry("test").where("x>5").print()
             select * from test
             where x>5
         """
         raise("Not implemented.")
 
-    from dwops._sqls.base import list_tables
-    from dwops._sqls.base import table_sizes
-    from dwops._sqls.base import table_cols
-    from dwops._sqls.base import list_cons
+    from dwopt._sqls.base import list_tables
+    from dwopt._sqls.base import table_sizes
+    from dwopt._sqls.base import table_cols
+    from dwopt._sqls.base import list_cons
 
 class Pg(_Db):
     def qry(self,*args,**kwargs):
         return PgQry(self,*args,**kwargs)
 
-    from dwops._sqls.pg import list_tables
-    from dwops._sqls.pg import table_cols
-    from dwops._sqls.pg import list_cons
+    from dwopt._sqls.pg import list_tables
+    from dwopt._sqls.pg import table_cols
+    from dwopt._sqls.pg import list_cons
 
 class Lt(_Db):
     def qry(self,*args,**kwargs):
         return LtQry(self,*args,**kwargs)
 
-    from dwops._sqls.lt import list_tables
+    from dwopt._sqls.lt import list_tables
 
 class Oc(_Db):
     def drop(self,tbl_nme):
@@ -570,6 +570,6 @@ class Oc(_Db):
     def qry(self,*args,**kwargs):
         return OcQry(self,*args,**kwargs)
 
-    from dwops._sqls.oc import list_tables
-    from dwops._sqls.oc import table_sizes
-    from dwops._sqls.oc import table_cols
+    from dwopt._sqls.oc import list_tables
+    from dwopt._sqls.oc import table_sizes
+    from dwopt._sqls.oc import table_cols

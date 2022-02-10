@@ -17,7 +17,7 @@ def save_url(db_nme,url):
 
     The system keyring service is accessed via the
     `keyring <https://pypi.org/project/keyring/>`_
-    package. The service id is the full path to the dwops package files.
+    package. The service id is the full path to the dwopt package files.
     The service on Windows is the Windows Credential Manager.
 
     Parameters
@@ -38,18 +38,18 @@ def save_url(db_nme,url):
 
     Save connection urls for various databases.
 
-    >>> import dwops
-    >>> dwops.save_url('pg'
+    >>> import dwopt
+    >>> dwopt.save_url('pg'
     ...     ,'postgresql://tiger:scott@localhost/mydatabase')
         'Saved pg url to keyring'
-    >>> dwops.save_url('sqlite','sqlite:///foo.db')
+    >>> dwopt.save_url('sqlite','sqlite:///foo.db')
         'Saved lt url to keyring'
-    >>> dwops.save_url('oracle','oracle://tiger:scott@tnsname')
+    >>> dwopt.save_url('oracle','oracle://tiger:scott@tnsname')
         'Saved oc url to keyring'
 
     Exit and re-enter python for it to take effect.
 
-    >>> from dwops import pg, lt, oc
+    >>> from dwopt import pg, lt, oc
     >>> pg.run('select * from test')
     >>> lt.list_tables()
     >>> oc.qry('dual').head()

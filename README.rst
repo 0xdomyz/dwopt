@@ -1,20 +1,23 @@
-DWOPS - Datawarehouse Operator Python Package
-=============================================
+DWOPT - Datawarehouse Operator
+==============================
 
-The interface between databases and the analytics environment
-can often be unstreamlined.
+**Dwopt** is a Python package that attempts to streamline
+the insight generation process when working with database tables.
+
+The interface between databases and python can often be unstreamlined.
 Does one read in millions of rows before doing anything,
 or run sql elsewhere and copy some CSVs around,
 or write up some embedded sql in the middle of a python script?
 
-**Dwops** allows frictionless running of sql codes & scripts,
-generation of simple query via code,
-and making & running of common summary queries, DDL, DML statement
-via templates. It also logs the sql used along the way.
+**Dwopt** allows frictionless running of sql codes/scripts,
+credentials management on system keyring,
+simple query generation via code,
+making & running common summary queries, DDL, DML statement
+via pre-built templates. It also logs the sql used along the way.
 
-All together, for common usages,
-an Excel-pivot table or pandas dataframe like experience
-on large database tables could be achieved,
+All together, for common analytics,
+an Excel-pivot table or dataframe summary function like experience
+on large database tables could be effortlessly achieved,
 see examples in the Features & the Walk Through section.
 
 .. end-of-readme-intro
@@ -24,7 +27,7 @@ Installation
 
 .. code-block:: console
 
-    pip install dwops
+    pip install dwopt
 
 
 Features
@@ -33,9 +36,9 @@ Features
 * `Run query with less friction using default credentials`_
 * `Automate processes with run sql from file, text replacement`_
 * `Programatically make and run simple query`_
-* `Sql from template: Excel-pivot table experience`_
-* `Sql from template: Dataframe summary function experience`_
-* `Sql from template: Run DDL/DML statement, metadata queries`_
+* `Sql template: Excel-pivot table experience`_
+* `Sql template: Dataframe summary function experience`_
+* `Sql template: DDL/DML statement, metadata queries`_
 * `Automatic logging with fully reproducible sql`_
 
 
@@ -45,19 +48,19 @@ Walk Through
 .. highlight:: python
 
 .. |save_url| replace:: ``save_url``
-.. _save_url: https://dwops.readthedocs.io/en/latest/urls.html#dwops.save_url
+.. _save_url: https://dwopt.readthedocs.io/en/latest/urls.html#dwopt.save_url
 
 .. |make_eng| replace:: ``make_eng``
-.. _make_eng: https://dwops.readthedocs.io/en/latest/urls.html#dwops.make_eng
+.. _make_eng: https://dwopt.readthedocs.io/en/latest/urls.html#dwopt.make_eng
 
 .. |run| replace:: ``run``
-.. _run: https://dwops.readthedocs.io/en/latest/db.html#dwops.db._Db.run
+.. _run: https://dwopt.readthedocs.io/en/latest/db.html#dwopt.db._Db.run
 
 .. |qry| replace:: ``qry``
-.. _qry: https://dwops.readthedocs.io/en/latest/db.html#dwops.db._Db.qry
+.. _qry: https://dwopt.readthedocs.io/en/latest/db.html#dwopt.db._Db.qry
 
 .. |valc| replace:: ``valc``
-.. _valc: https://dwops.readthedocs.io/en/latest/qry.html#dwops._qry._Qry.valc
+.. _valc: https://dwopt.readthedocs.io/en/latest/qry.html#dwopt._qry._Qry.valc
 
 .. |dataframe| replace:: ``dataframe``
 .. _dataframe: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
@@ -71,13 +74,13 @@ Walk Through
 .. |INFO| replace:: ``INFO``
 .. _INFO: https://docs.python.org/3/howto/logging.html#when-to-use-logging
 
-.. _operator object: https://dwops.readthedocs.io/en/latest/db.html#dwops.db._Db
-.. _operator constructors: https://dwops.readthedocs.io/en/latest/db.html#dwops.db._Db
-.. _query object: https://dwops.readthedocs.io/en/latest/qry.html#dwops._qry._Qry
-.. _clause methods: https://dwops.readthedocs.io/en/latest/api.html
-.. _summary methods: https://dwops.readthedocs.io/en/latest/api.html
-.. _operation methods: https://dwops.readthedocs.io/en/latest/api.html
-.. _metadata methods: https://dwops.readthedocs.io/en/latest/api.html
+.. _operator object: https://dwopt.readthedocs.io/en/latest/db.html#dwopt.db._Db
+.. _operator constructors: https://dwopt.readthedocs.io/en/latest/db.html#dwopt.db._Db
+.. _query object: https://dwopt.readthedocs.io/en/latest/qry.html#dwopt._qry._Qry
+.. _clause methods: https://dwopt.readthedocs.io/en/latest/api.html
+.. _summary methods: https://dwopt.readthedocs.io/en/latest/api.html
+.. _operation methods: https://dwopt.readthedocs.io/en/latest/api.html
+.. _metadata methods: https://dwopt.readthedocs.io/en/latest/api.html
 
 Run query with less friction using default credentials
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -86,9 +89,9 @@ On import, the package gives 3 different `operator object`_
 (``pg``, ``lt``, ``oc``, one for each supported database),
 with default credentials
 (Use the |save_url|_ function to save to the system keyring).
-This allows frictionless running of sql.
+These allow frictionless running of sql from any python program.
 
->>> from dwops import pg
+>>> from dwopt import pg
 >>> pg.run('select count(1) from test')
     42
 >>> pg.qry('test').len()
@@ -97,7 +100,7 @@ This allows frictionless running of sql.
 Alternatively, use the |make_eng|_ function and the `operator constructors`_
 (``Pg``, ``Lt``, ``Oc``) to access database.
 
->>> from dwops import make_eng, Pg
+>>> from dwopt import make_eng, Pg
 >>> url = "postgresql://scott:tiger@localhost/mydatabase"
 >>> pg = Pg(make_eng(url))
 >>> pg.run('select count(1) from test')
@@ -112,7 +115,7 @@ or simply supply the mappings to the function directly.
 
 .. code-block:: python
 
-    from dwops import oc
+    from dwopt import oc
     oc.run(pth = "E:/projects/my_sql_script.sql"
         , my_run_date = '2022-01-31'
         , my_label = '20220131'
@@ -128,6 +131,10 @@ Above runs the sql stored on ``E:/projects/my_sql_script.sql`` as below:
         date = to_date(':my_run_date','YYYY-MM-DD')
         and measurement > :threshold
 
+In future releases, the package will likely migrate to
+the `jinja <https://jinja2docs.readthedocs.io/en/stable/>`_
+package's directive syntax.
+
 Programatically make and run simple query
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -139,7 +146,7 @@ explained in the following sections.
 
 .. code-block:: python
 
-    from dwops import lt
+    from dwopt import lt
     (   
         lt.qry('test a').select('a.id', 'a.time')
         .case('amt', cond = {'amt < 1000':500,'amt < 2000':1500}, els = 'amt')
@@ -164,7 +171,11 @@ Above prints:
     where score > 0.5
         and cat = 'test'
 
-Sql from template: Excel-pivot table experience
+In future releases, the package's query construction internals will likely
+be improved from text manipulation to the
+`sqlalchemy <https://www.sqlalchemy.org/>`_ pakage's toolkit.
+
+Sql template: Excel-pivot table experience
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A few lines of code specifying minimal information could produce a summary
@@ -180,7 +191,7 @@ For example:
 
 .. code-block:: python
 
-    from dwops import lt #1
+    from dwopt import lt #1
     lt.qry('test').where("score > 0.5") \ #2
     .valc('time, cat',"avg(score) avgscore, round(sum(amt)/1e3,2) total") \ #3
     .pivot('time','cat',['n','avgscore','total']) #4
@@ -225,11 +236,16 @@ Automatic logs showing the sql that was ran on line 3:
     order by n desc
     2022-01-23 11:08:13,413 [INFO] done
 
-Sql from template: Dataframe summary function experience
+In future releases, the package's templating internals will ikely be
+driven by the
+`jinjasql <https://github.com/sripathikrishnan/jinjasql>`_
+package.
+
+Sql template: Dataframe summary function experience
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is possible to mimic what some of the dataframe summary functions
-would return, but implement via sql.
+would return, but implement via running sql templates.
 Difference being
 it is the efficient database engine doing the data processing work,
 and the flexible python machineries doing the presentation work.
@@ -242,7 +258,7 @@ For example:
 
 .. code-block:: python
 
-    from dwops import lt #1
+    from dwopt import lt #1
     tbl = lt.qry('test').where("score > 0.5") #2
     tbl.top()   #show top row to understand shape of data
     tbl.head()  #as expected
@@ -258,7 +274,7 @@ Explanation of lines:
 #. See the `summary methods`_ section for list of methods and
    their descriptions, examples, underlying sql shown in logs.
 
-Sql from template: Run DDL/DML statement, metadata queries
+Sql template: Run DDL/DML statement, metadata queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The `operator object`_'s `operation methods`_ allows running of
@@ -272,7 +288,7 @@ Operation methods example:
 
 .. code-block:: python
 
-    from dwops import lt
+    from dwopt import lt
     lt.drop('test')
     lt.drop('test') #alter return instead of raising error if table not exist
     lt.create(
@@ -294,7 +310,7 @@ Metadata methods example:
 
 .. code-block:: python
 
-    from dwops import pg
+    from dwopt import pg
     pg.list_tables() #list all tables
     pg.table_cols('test.test') #examine columns
     pg.table_cons() #list constraints
@@ -306,7 +322,7 @@ Automatic logging with fully reproducible sql
 Many of the package's methods are wired through the standard |logging|_ package.
 
 In particular, the |run|_ method emits sql used as |INFO|_ level message.
-The relevant logger object has standard naming and is called ``dwops.db``.
+The relevant logger object has standard naming and is called ``dwopt.db``.
 Configure the logging package or the logger at the start of application code
 for logs.
 See the `logging package documentation <https://docs.python.org/3/howto/logging.html#logging-from-multiple-modules>`_
@@ -320,7 +336,7 @@ Example configuration to show logs in console:
     import logging
     logging.basicConfig(level = logging.INFO)
 
-    from dwops import lt
+    from dwopt import lt
     lt.list_tables()
 
 Alternatively, to avoid logging info messages from other packages:
@@ -329,7 +345,7 @@ Alternatively, to avoid logging info messages from other packages:
 
     import logging
     logging.basicConfig()
-    logging.getLogger('dwops.db').setLevel(logging.INFO)
+    logging.getLogger('dwopt.db').setLevel(logging.INFO)
 
 
 Example configuration to show in console and store on file, with timestamps:
@@ -344,7 +360,7 @@ Example configuration to show in console and store on file, with timestamps:
             logging.StreamHandler()
         ]
     )
-    logging.getLogger('dwops.db').setLevel(logging.INFO)
+    logging.getLogger('dwopt.db').setLevel(logging.INFO)
 
 Example logs:
 
@@ -369,4 +385,4 @@ Example logs:
 Documentation
 -------------
 
-* `API <https://dwops.readthedocs.io/en/latest/api.html>`_
+* `API <https://dwopt.readthedocs.io/en/latest/api.html>`_

@@ -156,7 +156,7 @@ def head(self):
     Examples
     --------
     >>> import pandas as pd
-    >>> from dwops import lt
+    >>> from dwopt import lt
     >>> 
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
@@ -182,7 +182,7 @@ def top(self):
     Examples
     --------
     >>> import pandas as pd
-    >>> from dwops import lt
+    >>> from dwopt import lt
     >>> 
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
@@ -205,7 +205,7 @@ def cols(self):
     Examples
     --------
     >>> import pandas as pd
-    >>> from dwops import lt
+    >>> from dwopt import lt
     >>> 
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
@@ -226,7 +226,7 @@ def len(self):
     Examples
     --------
     >>> import pandas as pd
-    >>> from dwops import lt
+    >>> from dwopt import lt
     >>> 
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
@@ -254,7 +254,7 @@ def dist(self,*args):
     Examples
     --------
     >>> import pandas as pd
-    >>> from dwops import lt
+    >>> from dwopt import lt
     >>> 
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
@@ -297,7 +297,7 @@ def mimx(self,col):
     Examples
     --------
     >>> import pandas as pd
-    >>> from dwops import lt
+    >>> from dwopt import lt
     >>> 
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
@@ -341,7 +341,7 @@ def valc(self,group_by,agg = None,order_by = None,n = True):
     Examples
     --------
     >>> import pandas as pd
-    >>> from dwops import lt
+    >>> from dwopt import lt
     >>> 
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
@@ -401,7 +401,7 @@ def hash(self,*args):
     Examples
     --------
     >>> import pandas as pd
-    >>> from dwops import oc
+    >>> from dwopt import oc
     >>> 
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> oc.drop('test')

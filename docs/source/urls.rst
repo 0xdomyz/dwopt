@@ -1,6 +1,6 @@
 ``The Set-up Functions``
 ========================
 
-.. autofunction:: dwops.save_url
+.. autofunction:: dwopt.save_url
 
-.. autofunction:: dwops.make_eng
+.. autofunction:: dwopt.make_eng
