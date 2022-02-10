@@ -1,4 +1,4 @@
-from dwops import lt
+from dwopt import lt
 
 def test_run(lt_tbl):
     lt.run('select * from test limit 1')

@@ -10,52 +10,52 @@ API Reference
    qry.rst
 
 **The Set-up functions**
-        * :func:`dwops.save_url`
-        * :func:`dwops.make_eng`
+        * :func:`dwopt.save_url`
+        * :func:`dwopt.make_eng`
 
-**The Database Operator Class** :class:`dwops.db._Db`
+**The Database Operator Class** :class:`dwopt.db._Db`
 
     The operation methods:
-        * :meth:`dwops.db._Db.run`
-        * :meth:`dwops.db._Db.create`
-        * :meth:`dwops.db._Db.add_pkey`
-        * :meth:`dwops.db._Db.drop`
-        * :meth:`dwops.db._Db.write`
-        * :meth:`dwops.db._Db.write_nodup`
+        * :meth:`dwopt.db._Db.run`
+        * :meth:`dwopt.db._Db.create`
+        * :meth:`dwopt.db._Db.add_pkey`
+        * :meth:`dwopt.db._Db.drop`
+        * :meth:`dwopt.db._Db.write`
+        * :meth:`dwopt.db._Db.write_nodup`
     
     The query method:
-        * :meth:`dwops.db._Db.qry`
+        * :meth:`dwopt.db._Db.qry`
     
     The metadata methods:
-        * :meth:`dwops.db._Db.list_tables`
-        * :meth:`dwops.db._Db.table_cols`
-        * :meth:`dwops.db._Db.table_sizes`
-        * :meth:`dwops.db._Db.list_cons`
+        * :meth:`dwopt.db._Db.list_tables`
+        * :meth:`dwopt.db._Db.table_cols`
+        * :meth:`dwopt.db._Db.table_sizes`
+        * :meth:`dwopt.db._Db.list_cons`
 
 
-**The Query Class** :class:`dwops._qry._Qry`
+**The Query Class** :class:`dwopt._qry._Qry`
 
     The clause methods:
-        * :meth:`dwops._qry._Qry.select`
-        * :meth:`dwops._qry._Qry.case`
-        * :meth:`dwops._qry._Qry.from_`
-        * :meth:`dwops._qry._Qry.join`
-        * :meth:`dwops._qry._Qry.where`
-        * :meth:`dwops._qry._Qry.group_by`
-        * :meth:`dwops._qry._Qry.having`
-        * :meth:`dwops._qry._Qry.order_by`
-        * :meth:`dwops._qry._Qry.sql`
+        * :meth:`dwopt._qry._Qry.select`
+        * :meth:`dwopt._qry._Qry.case`
+        * :meth:`dwopt._qry._Qry.from_`
+        * :meth:`dwopt._qry._Qry.join`
+        * :meth:`dwopt._qry._Qry.where`
+        * :meth:`dwopt._qry._Qry.group_by`
+        * :meth:`dwopt._qry._Qry.having`
+        * :meth:`dwopt._qry._Qry.order_by`
+        * :meth:`dwopt._qry._Qry.sql`
     
     The operation methods:
-        * :meth:`dwops._qry._Qry.print`
-        * :meth:`dwops._qry._Qry.run`
+        * :meth:`dwopt._qry._Qry.print`
+        * :meth:`dwopt._qry._Qry.run`
     
     The summary methods:
-        * :meth:`dwops._qry._Qry.top`
-        * :meth:`dwops._qry._Qry.cols`
-        * :meth:`dwops._qry._Qry.head`
-        * :meth:`dwops._qry._Qry.len`
-        * :meth:`dwops._qry._Qry.dist`
-        * :meth:`dwops._qry._Qry.mimx`
-        * :meth:`dwops._qry._Qry.valc`
-        * :meth:`dwops._qry._Qry.hash`
+        * :meth:`dwopt._qry._Qry.top`
+        * :meth:`dwopt._qry._Qry.cols`
+        * :meth:`dwopt._qry._Qry.head`
+        * :meth:`dwopt._qry._Qry.len`
+        * :meth:`dwopt._qry._Qry.dist`
+        * :meth:`dwopt._qry._Qry.mimx`
+        * :meth:`dwopt._qry._Qry.valc`
+        * :meth:`dwopt._qry._Qry.hash`

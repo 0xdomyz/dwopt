@@ -1,5 +1,5 @@
 ``The Query Class``
 ===================
 
-.. autoclass:: dwops._qry._Qry
+.. autoclass:: dwopt._qry._Qry
    :members: 

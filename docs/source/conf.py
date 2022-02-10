@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'dwops'
+project = 'dwopt'
 copyright = '2022, 0xdomyz'
 author = '0xdomyz'
 
