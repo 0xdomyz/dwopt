@@ -22,6 +22,18 @@ class _Db:
     * dwopt.db.Lt: Sqlite database operator class.
     * dwopt.db.Oc: Oracle database operator class.
 
+    The operator objects:
+
+    * dwopt.pg: postgre.
+    * dwopt.lt: sqlite.
+    * dwopt.oc: Oracle.
+
+    The operator constructors:
+
+    * dwopt.Pg(eng): Postgre.
+    * dwopt.Lt(eng): Sqlite.
+    * dwopt.Oc(eng): Oracle.
+
     Parameters
     ----------
     eng : sqlalchemy engine
