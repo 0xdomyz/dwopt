@@ -129,8 +129,8 @@ Above runs the sql stored on ``E:/projects/my_sql_script.sql`` as below:
         date = to_date(':my_run_date','YYYY-MM-DD')
         and measurement > :threshold
 
-In future releases, the package will likely migrate to
-the `jinja <https://jinja2docs.readthedocs.io/en/stable/>`_
+In future releases, the package may migrate to
+the `jinja2 <https://jinja2docs.readthedocs.io/en/stable/>`_
 package's directive syntax.
 
 Programatically make and run simple query
@@ -169,9 +169,8 @@ Above prints:
     where score > 0.5
         and cat = 'test'
 
-In future releases, the package's query construction internals will likely
-be improved from text manipulation to the
-`sqlalchemy <https://www.sqlalchemy.org/>`_ pakage's toolkit.
+In future releases, the package's query construction internals may
+be based on the `sqlalchemy <https://www.sqlalchemy.org/>`_ pakage's toolkit.
 
 Sql template: Excel-pivot table experience
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -234,7 +233,7 @@ Automatic logs showing the sql that was ran on line 3:
     order by n desc
     2022-01-23 11:08:13,413 [INFO] done
 
-In future releases, the package's templating internals will ikely be
+In future releases, the package's templating internals may be
 driven by the
 `jinjasql <https://github.com/sripathikrishnan/jinjasql>`_
 package.
