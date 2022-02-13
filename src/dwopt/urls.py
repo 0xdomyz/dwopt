@@ -11,7 +11,8 @@ def save_url(db_nme,url):
     Use the system keyring service to save database engine url.
     See examples for quick-start.
 
-    A `sqlalchemy engine url <https://docs.sqlalchemy.org/en/14/core/engines.html#database-urls>`_
+    A `sqlalchemy engine url <https://docs.sqlalchemy.org/en/14/core/
+    engines.html#database-urls>`_
     combines the user name, password, database names, etc
     into a single string.
 
@@ -81,7 +82,8 @@ def make_eng(url):
     """
     Make database connection engine.
 
-    A `sqlalchemy engine url <https://docs.sqlalchemy.org/en/14/core/engines.html#database-urls>`_
+    A `sqlalchemy engine url <https://docs.sqlalchemy.org/en/14/
+    core/engines.html#database-urls>`_
     combines the user name, password, database names, etc
     into a single string.
     Engine object best to be created only once per application.

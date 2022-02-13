@@ -213,7 +213,8 @@ class _Db:
             Dictionary of column names to data types mappings.
         **kwargs :
             Convenient way to add mappings.
-            Keyword to argument mappings will be added to the dtypes dictionary.
+            Keyword to argument mappings will be added to the dtypes
+            dictionary.
             The keyword cannot be one of the positional parameter names.
 
         Notes
@@ -221,7 +222,13 @@ class _Db:
 
         *Datatypes*
 
-        Datatypes varies across databses, common example below:
+        Datatypes varies across databses
+        (`sqlite type <https://www.sqlite.org/datatype3.html>`_,
+        `postgre type <https://www.postgresql.org/docs/current/
+        datatype.html>`_,
+        `oracle type <https://docs.oracle.com/en/database/oracle/
+        oracle-database/21/sqlqr/Data-Types.html>`_),
+        common example below:
 
         ==========  =======  ===========  ============
         Type        Sqlite   Postgre      Oracle      
@@ -233,23 +240,16 @@ class _Db:
         date        text     date         date
         ==========  =======  ===========  ============
 
-        Details:
-
-        * https://www.sqlite.org/datatype3.html
-        * https://www.postgresql.org/docs/current/datatype.html
-        * https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlqr/Data-Types.html
-
         *Other statements*
 
-        The dtypes mappings also allow other sql statements which are 
-        part of a create statement to be added. For example 
-        a primary key constraint.
-
-        Details:
-
-        * https://sqlite.org/lang_createtable.html
-        * https://www.postgresql.org/docs/current/sql-createtable.html
-        * https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlrf/CREATE-TABLE.html
+        The dtypes mappings also allow other sql statements which are
+        part of a create statement to be added
+        (`sqlite other <https://sqlite.org/lang_createtable.html>`_,
+        `postgre other <https://www.postgresql.org/docs/current/
+        sql-createtable.html>`_,
+        `oracle other <https://docs.oracle.com/en/database/oracle/
+        oracle-database/21/sqlrf/CREATE-TABLE.html>`_).
+        For example a primary key constraint.
 
         Examples
         --------
