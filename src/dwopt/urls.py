@@ -6,10 +6,9 @@ _logger = logging.getLogger(__name__)
 
 _SERV_ID = f"{os.path.dirname(__file__)}"
 
-def save_url(db_nme,url):
+def save_url(db_nme, url, method = 'keyring'):
     """
-    Use the system keyring service to save database engine url.
-    See examples for quick-start.
+    Save database engine url to system. See examples for quick-start.
 
     A `sqlalchemy engine url <https://docs.sqlalchemy.org/en/14/core/
     engines.html#database-urls>`_
@@ -21,6 +20,8 @@ def save_url(db_nme,url):
     package. The service id is the full path to the dwopt package files.
     The service on Windows is the Windows Credential Manager.
 
+    The config file is created with name .dwopt on the HOME directory.
+
     Parameters
     ----------
     db_nme : str
@@ -28,6 +29,9 @@ def save_url(db_nme,url):
         or ``oc`` for oracle.
     url : str
         Sqlalchemy engine url.
+    method: str
+        Method used to save, either 'keyring', 'environ' or 'config'.
+        Default 'keyring'.
 
     Returns
     -------
@@ -55,7 +59,14 @@ def save_url(db_nme,url):
     >>> lt.list_tables()
     >>> oc.qry('dual').head()
     """
-    keyring.set_password(_SERV_ID, db_nme, url)
+    if method == 'keyring':
+        keyring.set_password(_SERV_ID, db_nme, url)
+    elif method == 'environ':
+        os.environ[f"dwopt_{db_nme}"] = url
+    elif method == 'config':
+        pass
+    else:
+        raise Exception('Invalid method')
     return f"Saved {db_nme} url to keyring"
 
 def _get_url(db_nme):
