@@ -78,7 +78,7 @@ def fix_lt(fix_df):
 #oracle
 #https://www.oracle.com/database/technologies/xe-downloads.html
 
-@pytest.fixture(scope = "session", params = ['pg', 'lt'])
+@pytest.fixture(scope = "session", params = ['lt'])
 def db_df(request, fix_df, fix_pg, fix_lt):
     if request.param == 'pg':
         db = fix_pg
