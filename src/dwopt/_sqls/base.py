@@ -16,7 +16,8 @@ def list_tables(self,owner):
     Notes
     -----
 
-    Postgre sql used:
+    Postgre sql used, `information_schema.tables
+    <https://www.postgresql.org/docs/current/infoschema-tables.html>`_:
 
     .. code-block:: sql
 
@@ -27,7 +28,7 @@ def list_tables(self,owner):
         where table_schema
         not in ('information_schema','pg_catalog')
 
-    Sqlite sql used:
+    Sqlite sql used, `sqlite_schema <https://www.sqlite.org/schematab.html>`_:
 
     .. code-block:: sql
 
@@ -35,7 +36,9 @@ def list_tables(self,owner):
         where type ='table'
         and name NOT LIKE 'sqlite_%'
 
-    Oracle sql used:
+    Oracle sql used, `all_tab_columns
+    <https://docs.oracle.com/en/database/oracle/oracle-database/21/
+    refrn/ALL_TAB_COLUMNS.html>`_:
 
     .. code-block:: sql
 
@@ -45,11 +48,6 @@ def list_tables(self,owner):
         where owner = ':owner'
         group by owner,table_name
 
-    Details:
-
-    https://www.postgresql.org/docs/current/infoschema-tables.html
-    https://www.sqlite.org/schematab.html
-    https://docs.oracle.com/en/database/oracle/oracle-database/21/refrn/ALL_TAB_COLUMNS.html
     """
     raise(Exception('Not Implemented.'))
 
@@ -64,7 +62,9 @@ def table_sizes(self):
     Notes
     -----
 
-    Oracle sql used:
+    Oracle sql used, `user_extents
+    <https://docs.oracle.com/en/database/oracle/oracle-database/21/refrn/
+    USER_EXTENTS.html>`_:
 
     .. code-block:: sql
 
@@ -74,9 +74,6 @@ def table_sizes(self):
         from user_extents
         group by tablespace_name,segment_type,segment_name
 
-    Details:
-
-    https://docs.oracle.com/en/database/oracle/oracle-database/21/refrn/USER_EXTENTS.html
     """
     raise(Exception('Not Implemented.'))
 
@@ -87,7 +84,8 @@ def table_cols(self,sch_tbl_nme):
     Notes
     -----
 
-    Postgre sql used:
+    Postgre sql used, `information_schema.columns
+    <https://www.postgresql.org/docs/current/infoschema-columns.html>`_:
 
     .. code-block:: sql
 
@@ -96,7 +94,9 @@ def table_cols(self,sch_tbl_nme):
         where table_schema = ':schema_nme'
         and table_name = ':tbl_nme'
 
-    Oracle sql used:
+    Oracle sql used, `all_tab_columns
+    <https://docs.oracle.com/en/database/oracle/oracle-database/21/
+    refrn/ALL_TAB_COLUMNS.html>`_:
 
     .. code-block:: sql
 
@@ -104,11 +104,6 @@ def table_cols(self,sch_tbl_nme):
         from all_tab_columns
         where owner = ':schema_nme'
         and table_name = ':tbl_nme'
-
-    Details:
-
-    https://www.postgresql.org/docs/current/infoschema-columns.html
-    https://docs.oracle.com/en/database/oracle/oracle-database/21/refrn/ALL_TAB_COLUMNS.html
 
     Parameters
     ----------
@@ -132,15 +127,14 @@ def list_cons():
     Notes
     -----
 
-    Postgre sql used:
+    Postgre sql used, `information_schema.constraint_table_usage
+    <https://www.postgresql.org/docs/current/infoschema-
+    constraint-table-usage.html>`_:
 
     .. code-block:: sql
 
         select * from information_schema.constraint_table_usage
 
-    Details:
-
-    https://www.postgresql.org/docs/current/infoschema-constraint-table-usage.html
     """
     raise(Exception('Not Implemented.'))
 

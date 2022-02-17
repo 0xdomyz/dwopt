@@ -116,7 +116,8 @@ class _Qry:
 
     .. code-block:: sql
 
-        select x.cat,y.cat as bcat,sum(x.score) bscore,sum(y.score) yscore,count(1) n
+        select x.cat,y.cat as bcat,sum(x.score) bscore,sum(y.score) yscore,
+            count(1) n
         from test x
         left join test y
             on x.id = y.id+1
