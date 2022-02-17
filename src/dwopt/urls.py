@@ -52,12 +52,12 @@ def save_url(db_nme, url, method = 'keyring'):
     Save connection urls in various methods for various databases.
 
     >>> import dwopt
-    >>> dwopt.save_url('pg','keyring'
+    >>> dwopt.save_url('pg'
     ...     ,'postgresql://scott:tiger@localhost/mydatabase')
         'Saved pg url to keyring'
-    >>> dwopt.save_url('sqlite','environ','sqlite://')
+    >>> dwopt.save_url('sqlite','sqlite://','environ')
         'Saved lt url to environ'
-    >>> dwopt.save_url('oracle','config','oracle://scott:tiger@tnsname')
+    >>> dwopt.save_url('oracle','oracle://scott:tiger@tnsname','config')
         'Saved oc url to config'
 
     Exit and re-enter python for it to take effect.
