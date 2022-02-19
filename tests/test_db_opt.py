@@ -1,6 +1,6 @@
 from pandas.testing import assert_frame_equal
 
-def test_run(db_df):
+def test_db_opt_run(db_df):
     db, df = db_df
     db.run('select * from test limit 1')
 

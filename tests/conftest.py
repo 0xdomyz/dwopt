@@ -34,6 +34,7 @@ def fix_pg(fix_df):
         CREATE USER dwopt_tester WITH PASSWORD '1234';
         GRANT ALL PRIVILEGES ON DATABASE dwopt_test to dwopt_tester;
 
+    To-do: implement in sqlalchemy
     """
     df = fix_df
     url = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
@@ -56,6 +57,7 @@ def fix_pg(fix_df):
 
 @pytest.fixture(scope="session")
 def fix_lt(fix_df):
+    """To-do: implement in sqlalchemy"""
     df = fix_df
     url = "sqlite://"
     lt = Lt(make_eng(url))
