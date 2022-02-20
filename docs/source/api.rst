@@ -3,19 +3,19 @@ API Reference
 
 .. toctree::
    :hidden:
-   :includehidden:
 
    urls.rst
    db.rst
    qry.rst
 
-**The Set-up functions**
+:doc:`The Set-up functions <urls>`
+
         * :func:`dwopt.save_url`
         * :func:`dwopt.make_eng`
 
-**The Database Operator Class** :class:`dwopt.db._Db`
+:doc:`The Database Operator Class <db>`
 
-    The operation methods:
+    :ref:`db-ops-mtd`:
         * :meth:`dwopt.db._Db.run`
         * :meth:`dwopt.db._Db.create`
         * :meth:`dwopt.db._Db.add_pkey`
@@ -23,19 +23,19 @@ API Reference
         * :meth:`dwopt.db._Db.write`
         * :meth:`dwopt.db._Db.write_nodup`
     
-    The query method:
+    :ref:`db-qry-mtd`:
         * :meth:`dwopt.db._Db.qry`
     
-    The metadata methods:
+    :ref:`db-meta-mtd`:
         * :meth:`dwopt.db._Db.list_tables`
         * :meth:`dwopt.db._Db.table_cols`
         * :meth:`dwopt.db._Db.table_sizes`
         * :meth:`dwopt.db._Db.list_cons`
 
 
-**The Query Class** :class:`dwopt._qry._Qry`
+:doc:`The Query Class <qry>`
 
-    The clause methods:
+    :ref:`qry-cls-mtd`:
         * :meth:`dwopt._qry._Qry.select`
         * :meth:`dwopt._qry._Qry.case`
         * :meth:`dwopt._qry._Qry.from_`
@@ -46,11 +46,11 @@ API Reference
         * :meth:`dwopt._qry._Qry.order_by`
         * :meth:`dwopt._qry._Qry.sql`
     
-    The operation methods:
+    :ref:`qry-ops-mtd`:
         * :meth:`dwopt._qry._Qry.print`
         * :meth:`dwopt._qry._Qry.run`
     
-    The summary methods:
+    :ref:`qry-sum-mtd`:
         * :meth:`dwopt._qry._Qry.top`
         * :meth:`dwopt._qry._Qry.cols`
         * :meth:`dwopt._qry._Qry.head`
