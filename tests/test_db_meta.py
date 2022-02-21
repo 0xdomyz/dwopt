@@ -15,7 +15,7 @@ not in ('information_schema','pg_catalog')
 """
     elif isinstance(db, Lt):
         sql = """
-select * from sqlite_schema
+select * from sqlite_master
 where type ='table'
 and name NOT LIKE 'sqlite_%'
 """
