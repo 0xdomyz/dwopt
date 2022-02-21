@@ -2,7 +2,7 @@
 
 def list_tables(self):
     sql = (
-        "select * from sqlite_schema "
+        "select * from sqlite_master "
         "\nwhere type ='table' "
         "\nand name NOT LIKE 'sqlite_%' "
     )

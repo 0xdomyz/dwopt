@@ -11,7 +11,8 @@ _KEYRING_SERV_ID = f"{Path(__file__).parent.resolve().as_posix()}"
 
 def save_url(db_nme, url, method = 'keyring'):
     """
-    Save database engine url to system in one of 3 methods.
+    Save database engine url to system in one of 3 methods: 
+    keyring, environment variable, and config file.
     See examples for quick-start.
 
     A `sqlalchemy engine url <https://docs.sqlalchemy.org/en/14/core/
@@ -19,16 +20,21 @@ def save_url(db_nme, url, method = 'keyring'):
     combines the user name, password, database names, etc
     into a single string.
 
-    On package import, default url are taken fristly from keyring if available,
-    then environment variable if available, then the config file if available,
-    lastly a set of dummy urls shown in the examples section.
-
     The system keyring service is accessed via the
     `keyring <https://pypi.org/project/keyring/>`_
     package. The service id is the full path to the dwopt package files.
     The service on Windows is the Windows Credential Manager.
 
+    The environment variables are made with the form ``dwopt_{db_nme}``.
+
     The config file is created with name .dwopt on the system HOME directory.
+    There will be a url section on the config file, with option names being
+    the database names.
+
+    On package import, default url are taken fristly from keyring if available,
+    then environment variable if available, then the config file if available,
+    lastly a set of hard-coded dummy urls that are the same as the ones shown
+    in the examples section.
 
     Parameters
     ----------
@@ -90,7 +96,7 @@ def _get_url(db_nme):
     try:
         url = keyring.get_password(_KEYRING_SERV_ID, db_nme)
     except Exception as e:
-        _logger.warn(e)
+        _logger.warning(e)
     if url is not None:
         return url
 

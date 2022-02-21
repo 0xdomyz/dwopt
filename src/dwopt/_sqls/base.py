@@ -32,7 +32,7 @@ def list_tables(self,owner):
 
     .. code-block:: sql
 
-        select * from sqlite_schema
+        select * from sqlite_master
         where type ='table'
         and name NOT LIKE 'sqlite_%'
 
