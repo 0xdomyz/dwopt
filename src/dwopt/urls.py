@@ -11,8 +11,9 @@ _KEYRING_SERV_ID = f"{Path(__file__).parent.resolve().as_posix()}"
 
 def save_url(db_nme, url, method = 'keyring'):
     """
-    Save database engine url to system in one of 3 methods: keyring, environment
-    variable, and config file. See examples for quick-start.
+    Save database engine url to system in one of 3 methods: 
+    keyring, environment variable, and config file.
+    See examples for quick-start.
 
     A `sqlalchemy engine url <https://docs.sqlalchemy.org/en/14/core/
     engines.html#database-urls>`_
