@@ -19,7 +19,7 @@ def table_cols(self,sch_tbl_nme):
     )
     return self.run(sql)
 
-def list_cons():
+def list_cons(self):
     sql = 'SELECT * FROM information_schema.constraint_table_usage'
     return self.run(sql)
 

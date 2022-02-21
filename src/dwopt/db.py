@@ -385,10 +385,10 @@ class _Db:
         ----------
         tbl : pandas.DataFrame
             Payload Dataframe with data to insert.
-        pkey : [str]
-            Iterable of column name str.
         tbl_nme : str
             Name of the database table to insert into.
+        pkey : [str]
+            Iterable of column name str.
         where : str
             where clause in str form. The ``where`` keyword is not needed.
 
@@ -495,7 +495,8 @@ class _Db:
 
     def add_pkey(self,tbl_nme,pkey):
         """
-        Make and run an add primary key statement. Example sql code:
+        Make and run an add primary key statement. Does not work on sqlite.
+        Example sql code:
 
         .. code-block:: sql
 
@@ -511,13 +512,13 @@ class _Db:
         Examples
         --------
 
-        Make example table on sqlite, then add primary key constraint.
+        Make example table on postgre, then add primary key constraint.
 
-        >>> from dw import lt
+        >>> from dw import pg
         >>> 
-        >>> lt.drop('test')
-        >>> lt.create('test',{'col1':'int','col2':'text'})
-        >>> lt.add_pkey('col1,col2')
+        >>> pg.drop('test')
+        >>> pg.create('test',{'col1':'int','col2':'text'})
+        >>> pg.add_pkey('test', 'col1, col2')
         """
         sql = f"alter table {tbl_nme} add primary key ({pkey})"
         return self.run(sql)
