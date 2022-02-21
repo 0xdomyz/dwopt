@@ -107,7 +107,7 @@ def fix_oc(fix_df):
     Install oracle db from
     `link <https://www.oracle.com/database/technologies/xe-downloads.html>`.
     """
-    pass
+    raise Exception('Not implemented.')
 
 
 @pytest.fixture(scope = "session")
