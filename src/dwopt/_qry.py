@@ -1,104 +1,80 @@
 class _Qry:
     """ 
-    Generic query class. There are 2 main usages:
+    The base query class.
+    
+    All methods on this base class and all methods on it's child classes
+    are documented here on the base class for convenience. 
 
-    1. Make sql query.
-    2. Make and run summary query on top of the generated sql query. 
-       In particular, the sql query is placed into a sub query clause
-       , and the summary query operates on the intermediate result 
-       that would be arrived by the query.
-
-    These usages work in the conext of a common program pattern 
-    where the summary query has preprocessing steps such as a case 
-    statement or a where clause. The intermediate tables are often not usefull
-    on it's own, thus avoiding explicitly materilising it gives performance
-    gain. A example as below:
-
-    .. code-block:: sql
-
-        with x as (
-            select 
-                a.*
-                ,case when amt < 1000 then amt*1.2 else amt end as amt
-            from test a
-            where score > 0.5
-        )
-        select
-            time,cat
-            ,count(1) n
-            ,avg(score) avgscore, round(sum(amt)/1e3,2) total
-        from x
-        group by time,cat
-        order by n desc
-
-    Query classes should not be instantiated directly by user
-    , the appropriate query object should be returned by the appropriate 
-    database operator object's qry method. Query classes:
-
-    * dwopt._qry.PgQry: Postgre query class.
-    * dwopt._qry.LtQry: Sqlite query class.
-    * dwopt._qry.OcQry: Oracle query class.
+    User should not instantiated the query class directly.
+    Instead call the ``qry`` methods on the database operator objects to
+    instantiate query objects.
+    See :ref:`qry-build-framework` section and the examples.
 
     Parameters
     ----------
     operator : dwopt.db._Db
         Database operator object to operate on generated queries.
     from_ : str
-        Query table name str format.
+        Query table name.
     select: str
-        Columns in str format.
+        Columns.
     join : str
-        Join clause in str format.
+        Join clause.
     where : str
-        Conditions in str format.
+        Conditions.
     group_by : str
-        Group by names in str format.
+        Group by names.
     having : str
-        Conditions in str format.
+        Conditions.
     order_by : str
-        Order by names in str format.
+        Order by names.
     sql : str
-        Sql code in str format.
+        Sql code.
 
     Notes
     -----
-    Alternative to initializing the query object by all desired clauses
-    , various convenience methods are given to augment the query. 
-    Use the methods.
+    The child classes:
+
+    * ``dwopt._qry.PgQry``: Relevant for the Postgre database.
+    * ``dwopt._qry.LtQry``: Relevant for the Sqlite database.
+    * ``dwopt._qry.OcQry``: Relevant for the Oracle database.
 
     Examples
     --------
 
-    Example of multiple join statements, and the underlying sql.
+    Create various qry objects relevant to various databases.
 
     .. code-block:: python
 
-        (
-            lt.qry('test x')
-            .select('x.id','y.id as yid','x.score','z.score as zscore')
-            .join("test y","x.id = y.id+1","x.id <= y.id+1")
-            .join("test z","x.id = z.id+2","x.id >= z.id+1")
-            .where('x.id < 10','z.id < 10')
-            .head()
-        )
+        from dwopt import pg, lt, oc
+        pg.qry('test').len()
+        lt.qry().from_('test').print()
+        oc.qry('test').run()
+
+    Create and run a query with a sub query and summary query component.
+
+    .. code-block:: python
+
+        lt.qry("test").where('score > 0.5').valc('time, cat')
+
+    The query that would be run:
 
     .. code-block:: sql
 
         with x as (
-            select x.id,y.id as yid,x.score,z.score as zscore
-            from test x
-            left join test y
-                on x.id = y.id+1
-                and x.id <= y.id+1
-            left join test z
-                on x.id = z.id+2
-                and x.id >= z.id+1
-            where x.id < 10
-                and z.id < 10
+            select * from test
+            where score > 0.5
         )
-        select * from x limit 5
+        select
+            time, cat
+            ,count(1) n
+        from x
+        group by time, cat
+        order by n desc
 
-    Example of group by and related clauses, and the underlying sql.
+    Iteratively piece together a query, instead of calling a summary method
+    to transform it into a sub query, call a operation method to
+    directly use the built query.
 
     .. code-block:: python
 
@@ -111,7 +87,7 @@ class _Qry:
             .group_by('x.cat,y.cat')
             .having('count(1) > 50','sum(y.score) > 100')
             .order_by('x.cat desc','sum(y.score) desc')
-            .run()
+            .print() -- run()
         )
 
     .. code-block:: sql

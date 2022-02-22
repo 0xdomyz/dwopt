@@ -8,41 +8,56 @@ _logger = logging.getLogger(__name__)
 
 class _Db:
     """
-    Generic database operator class. There are 3 main usages:
-
-    1. Run sql statment.
-    2. Run DDL/DML via the convenience methods.
-    3. Create query object, which allows running summary query.
-
-    This base class should not be instantiated directly by user
-    , it's child classes relevant to varies databases 
-    should be instantiated and used instead. Child classes:
-
-    * dwopt.db.Pg: Postgre database operator class.
-    * dwopt.db.Lt: Sqlite database operator class.
-    * dwopt.db.Oc: Oracle database operator class.
-
-    The operator objects:
-
-    * dwopt.pg: postgre.
-    * dwopt.lt: sqlite.
-    * dwopt.oc: Oracle.
-
-    The operator constructors:
-
-    * dwopt.Pg(eng): Postgre.
-    * dwopt.Lt(eng): Sqlite.
-    * dwopt.Oc(eng): Oracle.
+    The base database operator class.
+    
+    All methods on this base class and all methods on it's child classes
+    are documented here on the base class for convenience. 
+    
+    User should not instantiated the base class directly.
+    Instead instantiate the child classes tailored for the intended database,
+    or use the pre-instantiated objects on package import.
+    See the notes and the examples.
 
     Parameters
     ----------
     eng : sqlalchemy engine
         Database connection engine to be used.
 
-    Attributes
-    ----------
-    eng : sqlalchemy engine
-        Database connection engine that is used.
+    Notes
+    -----
+    The child classes:
+
+    * ``dwopt.Pg(eng)``: Relevant for the Postgre database.
+    * ``dwopt.Lt(eng)``: Relevant for the Sqlite database.
+    * ``dwopt.Oc(eng)``: Relevant for the Oracle database.
+    
+    The pre-instantiated objects:
+
+    * ``dwopt.pg``: Relevant for the Postgre database.
+    * ``dwopt.lt``: Relevant for the Sqlite database.
+    * ``dwopt.oc``: Relevant for the Oracle database.
+
+    Pre-instantiation uses the default credentials set-up prior by the user
+    via the ``dwopt.save_url`` function.
+
+    Examples
+    --------
+    Instantiate and use a postgre databse operator object.
+
+    >>> from dwopt import make_eng, Pg
+    >>> url = "postgresql://scott:tiger@localhost/mydatabase"
+    >>> pg = Pg(make_eng(url))
+    >>> pg.run('select count(1) from test')
+        42
+
+    Use the pre-instantiated sqlite database operator object.
+
+    >>> from dwopt import pg
+    >>> pg.run('select count(1) from test')
+        42
+    >>> pg.qry('test').len()
+        42
+
     """
     def __init__(self,eng):
         self.eng = eng
@@ -131,7 +146,6 @@ class _Db:
 
         >>> import pandas as pd
         >>> from dw import lt
-        >>> 
         >>> tbl = pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]})
         >>> lt.drop('test')
         >>> lt.create('test',{'col1':'int','col2':'int'})
