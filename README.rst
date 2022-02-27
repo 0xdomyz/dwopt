@@ -129,7 +129,7 @@ Above runs the sql stored on ``E:/projects/my_sql_script.sql`` as below:
         date = to_date(':my_run_date','YYYY-MM-DD')
         and measurement > :threshold
 
-In future releases, the package may migrate to
+On future releases, the package may migrate to
 the `jinja2 <https://jinja2docs.readthedocs.io/en/stable/>`_
 package's directive syntax.
 
@@ -169,7 +169,7 @@ Above prints:
     where score > 0.5
         and cat = 'test'
 
-In future releases, the package's query construction internals may
+On future releases, the package's query construction internals may
 be based on the `sqlalchemy <https://www.sqlalchemy.org/>`_ pakage's toolkit.
 
 Sql template: Excel-pivot table experience
@@ -233,7 +233,7 @@ Automatic logs showing the sql that was ran on line 3:
     order by n desc
     2022-01-23 11:08:13,413 [INFO] done
 
-In future releases, the package's templating internals may be
+On future releases, the package's templating internals may be
 driven by the
 `jinjasql <https://github.com/sripathikrishnan/jinjasql>`_
 package.
@@ -322,7 +322,8 @@ In particular, the |run|_ method emits sql used as |INFO|_ level message.
 The relevant logger object has standard naming and is called ``dwopt.db``.
 Configure the logging package or the logger at the start of application code
 for logs.
-See the `logging package documentation <https://docs.python.org/3/howto/logging.html#logging-from-multiple-modules>`_
+See the `logging package documentation
+<https://docs.python.org/3/howto/logging.html#logging-from-multiple-modules>`_
 for details.
 
 
@@ -376,6 +377,9 @@ Example logs:
     group by time, cat
     order by n desc
     2022-01-23 11:08:13,413 [INFO] done
+
+On future releases, the package's logging functions may be
+changed to the `loguru <https://pypi.org/project/loguru/>`_ package.
 
 .. end-of-readme-usage
 
