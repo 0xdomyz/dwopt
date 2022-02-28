@@ -3,6 +3,31 @@ import sqlalchemy as alc
 import pandas as pd
 import random
 import pytest
+from pathlib import Path
+import keyring
+import os
+
+_CONFIG_PTH = Path.home() / '.dwopt'
+_KEYRING_SERV_ID = (Path(__file__).parents[1] / 'src' / 'dwopt') \
+    .resolve().as_posix()
+
+@pytest.fixture()
+def fix_credential_clean_up():
+    pg_url = 'postgresql://tiger:!@#aD123@localhost/mydatabase'
+    lt_url = 'sqlite:////E:/db.sqlite'
+    oc_url = 'oracle://tiger:!@#aD123@tnsname'
+    if _CONFIG_PTH.exists():
+        _CONFIG_PTH.unlink()
+    for db_nme in ['pg', 'lt', 'oc']:
+        try:
+            keyring.delete_password(_KEYRING_SERV_ID, db_nme)
+        except Exception as ex:
+            print(ex)
+        environ_variable = f'dwopt_{db_nme}'
+        if environ_variable in os.environ.keys():
+            os.environ.pop(environ_variable)
+    return pg_url, lt_url, oc_url
+
 
 @pytest.fixture(scope="session")
 def fix_df():
@@ -22,6 +47,7 @@ def fix_df():
         }
     )
     return df
+
 
 @pytest.fixture(scope = "session")
 def fix_pg(fix_df):
@@ -65,6 +91,7 @@ def fix_pg(fix_df):
         conn.execute(test_tbl.insert(), df.to_dict('records'))
     return Pg(engine)
 
+
 @pytest.fixture(scope="session")
 def fix_lt(fix_df):
     """
@@ -92,6 +119,7 @@ def fix_lt(fix_df):
         conn.execute(test_tbl.insert(), df.to_dict('records'))
     return Lt(engine)
 
+
 @pytest.fixture(scope="session")
 def fix_oc(fix_df):
     """
@@ -115,6 +143,7 @@ def db_df(request, fix_df, fix_lt):
     """Test sqlite only in github testing environment."""
     db = fix_lt
     return db,fix_df
+
 
 #@pytest.fixture(scope = "session", params = ['pg','lt'])
 #def db_df(request, fix_df, fix_pg, fix_lt):
