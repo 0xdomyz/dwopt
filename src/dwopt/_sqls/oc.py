@@ -1,6 +1,7 @@
-#db method
+# db method
 
-def list_tables(self,owner):
+
+def list_tables(self, owner):
     sql = (
         "select/*+PARALLEL (4)*/ owner,table_name"
         "\n    ,max(column_name),min(column_name)"
@@ -9,6 +10,7 @@ def list_tables(self,owner):
         "\ngroup by owner,table_name"
     )
     return self.run(sql)
+
 
 def table_sizes(self):
     sql = (
@@ -20,8 +22,9 @@ def table_sizes(self):
     )
     return self.run(sql)
 
-def table_cols(self,sch_tbl_nme):
-    sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
+
+def table_cols(self, sch_tbl_nme):
+    sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
     sql = (
         "select/*+PARALLEL (4)*/ *"
         "\nfrom all_tab_columns"
@@ -30,18 +33,24 @@ def table_cols(self,sch_tbl_nme):
     )
     return self.run(sql)
 
-#qry method
+
+# qry method
+
 
 def head(self):
     return self.run("select * from x where rownum<=5")
 
-def top(self):
-    return self.run("select * from x where rownum<=1").iloc[0,]
 
-def hash(self,*args):
+def top(self):
+    return self.run("select * from x where rownum<=1").iloc[
+        0,
+    ]
+
+
+def hash(self, *args):
     if len(args) == 0:
         args = self.cols()
-    _ = args[0] if len(args) == 1 and not isinstance(args[0],str) else args
+    _ = args[0] if len(args) == 1 and not isinstance(args[0], str) else args
     _ = " || '_' || ".join(_)
     _ = (
         "select/*+ PARALLEL(4) */ \n"
@@ -50,5 +59,4 @@ def hash(self,*args):
         "    ) - 4294967296/2)) hash\n"
         "from x"
     )
-    return self.run(_).iloc[0,0]
-
+    return self.run(_).iloc[0, 0]

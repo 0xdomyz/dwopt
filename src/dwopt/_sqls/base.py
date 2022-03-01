@@ -1,8 +1,9 @@
-#db method
+# db method
 
-def list_tables(self,owner):
+
+def list_tables(self, owner):
     """
-    List all tables on database or specified schema. 
+    List all tables on database or specified schema.
 
     Parameters
     ----------
@@ -21,7 +22,7 @@ def list_tables(self,owner):
 
     .. code-block:: sql
 
-        select 
+        select
             table_catalog,table_schema,table_name
             ,is_insertable_into,commit_action
         from information_schema.tables
@@ -49,11 +50,12 @@ def list_tables(self,owner):
         group by owner,table_name
 
     """
-    raise(Exception('Not Implemented.'))
+    raise NotImplementedError
+
 
 def table_sizes(self):
-    """ 
-    List sizes of all tables in current schema. 
+    """
+    List sizes of all tables in current schema.
 
     Returns
     -------
@@ -75,9 +77,10 @@ def table_sizes(self):
         group by tablespace_name,segment_type,segment_name
 
     """
-    raise(Exception('Not Implemented.'))
+    raise NotImplementedError
 
-def table_cols(self,sch_tbl_nme):
+
+def table_cols(self, sch_tbl_nme):
     """
     Show information of specified table's columns.
 
@@ -114,11 +117,12 @@ def table_cols(self,sch_tbl_nme):
     -------
     pandas.DataFrame
     """
-    raise(Exception('Not Implemented.'))
+    raise NotImplementedError
+
 
 def list_cons():
     """
-    List all constraints. 
+    List all constraints.
 
     Returns
     -------
@@ -136,9 +140,11 @@ def list_cons():
         select * from information_schema.constraint_table_usage
 
     """
-    raise(Exception('Not Implemented.'))
+    raise NotImplementedError
 
-#qry methods
+
+# qry methods
+
 
 def head(self):
     """Fetch top 5 rows of the sub query table.
@@ -151,7 +157,7 @@ def head(self):
     --------
     >>> import pandas as pd
     >>> from dwopt import lt
-    >>> 
+    >>>
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
     >>> lt.create('test',{'col1':'int','col2':'int'})
@@ -166,6 +172,7 @@ def head(self):
     """
     return self.run("select * from x limit 5")
 
+
 def top(self):
     """Fetch top row of the sub query table.
 
@@ -177,7 +184,7 @@ def top(self):
     --------
     >>> import pandas as pd
     >>> from dwopt import lt
-    >>> 
+    >>>
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
     >>> lt.create('test',{'col1':'int','col2':'int'})
@@ -187,7 +194,10 @@ def top(self):
         col2    10
         Name: 0, dtype: int64
     """
-    return self.run("select * from x limit 1").iloc[0,]
+    return self.run("select * from x limit 1").iloc[
+        0,
+    ]
+
 
 def cols(self):
     """Fetch column names of the sub query table.
@@ -200,7 +210,7 @@ def cols(self):
     --------
     >>> import pandas as pd
     >>> from dwopt import lt
-    >>> 
+    >>>
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
     >>> lt.create('test',{'col1':'int','col2':'int'})
@@ -209,6 +219,7 @@ def cols(self):
         ['col1', 'col2']
     """
     return self.run("select * from x where 1=2").columns.tolist()
+
 
 def len(self):
     """Length of the sub query table.
@@ -221,7 +232,7 @@ def len(self):
     --------
     >>> import pandas as pd
     >>> from dwopt import lt
-    >>> 
+    >>>
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
     >>> lt.create('test',{'col1':'int','col2':'int'})
@@ -229,12 +240,13 @@ def len(self):
     >>> lt.qry("test").len()
         10
     """
-    return self.run("select count(1) from x").iloc[0,0]
+    return self.run("select count(1) from x").iloc[0, 0]
 
-def dist(self,*args):
+
+def dist(self, *args):
     """
-    Count number of distinct occurances of data within specified columns
-    , or combination of columns, of the sub query table.
+    Count number of distinct occurances of data within specified columns,
+    or combination of columns, of the sub query table.
 
     Parameters
     ----------
@@ -249,7 +261,7 @@ def dist(self,*args):
     --------
     >>> import pandas as pd
     >>> from dwopt import lt
-    >>> 
+    >>>
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
     >>> lt.create('test',{'col1':'int','col2':'int'})
@@ -260,22 +272,16 @@ def dist(self,*args):
         count(distinct col1 || '_' || col2)    5
         Name: 0, dtype: int64
     """
-    _ = (" || '_' || ".join(_) if not isinstance(_,str) else _ 
-        for _ in args)
-    _ = ''.join(
-        f"    ,count(distinct {j})\n" 
-        if i else 
-        f'    count(distinct {j})\n'
-        for i,j in enumerate(_)
+    _ = (" || '_' || ".join(_) if not isinstance(_, str) else _ for _ in args)
+    _ = "".join(
+        f"    ,count(distinct {j})\n" if i else f"    count(distinct {j})\n"
+        for i, j in enumerate(_)
     )
-    _ = (
-        "select \n"
-        f'{_}'
-        'from x'
-    )
-    return self.run(_).iloc[0,:]
+    _ = "select \n" f"{_}" "from x"
+    return self.run(_).iloc[0, :]
 
-def mimx(self,col):
+
+def mimx(self, col):
     """
     Summarise on max and min values of a column for a sub query table.
 
@@ -292,7 +298,7 @@ def mimx(self,col):
     --------
     >>> import pandas as pd
     >>> from dwopt import lt
-    >>> 
+    >>>
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
     >>> lt.create('test',{'col1':'int','col2':'int'})
@@ -302,18 +308,15 @@ def mimx(self,col):
         min(col1)    0
         Name: 0, dtype: int64
     """
-    _ = (
-        "select \n"
-        f"    max({col}),min({col})\n"
-        "from x"
-    )
-    return self.run(_).iloc[0,:]
+    _ = "select \n" f"    max({col}),min({col})\n" "from x"
+    return self.run(_).iloc[0, :]
 
-def valc(self,group_by,agg = None,order_by = None,n = True):
+
+def valc(self, group_by, agg=None, order_by=None, n=True):
     """
-    Value count of a column or combination of columns. A value count is a 
+    Value count of a column or combination of columns. A value count is a
     group by query, with total number of row of each group calculated.
-    Also allow custom summary calculation, and custom order by clauses 
+    Also allow custom summary calculation, and custom order by clauses
     to be added.
 
     Parameters
@@ -336,7 +339,7 @@ def valc(self,group_by,agg = None,order_by = None,n = True):
     --------
     >>> import pandas as pd
     >>> from dwopt import lt
-    >>> 
+    >>>
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> lt.drop('test')
     >>> lt.create('test',{'col1':'int','col2':'int'})
@@ -347,17 +350,16 @@ def valc(self,group_by,agg = None,order_by = None,n = True):
         0   B   4    46
         1   A   1    14
     """
-    group_by_cls = (','.join(group_by) if not isinstance(group_by,str)
-        else group_by)
+    group_by_cls = ",".join(group_by) if not isinstance(group_by, str) else group_by
     if agg is None:
-        agg_cls = ''
-    elif isinstance(agg,str):
+        agg_cls = ""
+    elif isinstance(agg, str):
         agg_cls = f"    ,{agg}\n"
     else:
-        agg_cls = ''.join(f"    ,{_}\n" for _ in agg)
+        agg_cls = "".join(f"    ,{_}\n" for _ in agg)
     if order_by is None:
         if n:
-            order_by_cls = 'n desc'
+            order_by_cls = "n desc"
         else:
             order_by_cls = group_by_cls
     else:
@@ -373,7 +375,8 @@ def valc(self,group_by,agg = None,order_by = None,n = True):
     )
     return self.run(_)
 
-def hash(self,*args):
+
+def hash(self, *args):
     """
     Calculate a simple configuration of oracle hash to arrive at a indicative
     has value for a number of columns or all columns of a sub query table.
@@ -385,7 +388,7 @@ def hash(self,*args):
     ----------
     *args : str
         Column names in str. If no value is given, a cols method will be
-        performed to fetch the list of all columns, from which a hash will be 
+        performed to fetch the list of all columns, from which a hash will be
         calculated.
 
     Returns
@@ -396,15 +399,15 @@ def hash(self,*args):
     --------
     >>> import pandas as pd
     >>> from dwopt import oc
-    >>> 
+    >>>
     >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
     >>> oc.drop('test')
     >>> oc.create('test',{'col1':'int','col2':'int'})
     >>> oc.write(tbl,'test')
     >>> oc.qry("test").where("col1 < 5").hash()
     """
-    raise(Exception('Not Implemented.'))
+    raise NotImplementedError
+
 
 def piv(self):
     pass
-

@@ -7,10 +7,11 @@ import logging
 import base64
 
 _logger = logging.getLogger(__name__)
-_CONFIG_PTH = Path.home() / '.dwopt'
+_CONFIG_PTH = Path.home() / ".dwopt"
 _KEYRING_SERV_ID = Path(__file__).parent.resolve().as_posix()
 
-def save_url(db_nme, url, method = 'keyring'):
+
+def save_url(db_nme, url, method="keyring"):
     """
     Save encoded database engine url to either
     system keyring or a config file. The package can also read a
@@ -86,19 +87,20 @@ def save_url(db_nme, url, method = 'keyring'):
     >>> oc.qry('dual').head()
     """
     url = _encode(url)
-    if method == 'keyring':
+    if method == "keyring":
         keyring.set_password(_KEYRING_SERV_ID, db_nme, url)
-    elif method == 'config':
+    elif method == "config":
         cfg = ConfigParser()
         cfg.read(_CONFIG_PTH)
-        if not cfg.has_section('url'):
-            cfg.add_section('url')
-        cfg.set('url', db_nme, url)
-        with open(_CONFIG_PTH,'w') as f:
+        if not cfg.has_section("url"):
+            cfg.add_section("url")
+        cfg.set("url", db_nme, url)
+        with open(_CONFIG_PTH, "w") as f:
             cfg.write(f)
     else:
-        raise Exception('Invalid method')
+        raise ValueError("Invalid method, either 'keyring', or 'config'")
     return f"Saved {db_nme} url to {method}"
+
 
 def _get_url(db_nme):
     """Get url if available, else dummy url."""
@@ -109,40 +111,43 @@ def _get_url(db_nme):
     except Exception as e:
         _logger.warning(e)
     if url is not None:
-        _logger.debug(f'{db_nme} url obtained from keyring')
+        _logger.debug(f"{db_nme} url obtained from keyring")
         return url
 
     cfg = ConfigParser()
     cfg.read(_CONFIG_PTH)
-    if cfg.has_option('url',db_nme):
-        url = _decode(cfg.get('url',db_nme))
+    if cfg.has_option("url", db_nme):
+        url = _decode(cfg.get("url", db_nme))
     if url is not None:
-        _logger.debug(f'{db_nme} url obtained from config')
+        _logger.debug(f"{db_nme} url obtained from config")
         return url
 
     url = os.environ.get(f"dwopt_{db_nme}")
     if url is not None:
-        _logger.debug(f'{db_nme} url obtained from environ')
+        _logger.debug(f"{db_nme} url obtained from environ")
         return url
 
-    if db_nme == 'pg':
-        url = 'postgresql://scott:tiger@localhost/mydatabase'
-    elif db_nme == 'lt':
-        url = 'sqlite://'
-    elif db_nme == 'oc':
-        url = 'oracle://scott:tiger@tnsname'
+    if db_nme == "pg":
+        url = "postgresql://scott:tiger@localhost/mydatabase"
+    elif db_nme == "lt":
+        url = "sqlite://"
+    elif db_nme == "oc":
+        url = "oracle://scott:tiger@tnsname"
     else:
-        raise Exception("Invalid db_nme")
-    _logger.debug(f'{db_nme} url obtained from hardcoded dummy')
+        raise ValueError("Invalid db_nme, either 'pg', 'lt' or 'oc'")
+    _logger.debug(f"{db_nme} url obtained from hardcoded dummy")
     return url
+
 
 def _encode(x):
     if x is not None:
-        return base64.b64encode(x.encode('UTF-8')).decode('UTF-8')
+        return base64.b64encode(x.encode("UTF-8")).decode("UTF-8")
+
 
 def _decode(x):
     if x is not None:
-        return base64.b64decode(x.encode('UTF-8')).decode('UTF-8')
+        return base64.b64decode(x.encode("UTF-8")).decode("UTF-8")
+
 
 def make_eng(url):
     """
@@ -180,5 +185,6 @@ def make_eng(url):
     """
     return sqlalchemy.create_engine(url)
 
-def make_meta(eng,schema):
+
+def make_meta(eng, schema):
     pass

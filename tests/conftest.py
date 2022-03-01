@@ -7,26 +7,31 @@ from pathlib import Path
 import keyring
 import os
 
-_CONFIG_PTH = Path.home() / '.dwopt'
-_KEYRING_SERV_ID = (Path(__file__).parents[1] / 'src' / 'dwopt') \
-    .resolve().as_posix()
+_CONFIG_PTH = Path.home() / ".dwopt"
+_KEYRING_SERV_ID = (Path(__file__).parents[1] / "src" / "dwopt").resolve().as_posix()
 
-@pytest.fixture()
-def fix_credential_clean_up():
-    pg_url = 'postgresql://tiger:!@#aD123@localhost/mydatabase'
-    lt_url = 'sqlite:////E:/db.sqlite'
-    oc_url = 'oracle://tiger:!@#aD123@tnsname'
+
+def _clean_up_credential():
     if _CONFIG_PTH.exists():
         _CONFIG_PTH.unlink()
-    for db_nme in ['pg', 'lt', 'oc']:
+    for db_nme in ["pg", "lt", "oc"]:
         try:
             keyring.delete_password(_KEYRING_SERV_ID, db_nme)
         except Exception as ex:
             print(ex)
-        environ_variable = f'dwopt_{db_nme}'
+        environ_variable = f"dwopt_{db_nme}"
         if environ_variable in os.environ.keys():
             os.environ.pop(environ_variable)
-    return pg_url, lt_url, oc_url
+
+
+@pytest.fixture()
+def fix_credential():
+    pg_url = "postgresql://tiger:!@#aD123@localhost/mydatabase"
+    lt_url = "sqlite:////E:/db.sqlite"
+    oc_url = "oracle://tiger:!@#aD123@tnsname"
+    _clean_up_credential()
+    yield pg_url, lt_url, oc_url
+    _clean_up_credential()
 
 
 @pytest.fixture(scope="session")
@@ -36,20 +41,20 @@ def fix_df():
     random.seed(0)
     df = pd.DataFrame(
         {
-            "id": range(n)
-            ,"score": [random.random() for i in range(n)]
-            ,"amt": [random.choice(range(1000)) for i in range(n)]
-            ,"cat": [random.choice(["test", "train"]) for i in range(n)]
-            ,'time': [
-                random.choice(["2013-01-02","2013-02-02","2013-03-02"])
+            "id": range(n),
+            "score": [random.random() for i in range(n)],
+            "amt": [random.choice(range(1000)) for i in range(n)],
+            "cat": [random.choice(["test", "train"]) for i in range(n)],
+            "time": [
+                random.choice(["2013-01-02", "2013-02-02", "2013-03-02"])
                 for i in range(n)
-            ]
+            ],
         }
     )
     return df
 
 
-@pytest.fixture(scope = "session")
+@pytest.fixture(scope="session")
 def fix_pg(fix_df):
     """
     Postgre test database object and test table creation.
@@ -73,13 +78,13 @@ def fix_pg(fix_df):
     engine = alc.create_engine(url)
     meta = alc.MetaData()
     test_tbl = alc.Table(
-        'test', meta,
-        alc.Column('id', alc.dialects.postgresql.BIGINT,
-            primary_key=True),
-        alc.Column('score', alc.Float),
-        alc.Column('amt', alc.dialects.postgresql.BIGINT),
-        alc.Column('cat', alc.String(20)),
-        alc.Column('time', alc.String(20))
+        "test",
+        meta,
+        alc.Column("id", alc.dialects.postgresql.BIGINT, primary_key=True),
+        alc.Column("score", alc.Float),
+        alc.Column("amt", alc.dialects.postgresql.BIGINT),
+        alc.Column("cat", alc.String(20)),
+        alc.Column("time", alc.String(20)),
     )
     try:
         with engine.connect() as conn:
@@ -88,7 +93,7 @@ def fix_pg(fix_df):
         print(ex)
     meta.create_all(engine)
     with engine.connect() as conn:
-        conn.execute(test_tbl.insert(), df.to_dict('records'))
+        conn.execute(test_tbl.insert(), df.to_dict("records"))
     return Pg(engine)
 
 
@@ -96,7 +101,7 @@ def fix_pg(fix_df):
 def fix_lt(fix_df):
     """
     Sqlite test database object and test table creation.
-    
+
     Test table
     ----------
     Database: memory
@@ -107,16 +112,17 @@ def fix_lt(fix_df):
     engine = alc.create_engine(url)
     meta = alc.MetaData()
     test_tbl = alc.Table(
-        'test', meta,
-        alc.Column('id', alc.Integer, primary_key=True),
-        alc.Column('score', alc.REAL),
-        alc.Column('amt', alc.Integer),
-        alc.Column('cat', alc.String),
-        alc.Column('time', alc.String)
+        "test",
+        meta,
+        alc.Column("id", alc.Integer, primary_key=True),
+        alc.Column("score", alc.REAL),
+        alc.Column("amt", alc.Integer),
+        alc.Column("cat", alc.String),
+        alc.Column("time", alc.String),
     )
     meta.create_all(engine)
     with engine.connect() as conn:
-        conn.execute(test_tbl.insert(), df.to_dict('records'))
+        conn.execute(test_tbl.insert(), df.to_dict("records"))
     return Lt(engine)
 
 
@@ -135,18 +141,18 @@ def fix_oc(fix_df):
     Install oracle db from
     `link <https://www.oracle.com/database/technologies/xe-downloads.html>`.
     """
-    raise Exception('Not implemented.')
+    raise Exception("Not implemented.")
 
 
-@pytest.fixture(scope = "session")
+@pytest.fixture(scope="session")
 def db_df(request, fix_df, fix_lt):
     """Test sqlite only in github testing environment."""
     db = fix_lt
-    return db,fix_df
+    return db, fix_df
 
 
-#@pytest.fixture(scope = "session", params = ['pg','lt'])
-#def db_df(request, fix_df, fix_pg, fix_lt):
+# @pytest.fixture(scope = "session", params = ['pg','lt'])
+# def db_df(request, fix_df, fix_pg, fix_lt):
 #   """Test sqlite and postgre on local computer.
 #
 #      To-do: fix param that selects which to test.

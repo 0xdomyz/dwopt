@@ -1,9 +1,9 @@
 class _Qry:
-    """ 
+    """
     The base query class.
-    
+
     All methods on this base class and all methods on it's child classes
-    are documented here on the base class for convenience. 
+    are documented here on the base class for convenience.
 
     User should not instantiated the query class directly.
     Instead call the ``qry`` methods on the database operator objects to
@@ -104,11 +104,19 @@ class _Qry:
         order by x.cat desc,sum(y.score) desc
 
     """
-    def __init__(self
-            ,operator
-            ,from_ = None,select = None,join = None
-            ,where = None,group_by = None,having = None
-            ,order_by = None,sql = None):
+
+    def __init__(
+        self,
+        operator,
+        from_=None,
+        select=None,
+        join=None,
+        where=None,
+        group_by=None,
+        having=None,
+        order_by=None,
+        sql=None,
+    ):
         self._ops = operator
         self._from_ = from_
         self._select = select
@@ -121,22 +129,27 @@ class _Qry:
 
     def __copy__(self):
         return type(self)(
-             self._ops
-            ,self._from_,self._select,self._join
-            ,self._where,self._group_by,self._having
-            ,self._order_by,self._sql
+            self._ops,
+            self._from_,
+            self._select,
+            self._join,
+            self._where,
+            self._group_by,
+            self._having,
+            self._order_by,
+            self._sql,
         )
 
-    def _args2str(self,args,sep):
+    def _args2str(self, args, sep):
         """
-        Parse a tuple of str, or iterator of str, 
+        Parse a tuple of str, or iterator of str,
         into a combined str, fit to be used as part of query.
 
         Parameters
         ----------
         args : (str,) or ([str],)
             Either a tuple of elemental and/or combined str
-            , or a tuple with first and only element 
+            , or a tuple with first and only element
             being a iterator of elemental str.
         sep : str
             Seperator used to seperate elemental str.
@@ -158,12 +171,12 @@ class _Qry:
         >>> dwopt._qry._Qry._args2str(_,(('a','b','c'),),',')
             'a,b,c'
         """
-        l = len(args)
-        if l == 0:
+        L = len(args)
+        if L == 0:
             res = None
-        elif l == 1:
+        elif L == 1:
             arg = args[0]
-            if isinstance(arg,str):
+            if isinstance(arg, str):
                 res = arg
             else:
                 res = sep.join(arg)
@@ -171,7 +184,7 @@ class _Qry:
             res = sep.join(args)
         return res
 
-    def select(self,*args,sep = ','):
+    def select(self, *args, sep=","):
         """
         Add the select clause to query.
 
@@ -202,10 +215,10 @@ class _Qry:
             from test
         """
         _ = self.__copy__()
-        _._select = self._args2str(args,sep)
+        _._select = self._args2str(args, sep)
         return _
 
-    def case(self,col,*args,cond = None,els = 'NULL'):
+    def case(self, col, *args, cond=None, els="NULL"):
         """
         Add a case when statement to select clause in query.
         Calling this method multiple times would add multiple statements.
@@ -256,14 +269,16 @@ class _Qry:
         """
         _ = self.__copy__()
         if cond is not None:
-            for i,j in cond.items():
+            for i, j in cond.items():
                 args = args + (f"{i} then {j}",)
         if len(args) == 0:
-            raise Exception('too few cases')
+            raise TypeError(
+                "qry.case() takes at least one args or cond argument (0 given)"
+            )
         elif len(args) == 1 and len(args[0]) < 35:
             cls = f"\n    ,case when {args[0]} else {els} end as {col}"
         else:
-            cls = self._args2str(args,'\n        when ')
+            cls = self._args2str(args, "\n        when ")
             cls = (
                 "\n    ,case"
                 f"\n        when {cls}"
@@ -271,12 +286,12 @@ class _Qry:
                 f"\n    end as {col}"
             )
         if _._select is None:
-            _._select = '*' + cls
+            _._select = "*" + cls
         else:
             _._select = _._select + cls
         return _
 
-    def from_(self,from_):
+    def from_(self, from_):
         """
         Add the from clause to query. Alternative to simply specifying table
         name as the only argument of the qry method. Use the qry method.
@@ -301,9 +316,9 @@ class _Qry:
         _._from_ = from_
         return _
 
-    def join(self,tbl,*args,how = 'left'):
+    def join(self, tbl, *args, how="left"):
         """
-        Add a join clause to query. 
+        Add a join clause to query.
         Calling this method multiple times would add multiple clauses.
 
         Parameters
@@ -339,18 +354,15 @@ class _Qry:
                 and x.id >= z.id+1
         """
         _ = self.__copy__()
-        on = self._args2str(args,'\n    and ')
-        cls = (
-            f'{how} join {tbl}'
-            f'\n    on {on}'
-        )
+        on = self._args2str(args, "\n    and ")
+        cls = f"{how} join {tbl}" f"\n    on {on}"
         if _._join is not None:
-            _._join = _._join + '\n' + cls
+            _._join = _._join + "\n" + cls
         else:
             _._join = cls
         return _
 
-    def where(self,*args):
+    def where(self, *args):
         """
         Add the where clause to query.
 
@@ -378,10 +390,10 @@ class _Qry:
                 and y <> 5
         """
         _ = self.__copy__()
-        _._where = self._args2str(args,'\n    and ')
+        _._where = self._args2str(args, "\n    and ")
         return _
 
-    def group_by(self,*args):
+    def group_by(self, *args):
         """
         Add the group by clause to query.
 
@@ -408,10 +420,10 @@ class _Qry:
             group by a,b
         """
         _ = self.__copy__()
-        _._group_by = self._args2str(args,',')
+        _._group_by = self._args2str(args, ",")
         return _
 
-    def having(self,*args):
+    def having(self, *args):
         """
         Add the having clause to query.
 
@@ -436,10 +448,10 @@ class _Qry:
             having count(1)>5
         """
         _ = self.__copy__()
-        _._having = self._args2str(args,'\n    and ')
+        _._having = self._args2str(args, "\n    and ")
         return _
 
-    def order_by(self,*args):
+    def order_by(self, *args):
         """
         Add the order by clause to query.
 
@@ -465,12 +477,12 @@ class _Qry:
             order by a,n desc
         """
         _ = self.__copy__()
-        _._order_by = self._args2str(args,',')
+        _._order_by = self._args2str(args, ",")
         return _
 
-    def sql(self,sql):
+    def sql(self, sql):
         """
-        Replace entire query by specified sql. 
+        Replace entire query by specified sql.
         This allows arbituary advanced sql to be incorporated into framework.
 
         Parameters
@@ -494,7 +506,7 @@ class _Qry:
         _._sql = sql
         return _
 
-    def _make_cls(self,key,load,na = ''):
+    def _make_cls(self, key, load, na=""):
         """Add keyword to clause payload"""
         return f"{key}{load}" if load is not None else na
 
@@ -503,21 +515,21 @@ class _Qry:
         if self._sql is not None:
             self._qry = self._sql
         else:
-            select = self._make_cls('select ',self._select,'select *')
-            from_ = self._make_cls('from ',self._from_,'from test')
-            join = self._make_cls('\n',self._join)
-            where = self._make_cls('\nwhere ',self._where)
-            group_by = self._make_cls('\ngroup by ',self._group_by)
-            having = self._make_cls('\nhaving ',self._having)
-            order_by = self._make_cls('\norder by ',self._order_by)
+            select = self._make_cls("select ", self._select, "select *")
+            from_ = self._make_cls("from ", self._from_, "from test")
+            join = self._make_cls("\n", self._join)
+            where = self._make_cls("\nwhere ", self._where)
+            group_by = self._make_cls("\ngroup by ", self._group_by)
+            having = self._make_cls("\nhaving ", self._having)
+            order_by = self._make_cls("\norder by ", self._order_by)
             self._qry = (
-                select 
-                + (' ' if select == 'select *' else '\n')
-                + from_ 
+                select
+                + (" " if select == "select *" else "\n")
+                + from_
                 + join
-                + where 
-                + group_by 
-                + having 
+                + where
+                + group_by
+                + having
                 + order_by
             )
 
@@ -537,7 +549,7 @@ class _Qry:
         self._make_qry()
         print(self)
 
-    def run(self,sql = None,*args,**kwargs):
+    def run(self, sql=None, *args, **kwargs):
         """
         Run the underlying query directly, without using it to make summary
         queries.
@@ -559,7 +571,7 @@ class _Qry:
         --------
         >>> import pandas as pd
         >>> from dw import lt
-        >>> 
+        >>>
         >>> tbl = pd.DataFrame({'col1': [1, 2], 'col2': ['a', 'b']})
         >>> lt.drop('test')
         >>> lt.create('test',{'col1':'int','col2':'text'})
@@ -570,16 +582,12 @@ class _Qry:
         """
         self._make_qry()
         if sql is not None:
-            _ = self._qry.replace('\n','\n    ')
-            _ = (
-                "with x as (\n"
-                f"    {_}\n"
-                ")"
-            )
+            _ = self._qry.replace("\n", "\n    ")
+            _ = "with x as (\n" f"    {_}\n" ")"
             qry = f"{_}\n{sql}"
         else:
             qry = self._qry
-        return self._ops.run(qry,*args,**kwargs)
+        return self._ops.run(qry, *args, **kwargs)
 
     from dwopt._sqls.base import head
     from dwopt._sqls.base import top
@@ -590,16 +598,19 @@ class _Qry:
     from dwopt._sqls.base import valc
     from dwopt._sqls.base import hash
 
+
 class PgQry(_Qry):
     pass
+
 
 class LtQry(_Qry):
     pass
 
+
 class OcQry(_Qry):
     def _make_qry(self):
         super()._make_qry()
-        self._qry = self._qry.replace('select','select /*+PARALLEL (4)*/')
+        self._qry = self._qry.replace("select", "select /*+PARALLEL (4)*/")
 
     from dwopt._sqls.oc import head
     from dwopt._sqls.oc import top

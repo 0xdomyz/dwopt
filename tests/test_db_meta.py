@@ -29,7 +29,7 @@ group by owner,table_name
 """
     act = db.list_tables()
     exp = db.run(sql)
-    assert_frame_equal(act,exp)
+    assert_frame_equal(act, exp)
 
 
 def test_db_meta_table_cols(db_df):
@@ -41,7 +41,7 @@ from information_schema.columns
 where table_schema = 'public'
 and table_name = 'test'
 """
-        act = db.table_cols('public.test')
+        act = db.table_cols("public.test")
     elif isinstance(db, Lt):
         return True
     elif isinstance(db, Oc):
@@ -51,9 +51,9 @@ from all_tab_columns
 where owner = 'test_schema'
 and table_name = 'test'
 """
-        act = db.table_cols('test_schema.test')
+        act = db.table_cols("test_schema.test")
     exp = db.run(sql)
-    assert_frame_equal(act,exp)
+    assert_frame_equal(act, exp)
 
 
 def test_db_meta_table_sizes(db_df):
@@ -72,7 +72,7 @@ group by tablespace_name,segment_type,segment_name
 """
     act = db.table_sizes()
     exp = db.run(sql)
-    assert_frame_equal(act,exp)
+    assert_frame_equal(act, exp)
 
 
 def test_db_meta_list_cons(db_df):
@@ -87,5 +87,4 @@ select * from information_schema.constraint_table_usage
         return True
     act = db.list_cons()
     exp = db.run(sql)
-    assert_frame_equal(act,exp)
-
+    assert_frame_equal(act, exp)
