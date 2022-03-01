@@ -1,4 +1,5 @@
-#db method
+# db method
+
 
 def list_tables(self):
     sql = (
@@ -10,8 +11,9 @@ def list_tables(self):
     )
     return self.run(sql)
 
-def table_cols(self,sch_tbl_nme):
-    sch,tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
+
+def table_cols(self, sch_tbl_nme):
+    sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
     sql = (
         "select column_name, data_type from information_schema.columns"
         f"\nwhere table_schema = '{sch}' "
@@ -19,10 +21,10 @@ def table_cols(self,sch_tbl_nme):
     )
     return self.run(sql)
 
+
 def list_cons(self):
-    sql = 'SELECT * FROM information_schema.constraint_table_usage'
+    sql = "SELECT * FROM information_schema.constraint_table_usage"
     return self.run(sql)
 
-#qry method
 
-
+# qry method

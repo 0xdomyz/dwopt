@@ -35,6 +35,8 @@ API Reference
 
 :doc:`The Query Class <qry>`
 
+    :ref:`qry-build-framework`
+
     :ref:`qry-cls-mtd`:
         * :meth:`dwopt._qry._Qry.select`
         * :meth:`dwopt._qry._Qry.case`

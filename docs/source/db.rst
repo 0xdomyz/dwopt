@@ -9,7 +9,8 @@ The Database Operator Class
 The operation methods
 ---------------------
 
-List of operation methods:
+Include the ``run`` method which is the core of the package,
+and various convenience wrapers for common DDL and DML statements:
 
 * :meth:`dwopt.db._Db.run`
 * :meth:`dwopt.db._Db.create`
@@ -39,7 +40,7 @@ The query method
 The metadata methods
 --------------------
 
-List of metadata methods:
+Various convenience wrapers for common metadata statements:
 
 * :meth:`dwopt.db._Db.list_tables`
 * :meth:`dwopt.db._Db.table_cols`

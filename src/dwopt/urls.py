@@ -4,37 +4,52 @@ from pathlib import Path
 from configparser import ConfigParser
 import sqlalchemy
 import logging
+import base64
 
 _logger = logging.getLogger(__name__)
-_CONFIG_PTH = Path.home() / 'dwopt'
-_KEYRING_SERV_ID = f"{Path(__file__).parent.resolve().as_posix()}"
+_CONFIG_PTH = Path.home() / ".dwopt"
+_KEYRING_SERV_ID = Path(__file__).parent.resolve().as_posix()
 
-def save_url(db_nme, url, method = 'keyring'):
+
+def save_url(db_nme, url, method="keyring"):
     """
-    Save database engine url to system in one of 3 methods: 
-    keyring, environment variable, and config file.
+    Save encoded database engine url to either
+    system keyring or a config file. The package can also read a
+    manually set environment variable storing the raw url.
     See examples for quick-start.
+
+    On package import, default url are taken firstly from keyring if available,
+    then the config file if available, then the environment variable
+    if available, lastly a set of hard-coded dummy urls.
 
     A `sqlalchemy engine url <https://docs.sqlalchemy.org/en/14/core/
     engines.html#database-urls>`_
     combines the user name, password, database names, etc
     into a single string.
 
-    The system keyring service is accessed via the
-    `keyring <https://pypi.org/project/keyring/>`_
-    package. The service id is the full path to the dwopt package files.
-    The service on Windows is the Windows Credential Manager.
+    *Details on credential locations:*
 
-    The environment variables are made with the form ``dwopt_{db_nme}``.
+    * The system keyring service is accessed via the
+      `keyring <https://pypi.org/project/keyring/>`_
+      package. The service on Windows is the Windows Credential Manager.
+      The service id is the full path to the dwopt package files.
+      For example: ``E:\\python\\python3.9\\Lib\\site-packages\\dwopt``.
+      The user name will be either ``pg``, ``lt``, or ``oc``.
+      The url will be encoded before saving.
 
-    The config file is created with name .dwopt on the system HOME directory.
-    There will be a url section on the config file, with option names being
-    the database names.
+    * The config file is created with name ``.dwopt``
+      on the system ``HOME`` directory.
+      There will be a url section on the config file, with option names being
+      the database names. The url will be encoded before saving.
 
-    On package import, default url are taken fristly from keyring if available,
-    then environment variable if available, then the config file if available,
-    lastly a set of hard-coded dummy urls that are the same as the ones shown
-    in the examples section.
+    * The environment variables should be manually made with the names
+      ``dwopt_pg``, ``dwopt_lt`` or ``dwopt_oc``, and the value being
+      the raw url string.
+
+    Base 64 encoding is done to prevent raw password being stored on files.
+    User could rewrite the ``dwopt.urls._encode`` and the
+    ``dwopt.urls._decode`` functions to implement a
+    sophiticated encryption algorithm.
 
     Parameters
     ----------
@@ -44,7 +59,7 @@ def save_url(db_nme, url, method = 'keyring'):
     url : str
         Sqlalchemy engine url.
     method: str
-        Method used to save, either 'keyring', 'environ' or 'config'.
+        Method used to save, either 'keyring', or 'config'.
         Default 'keyring'.
 
     Returns
@@ -54,82 +69,99 @@ def save_url(db_nme, url, method = 'keyring'):
 
     Examples
     --------
-
     Save connection urls in various methods for various databases.
+    Also manually create following environment variable
+    ``variable = value`` pair: ``dwopt_lt = sqlite:///:memory:``.
 
     >>> import dwopt
-    >>> dwopt.save_url('pg'
-    ...     ,'postgresql://scott:tiger@localhost/mydatabase')
+    >>> dwopt.save_url('pg', 'postgresql://scott2:tiger@localhost/mydatabase')
         'Saved pg url to keyring'
-    >>> dwopt.save_url('sqlite','sqlite://','environ')
-        'Saved lt url to environ'
-    >>> dwopt.save_url('oracle','oracle://scott:tiger@tnsname','config')
+    >>> dwopt.save_url('oc', 'oracle://scott2:tiger@tnsname', 'config')
         'Saved oc url to config'
 
-    Exit and re-enter python for it to take effect.
+    Exit and re-enter python for changes to take effect.
 
     >>> from dwopt import pg, lt, oc
     >>> pg.run('select * from test')
     >>> lt.list_tables()
     >>> oc.qry('dual').head()
     """
-    if method == 'keyring':
+    url = _encode(url)
+    if method == "keyring":
         keyring.set_password(_KEYRING_SERV_ID, db_nme, url)
-    elif method == 'environ':
-        os.environ[f"dwopt_{db_nme}"] = url
-    elif method == 'config':
+    elif method == "config":
         cfg = ConfigParser()
         cfg.read(_CONFIG_PTH)
-        if not cfg.has_section('url'):
-            cfg.add_section('url')
-        cfg.set('url', db_nme, url)
-        with open(_CONFIG_PTH,'w') as f:
+        if not cfg.has_section("url"):
+            cfg.add_section("url")
+        cfg.set("url", db_nme, url)
+        with open(_CONFIG_PTH, "w") as f:
             cfg.write(f)
     else:
-        raise Exception('Invalid method')
+        raise ValueError("Invalid method, either 'keyring', or 'config'")
     return f"Saved {db_nme} url to {method}"
 
+
 def _get_url(db_nme):
-    """Get url if possible, else dummy url."""
+    """Get url if available, else dummy url."""
     url = None
 
     try:
-        url = keyring.get_password(_KEYRING_SERV_ID, db_nme)
+        url = _decode(keyring.get_password(_KEYRING_SERV_ID, db_nme))
     except Exception as e:
         _logger.warning(e)
     if url is not None:
-        return url
-
-    url = os.environ.get(f"dwopt_{db_nme}")
-    if url is not None:
+        _logger.debug(f"{db_nme} url obtained from keyring")
         return url
 
     cfg = ConfigParser()
     cfg.read(_CONFIG_PTH)
-    if cfg.has_option('url',db_nme):
-        url = cfg.get('url',db_nme)
+    if cfg.has_option("url", db_nme):
+        url = _decode(cfg.get("url", db_nme))
     if url is not None:
+        _logger.debug(f"{db_nme} url obtained from config")
         return url
 
-    if db_nme == 'pg':
-        url = 'postgresql://scott:tiger@localhost/mydatabase'
-    elif db_nme == 'lt':
-        url = 'sqlite://'
-    elif db_nme == 'oc':
-        url = 'oracle://scott:tiger@tnsname'
+    url = os.environ.get(f"dwopt_{db_nme}")
+    if url is not None:
+        _logger.debug(f"{db_nme} url obtained from environ")
+        return url
+
+    if db_nme == "pg":
+        url = "postgresql://scott:tiger@localhost/mydatabase"
+    elif db_nme == "lt":
+        url = "sqlite://"
+    elif db_nme == "oc":
+        url = "oracle://scott:tiger@tnsname"
     else:
-        raise Exception("Invalid db_nme")
+        raise ValueError("Invalid db_nme, either 'pg', 'lt' or 'oc'")
+    _logger.debug(f"{db_nme} url obtained from hardcoded dummy")
     return url
+
+
+def _encode(x):
+    if x is not None:
+        return base64.b64encode(x.encode("UTF-8")).decode("UTF-8")
+
+
+def _decode(x):
+    if x is not None:
+        return base64.b64decode(x.encode("UTF-8")).decode("UTF-8")
+
 
 def make_eng(url):
     """
-    Make database connection engine.
+    Make database connection engine, which can be used to instantiate
+    the database opeartor classes.
+
+    Engine object best to be created only once per application. Therefore
+    this function is provided to create engine outside of the database
+    operator class.
 
     A `sqlalchemy engine url <https://docs.sqlalchemy.org/en/14/
     core/engines.html#database-urls>`_
     combines the user name, password, database names, etc
     into a single string.
-    Engine object best to be created only once per application.
 
     Parameters
     ----------
@@ -139,8 +171,20 @@ def make_eng(url):
     Returns
     -------
     sqlalchemy engine
+
+    Examples
+    --------
+    Instantiate and use a database operator object.
+
+    >>> from dwopt import make_eng, Pg
+    >>> url = "postgresql://scott:tiger@localhost/mydatabase"
+    >>> pg_eng = make_eng(url)
+    >>> pg = Pg(pg_eng)
+    >>> pg.run('select count(1) from test')
+        42
     """
     return sqlalchemy.create_engine(url)
 
-def make_meta(eng,schema):
+
+def make_meta(eng, schema):
     pass
