@@ -4,11 +4,11 @@ API Reference
 .. toctree::
    :hidden:
 
-   urls.rst
+   set_up.rst
    db.rst
    qry.rst
 
-:doc:`The Set-up functions <urls>`
+:doc:`The Set-up functions <set_up>`
 
         * :func:`dwopt.save_url`
         * :func:`dwopt.make_eng`
