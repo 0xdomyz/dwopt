@@ -50,7 +50,7 @@ def test_db_opt_create(db_df):
             },
         )
     elif isinstance(db, Oc):
-        raise Exception("Not implemented.")
+        raise NotImplementedError
 
     act = db.run("select * from test2").columns.tolist()
     exp = db.run("select * from test").columns.tolist()
@@ -66,7 +66,7 @@ def test_db_opt_add_pkey(db_df):
     elif isinstance(db, Lt):
         pass
     elif isinstance(db, Oc):
-        raise Exception("Not implemented.")
+        raise NotImplementedError
 
 
 def test_db_opt_drop(db_df):
