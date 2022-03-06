@@ -1,3 +1,5 @@
+import pandas as pd
+
 # db method
 
 
@@ -194,9 +196,13 @@ def top(self):
         col2    10
         Name: 0, dtype: int64
     """
-    return self.run("select * from x limit 1").iloc[
-        0,
-    ]
+    res = self.run("select * from x limit 1")
+    if res.empty:
+        return pd.Series(index = res.columns)
+    else:
+        return res.iloc[
+            0,
+        ]
 
 
 def cols(self):
