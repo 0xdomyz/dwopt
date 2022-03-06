@@ -298,7 +298,19 @@ class _Db:
 
     def write(self, tbl, tbl_nme):
         """
-        Make and run a insert statement. Example sql code:
+        Make and run a insert many statement. Example sql code:
+
+        Parameters
+        ----------
+        tbl : pandas.DataFrame
+            Payload Dataframe with data to insert.
+        tbl_nme : str
+            Name of the database table to insert into.
+
+        Notes
+        -----
+
+        **Sql used**
 
         .. code-block:: sql
 
@@ -315,23 +327,33 @@ class _Db:
                 ...
             }
 
-        Parameters
-        ----------
-        tbl : pandas.DataFrame
-            Payload Dataframe with data to insert.
-        tbl_nme : str
-            Name of the database table to insert into.
+        **Datetime**
 
-        Notes
-        -----
+        Datetime data type columns are converted into str before insertion.
+        The ``NaT`` objects on Datatime columns will be converted into None before
+        insertion.
 
-        *Datetime*
+        **Reversibility**
 
-        Datetime objects are converted into str before inserting.
+        When reading table from databases, Sqlalchemy returns date and datetime columns
+        as str, use ``datetime`` and ``pandas`` package to convert back to
+        python datetime data types.
 
-        *Null values*
+        .. code-block:: python
 
-        Behaviour with null values are not tested for current version.
+            from dwopt import make_test_tbl
+            import pandas as pd
+            import datetime
+            from pandas.testing import assert_frame_equal
+
+            lt, df = make_test_tbl('lt', 'test')
+            tbl = lt.qry('test').run().assign(
+                date = lambda x:x["date"].apply(lambda x:
+                    datetime.date.fromisoformat(x) if x else None
+                ),
+                time = lambda x:pd.to_datetime(x.time)
+            )
+            assert_frame_equal(tbl, df)
 
         Examples
         --------
@@ -346,16 +368,17 @@ class _Db:
         >>> lt.create('test',{'col1':'int','col2':'text'})
         >>> lt.write(tbl,'test')
         """
-        _ = len(tbl)
-        _logger.debug(f"writing to {tbl_nme}, len: {_}")
-        if _ == 0:
+        L = len(tbl)
+        _logger.debug(f"writing to {tbl_nme}, len: {L}")
+        if L == 0:
             return
         tbl = tbl.copy()
         cols = tbl.columns.tolist()
-        for i in cols:
-            if np.issubdtype(tbl[i].dtype, np.datetime64):
-                tbl[i] = tbl[i].astype(str)
-                logging.debug(f"converted col {i} to str")
+        for col in cols:
+            if np.issubdtype(tbl[col].dtype, np.datetime64):
+                idx = tbl[col].isna()
+                tbl[col] = tbl[col].astype(str)
+                tbl.loc[idx,col] = None
         _ = ",".join(f":{i}" for i in cols)
         sql = f"insert into {tbl_nme} ({','.join(cols)})" f" values ({_})"
         self.run(sql, args=tbl.to_dict("records"))
@@ -372,11 +395,24 @@ class _Db:
            key columns as judge of duplication.
         3. Make insert statement on the non-duplicating payload data.
 
-        Example sql code:
+        Parameters
+        ----------
+        tbl : pandas.DataFrame
+            Payload Dataframe with data to insert.
+        tbl_nme : str
+            Name of the database table to insert into.
+        pkey : [str]
+            Iterable of column name str.
+        where : str
+            where clause in str form. The ``where`` keyword is not needed.
+
+        Notes
+        --------
+        **Sql used**:
 
         .. code-block:: sql
 
-            select * from tbl_nme where where_clause;
+            select * from tbl_nme where :where_clause;
 
             insert into tbl_nme (col1, col2, ...)
             values (:col1, :col2, ...)
@@ -390,17 +426,6 @@ class _Db:
                 ,['col1' : data3, 'col2' : data4, ...]
                 ...
             }
-
-        Parameters
-        ----------
-        tbl : pandas.DataFrame
-            Payload Dataframe with data to insert.
-        tbl_nme : str
-            Name of the database table to insert into.
-        pkey : [str]
-            Iterable of column name str.
-        where : str
-            where clause in str form. The ``where`` keyword is not needed.
 
         Examples
         --------
