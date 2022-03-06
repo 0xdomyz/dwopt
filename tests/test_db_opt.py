@@ -1,6 +1,7 @@
 from pandas.testing import assert_frame_equal
-from dwopt import Pg, Lt, Oc
-
+from dwopt import Pg, Lt, Oc, make_test_tbl
+import pandas as pd
+import datetime
 
 def test_db_opt_run(db_df):
     db, df = db_df
@@ -84,6 +85,17 @@ def test_db_opt_write(db_df):
     act = db.run("select * from test order by id")
     exp = db.run("select * from test2 order by id")
     assert_frame_equal(act, exp)
+
+
+def test_db_opt_write_reverse():
+    lt, df = make_test_tbl('lt', 'test')
+    tbl = lt.qry('test').run().assign(
+        date = lambda x:x["date"].apply(lambda x:
+            datetime.date.fromisoformat(x) if x else None
+        ),
+        time = lambda x:pd.to_datetime(x.time)
+    )
+    assert_frame_equal(tbl, df)
 
 
 def test_db_opt_write_nodup(db_df):
