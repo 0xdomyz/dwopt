@@ -12,6 +12,7 @@ API Reference
 
         * :func:`dwopt.save_url`
         * :func:`dwopt.make_eng`
+        * :func:`dwopt.make_test_tbl`
 
 :doc:`The Database Operator Class <db>`
 
