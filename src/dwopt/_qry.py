@@ -551,8 +551,10 @@ class _Qry:
 
     def run(self, sql=None, *args, **kwargs):
         """
-        Run the underlying query directly, without using it to make summary
-        queries.
+        Run the underlying query directly.
+
+        Primary usage of the query obejct is to make and run summary queries, instead
+        of using the operation methods.
 
         Parameters
         ----------

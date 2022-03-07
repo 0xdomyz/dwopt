@@ -1,6 +1,14 @@
 The Database Operator Class
 ===========================
 
+Database operators provide access to DDL/DML statements, metadata queries, and
+the relevant query objects. Categories of methods:
+
+* :ref:`db-ops-mtd`
+* :ref:`db-qry-mtd`
+* :ref:`db-meta-mtd`
+
+
 .. autoclass:: dwopt.db._Db
 
 
@@ -12,12 +20,15 @@ The operation methods
 Include the ``run`` method which is the core of the package,
 and various convenience wrapers for common DDL and DML statements:
 
-* :meth:`dwopt.db._Db.run`
-* :meth:`dwopt.db._Db.create`
-* :meth:`dwopt.db._Db.add_pkey`
-* :meth:`dwopt.db._Db.drop`
-* :meth:`dwopt.db._Db.write`
-* :meth:`dwopt.db._Db.write_nodup`
+.. autosummary::
+   :nosignatures:
+
+   dwopt.db._Db.run
+   dwopt.db._Db.create
+   dwopt.db._Db.add_pkey
+   dwopt.db._Db.drop
+   dwopt.db._Db.write
+   dwopt.db._Db.write_nodup
 
 .. automethod:: dwopt.db._Db.run
 .. automethod:: dwopt.db._Db.create
@@ -42,10 +53,13 @@ The metadata methods
 
 Various convenience wrapers for common metadata statements:
 
-* :meth:`dwopt.db._Db.list_tables`
-* :meth:`dwopt.db._Db.table_cols`
-* :meth:`dwopt.db._Db.table_sizes`
-* :meth:`dwopt.db._Db.list_cons`
+.. autosummary::
+   :nosignatures:
+
+   dwopt.db._Db.list_tables
+   dwopt.db._Db.table_cols
+   dwopt.db._Db.table_sizes
+   dwopt.db._Db.list_cons
 
 .. automethod:: dwopt.db._Db.list_tables
 .. automethod:: dwopt.db._Db.table_cols

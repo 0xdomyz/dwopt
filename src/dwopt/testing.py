@@ -91,8 +91,11 @@ def make_test_tbl(db, tbl_nme, n=10000):
     >>> make_test_tbl(lt, 'test')
 
     >>> from dwopt import make_test_tbl
-    >>> lt, _ = make_test_tbl('lt', 'test')
+    >>> lt, df = make_test_tbl('lt', 'test', 999)
     >>> lt.qry('test').len()
+        999
+    >>> len(df)
+        999
     """
     if isinstance(db, str):
         if db == "pg":
@@ -133,8 +136,7 @@ def make_test_tbl(db, tbl_nme, n=10000):
         raise NotImplementedError
     else:
         raise ValueError(
-            "Invalid db, either one of database operator objects, or "
-            "one of 'pg', 'lt', or 'oc'"
+            "Invalid db, must be a database operator object (dwopt.db._Db)"
         )
     df = make_test_df(n)
     db.write(df, tbl_nme)

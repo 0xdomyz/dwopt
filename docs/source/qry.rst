@@ -1,6 +1,15 @@
 The Query Class
 ===============
 
+Query objects provide access to sql query building methods and
+pre-built summary queries. See below :ref:`qry-build-framework` for details.
+Categories of methods:
+
+* :ref:`qry-build-framework`
+* :ref:`qry-cls-mtd`
+* :ref:`qry-ops-mtd`
+* :ref:`qry-sum-mtd`
+
 .. autoclass:: dwopt._qry._Qry
 
 
@@ -64,15 +73,18 @@ Can be paired with the operation methods to build and run query.
 However the main usage is to act as pre-processing step of the summary methods.
 See :any:`qry-build-framework` for details.
 
-* :meth:`dwopt._qry._Qry.select`
-* :meth:`dwopt._qry._Qry.case`
-* :meth:`dwopt._qry._Qry.from_`
-* :meth:`dwopt._qry._Qry.join`
-* :meth:`dwopt._qry._Qry.where`
-* :meth:`dwopt._qry._Qry.group_by`
-* :meth:`dwopt._qry._Qry.having`
-* :meth:`dwopt._qry._Qry.order_by`
-* :meth:`dwopt._qry._Qry.sql`
+.. autosummary::
+   :nosignatures:
+
+   dwopt._qry._Qry.select
+   dwopt._qry._Qry.case
+   dwopt._qry._Qry.from_
+   dwopt._qry._Qry.join
+   dwopt._qry._Qry.where
+   dwopt._qry._Qry.group_by
+   dwopt._qry._Qry.having
+   dwopt._qry._Qry.order_by
+   dwopt._qry._Qry.sql
 
 .. automethod:: dwopt._qry._Qry.select
 .. automethod:: dwopt._qry._Qry.case
@@ -94,8 +106,12 @@ Directly operate on the underlying query built by the clause methods.
 These functions does not place the underlying query into a with block,
 which is the behaviour of the summary methods.
 
-* :meth:`dwopt._qry._Qry.print`
-* :meth:`dwopt._qry._Qry.run`
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt._qry._Qry.print
+   dwopt._qry._Qry.run
 
 .. automethod:: dwopt._qry._Qry.print
 .. automethod:: dwopt._qry._Qry.run
@@ -110,14 +126,17 @@ Apply a parameterized pre-built summary query template, to the underlying
 query, to build a complete summary query. Then immediately runs it.
 See :any:`qry-build-framework` for details.
 
-* :meth:`dwopt._qry._Qry.top`
-* :meth:`dwopt._qry._Qry.cols`
-* :meth:`dwopt._qry._Qry.head`
-* :meth:`dwopt._qry._Qry.len`
-* :meth:`dwopt._qry._Qry.dist`
-* :meth:`dwopt._qry._Qry.mimx`
-* :meth:`dwopt._qry._Qry.valc`
-* :meth:`dwopt._qry._Qry.hash`
+.. autosummary::
+   :nosignatures:
+
+   dwopt._qry._Qry.top
+   dwopt._qry._Qry.cols
+   dwopt._qry._Qry.head
+   dwopt._qry._Qry.len
+   dwopt._qry._Qry.dist
+   dwopt._qry._Qry.mimx
+   dwopt._qry._Qry.valc
+   dwopt._qry._Qry.hash
 
 .. automethod:: dwopt._qry._Qry.top
 .. automethod:: dwopt._qry._Qry.cols

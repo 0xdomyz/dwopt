@@ -59,7 +59,6 @@ class _Db:
         42
     >>> pg.qry('test').len()
         42
-
     """
 
     def __init__(self, eng):
@@ -298,7 +297,7 @@ class _Db:
 
     def write(self, tbl, tbl_nme):
         """
-        Make and run a insert many statement. Example sql code:
+        Make and run a insert many statement.
 
         Parameters
         ----------
@@ -384,9 +383,9 @@ class _Db:
         self.run(sql, args=tbl.to_dict("records"))
 
     def write_nodup(self, tbl, tbl_nme, pkey, where=None):
-        """
-        Make and run a insert statement without creating duplicates on
-        the database table. Implemented as below process:
+        """Insert many statement without creating duplicates.
+
+        Implemented as below process:
 
         1. Make and run a select statement with optionally provided
            where clause.

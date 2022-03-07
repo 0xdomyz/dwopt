@@ -12,10 +12,9 @@ _KEYRING_SERV_ID = Path(__file__).parent.resolve().as_posix()
 
 
 def save_url(db_nme, url, method="keyring"):
-    """
-    Save encoded database engine url to either
-    system keyring or a config file. The package can also read a
-    manually set environment variable storing the raw url.
+    """Save encoded database engine url to keyring or config.
+
+    The package can also read a manually set environment variable storing the raw url.
     See examples for quick-start.
 
     On package import, default url are taken firstly from keyring if available,
@@ -47,8 +46,7 @@ def save_url(db_nme, url, method="keyring"):
       the raw url string.
 
     Base 64 encoding is done to prevent raw password being stored on files.
-    User could rewrite the ``dwopt.urls._encode`` and the
-    ``dwopt.urls._decode`` functions to implement a
+    User could rewrite the ``_encode`` and the ``_decode`` functions to implement a
     sophiticated encryption algorithm.
 
     Parameters
@@ -150,13 +148,11 @@ def _decode(x):
 
 
 def make_eng(url):
-    """
-    Make database connection engine, which can be used to instantiate
-    the database opeartor classes.
+    """Make database connection engine.
 
-    Engine object best to be created only once per application. Therefore
-    this function is provided to create engine outside of the database
-    operator class.
+    Use the database connection engine to instantiate the database opeartor class.
+    This function is provided outside of the class because the engine object is
+    best to be created only once per application.
 
     A `sqlalchemy engine url <https://docs.sqlalchemy.org/en/14/
     core/engines.html#database-urls>`_

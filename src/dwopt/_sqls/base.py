@@ -250,9 +250,9 @@ def len(self):
 
 
 def dist(self, *args):
-    """
-    Count number of distinct occurances of data within specified columns,
-    or combination of columns, of the sub query table.
+    """Count number of distinct occurances of data.
+
+    Works on specified columns, or combination of columns, of the sub query table.
 
     Parameters
     ----------
@@ -288,8 +288,7 @@ def dist(self, *args):
 
 
 def mimx(self, col):
-    """
-    Summarise on max and min values of a column for a sub query table.
+    """Fetch maximum and minimum values of a column.
 
     Parameters
     ----------
@@ -319,8 +318,9 @@ def mimx(self, col):
 
 
 def valc(self, group_by, agg=None, order_by=None, n=True):
-    """
-    Value count of a column or combination of columns. A value count is a
+    """Value count of a column or combination of columns.
+    
+    A value count is a
     group by query, with total number of row of each group calculated.
     Also allow custom summary calculation, and custom order by clauses
     to be added.
@@ -383,9 +383,10 @@ def valc(self, group_by, agg=None, order_by=None, n=True):
 
 
 def hash(self, *args):
-    """
-    Calculate a simple configuration of oracle hash to arrive at a indicative
-    has value for a number of columns or all columns of a sub query table.
+    """Calculate a simple oracle hash for table.
+
+    Arrive at a indicative hash value for a number of columns or all columns of
+    a sub query table.
     Hash value is a number or symbol that is calculated from data
     , and is sensitive to any small changes in data. It serves as method to
     detect if any data element in data is changed.
