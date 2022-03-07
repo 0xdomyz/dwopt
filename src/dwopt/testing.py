@@ -8,7 +8,7 @@ _TESTING_LT_URL = "sqlite://"
 _TESTING_OC_URL = ""
 
 
-def make_test_df(n = 10000):
+def make_test_df(n=10000):
     """Make a test dataframe with various data types and missing values.
 
     The ``id`` and the ``amt`` column do not have missing values, the other columns
@@ -18,11 +18,11 @@ def make_test_df(n = 10000):
     ------------
     n: int
         Number of records.
-    
+
     Returns
     --------
     pandas.DataFrame
-    
+
     Examples
     ----------
     >> from dwopt.testing import make_test_df
@@ -35,19 +35,26 @@ def make_test_df(n = 10000):
             "score": [random.uniform(-1, 5) for i in range(n)],
             "amt": random.choices(range(1000), k=n),
             "cat": random.choices(["test", "train"], k=n),
-            "date": [datetime.date.fromisoformat(i) for i in 
-                random.choices(["2022-01-01", "2022-02-02", "2022-03-03"], k=n)],
-            "time": [datetime.datetime.fromisoformat(i) for i in 
-                random.choices([
-                    "2022-01-01 00:19:02.011135",
-                    "2022-02-02 23:00:00.000000",
-                    "2022-03-03 10:19:35.071235"], k=n)
-            ]
+            "date": [
+                datetime.date.fromisoformat(i)
+                for i in random.choices(["2022-01-01", "2022-02-02", "2022-03-03"], k=n)
+            ],
+            "time": [
+                datetime.datetime.fromisoformat(i)
+                for i in random.choices(
+                    [
+                        "2022-01-01 00:19:02.011135",
+                        "2022-02-02 23:00:00.000000",
+                        "2022-03-03 10:19:35.071235",
+                    ],
+                    k=n,
+                )
+            ],
         }
     )
 
-    for col in ['score','cat','date','time']:
-        df.loc[random.choices(range(n), k=int(n/20)), col] = None
+    for col in ["score", "cat", "date", "time"]:
+        df.loc[random.choices(range(n), k=int(n / 20)), col] = None
 
     return df
 
@@ -64,7 +71,7 @@ def make_test_tbl(db, tbl_nme, n=10000):
         Test table name.
     n: int
         Number of records.
-    
+
     Returns
     ----------
     (Dwopt._Db, pandas.DataFrame):
@@ -88,11 +95,11 @@ def make_test_tbl(db, tbl_nme, n=10000):
     >>> lt.qry('test').len()
     """
     if isinstance(db, str):
-        if db == 'pg':
+        if db == "pg":
             db = Pg(make_eng(_TESTING_PG_URL))
-        elif db == 'lt':
+        elif db == "lt":
             db = Lt(make_eng(_TESTING_LT_URL))
-        elif db == 'pg':
+        elif db == "pg":
             db = Oc(make_eng(_TESTING_OC_URL))
         else:
             raise ValueError("Invalid db str, use one of 'pg', 'lt', or 'oc'")
@@ -107,7 +114,7 @@ def make_test_tbl(db, tbl_nme, n=10000):
                 "amt": "bigint",
                 "cat": "varchar(20)",
                 "date": "date",
-                "time": "timestamp"
+                "time": "timestamp",
             },
         )
     elif isinstance(db, Lt):
@@ -119,14 +126,16 @@ def make_test_tbl(db, tbl_nme, n=10000):
                 "amt": "integer",
                 "cat": "text",
                 "date": "text",
-                "time": "text"
+                "time": "text",
             },
         )
     elif isinstance(db, Oc):
         raise NotImplementedError
     else:
-        raise ValueError("Invalid db, either one of database operator objects, or "
-            "one of 'pg', 'lt', or 'oc'")
+        raise ValueError(
+            "Invalid db, either one of database operator objects, or "
+            "one of 'pg', 'lt', or 'oc'"
+        )
     df = make_test_df(n)
     db.write(df, tbl_nme)
     return db, df

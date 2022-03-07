@@ -378,7 +378,7 @@ class _Db:
             if np.issubdtype(tbl[col].dtype, np.datetime64):
                 idx = tbl[col].isna()
                 tbl[col] = tbl[col].astype(str)
-                tbl.loc[idx,col] = None
+                tbl.loc[idx, col] = None
         _ = ",".join(f":{i}" for i in cols)
         sql = f"insert into {tbl_nme} ({','.join(cols)})" f" values ({_})"
         self.run(sql, args=tbl.to_dict("records"))

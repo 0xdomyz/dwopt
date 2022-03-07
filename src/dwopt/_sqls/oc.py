@@ -46,7 +46,7 @@ def head(self):
 def top(self):
     res = self.run("select * from x where rownum<=1")
     if res.empty:
-        return pd.Series(index = res.columns)
+        return pd.Series(index=res.columns)
     else:
         return res.iloc[
             0,
