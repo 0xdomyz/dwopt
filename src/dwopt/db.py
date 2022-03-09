@@ -12,9 +12,6 @@ class _Db:
     """
     The base database operator class.
 
-    All methods on this base class and all methods on it's child classes
-    are documented here on the base class for convenience.
-
     User should not instantiated the base class directly.
     Instead instantiate the child classes tailored for the intended database,
     or use the pre-instantiated objects on package import.
@@ -23,42 +20,46 @@ class _Db:
     Parameters
     ----------
     eng : sqlalchemy engine
-        Database connection engine to be used.
+        Database connection engine to be used. Use the :func:`dwopt.make_eng` function
+        to make engine.
 
     Notes
     -----
-    The child classes:
+    The child classes and the pre-instantiated objects:
 
-    * ``dwopt.Pg(eng)``: Relevant for the Postgre database.
-    * ``dwopt.Lt(eng)``: Relevant for the Sqlite database.
-    * ``dwopt.Oc(eng)``: Relevant for the Oracle database.
-
-    The pre-instantiated objects:
-
-    * ``dwopt.pg``: Relevant for the Postgre database.
-    * ``dwopt.lt``: Relevant for the Sqlite database.
-    * ``dwopt.oc``: Relevant for the Oracle database.
+    ========== =================== ========================
+    Database    Child class        Pre-instantiated object
+    ========== =================== ========================
+    Postgre     ``dwopt.Pg(eng)``   ``dwopt.pg``
+    Sqlite      ``dwopt.Lt(eng)``   ``dwopt.lt``
+    Oracle      ``dwopt.Oc(eng)``   ``dwopt.oc``
+    ========== =================== ========================
 
     Pre-instantiation uses the default credentials set-up prior by the user
-    via the ``dwopt.save_url`` function.
+    via the :func:`dwopt.save_url` function.
 
     Examples
     --------
-    Instantiate and use a postgre databse operator object.
+    Instantiate and use a Postgre database operator object.
 
     >>> from dwopt import make_eng, Pg
-    >>> url = "postgresql://scott:tiger@localhost/mydatabase"
+    >>> url = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
     >>> pg = Pg(make_eng(url))
     >>> pg.run('select count(1) from test')
-        42
+        count(1)
+    0         42
 
-    Use the pre-instantiated sqlite database operator object.
+    Use the pre-instantiated Sqlite database operator object.
 
-    >>> from dwopt import pg
+    >>> from dwopt import lt
     >>> pg.run('select count(1) from test')
-        42
-    >>> pg.qry('test').len()
-        42
+        count(1)
+    0         42
+
+    Note: use the :func:`dwopt.make_test_tbl` function to make testing data for above.
+
+    >>> from dwopt import lt, make_test_tbl
+    >>> _ = make_test_tbl(lt, 'test', 42)
     """
 
     def __init__(self, eng):
@@ -95,10 +96,11 @@ class _Db:
         ----------
         sql : str, optional
             The sql statement to run. Only 1 statement is allowed.
-        args : dict, optional
-            Dictionary of argument name str to argument str mappings.
-            These arguments are passed to the database, to function as data
-            for the argument names.
+        args : dict, or [dict], optional
+            Dictionary or list of dictionary of argument name str to argument
+            data object mappings.
+            These argument data objects are passed via sqlalchemy to the database,
+            to function as data for the argument names.
             See the notes and the examples section for details.
         pth : str, optional
             Path to sql script, ignored if the sql parameter is not None.
@@ -139,8 +141,7 @@ class _Db:
         The args parameter method of passing arguments is less prone
         to unintended sql injection, while the mods paramter method of
         text replacement gives much more flexibility when it comes to
-        programatically generate sql statment. For example when database
-        does not support argument passing on DDL/DML statements.
+        programatically generate sql statment.
 
         Examples
         --------
@@ -211,15 +212,7 @@ class _Db:
 
     def create(self, tbl_nme, dtypes=None, **kwargs):
         """
-        Make and run a create table statment. Example sql code:
-
-        .. code-block:: sql
-
-            create table tbl_nme(
-                ,col1 dtype1
-                ,col2 dtype2
-                ...
-            )
+        Make and run a create table statment.
 
         Parameters
         ----------
@@ -236,27 +229,40 @@ class _Db:
         Notes
         -----
 
-        *Datatypes*
+        **Statement used**
 
-        Datatypes varies across databses
-        (`sqlite type <https://www.sqlite.org/datatype3.html>`_,
-        `postgre type <https://www.postgresql.org/docs/current/
+        .. code-block:: sql
+
+            create table tbl_nme(
+                ,col1 dtype1
+                ,col2 dtype2
+                ...
+            )
+
+        **Datatypes**
+
+        Datatypes vary across databses
+        (`postgre type <https://www.postgresql.org/docs/current/
         datatype.html>`_,
+        `sqlite type <https://www.sqlite.org/datatype3.html>`_,
         `oracle type <https://docs.oracle.com/en/database/oracle/
         oracle-database/21/sqlqr/Data-Types.html>`_),
         common example below:
 
-        ==========  =======  ===========  ============
-        Type        Sqlite   Postgre      Oracle
-        ==========  =======  ===========  ============
-        integer     integer  bigint       number
-        float       real     float8       float
-        string      text     varchar(20)  varchar2(20)
-        datetime    text     timestamp    timestamp
-        date        text     date         date
-        ==========  =======  ===========  ============
+        ========== =========== ======= ============
+        Type       Postgre     Sqlite  Oracle
+        ========== =========== ======= ============
+        integer    bigint      integer number
+        float      float8      real    float
+        string     varchar(20) text    varchar2(20)
+        datetime   timestamp   text    timestamp
+        date       date        text    date
+        ========== =========== ======= ============
 
-        *Other statements*
+        Note `sqlite datetime functions <https://www.sqlite.org/lang_datefunc.html>`_
+        could be used to work with date data types stored as text.
+
+        **Other statements**
 
         The dtypes mappings also allow other sql statements which are
         part of a create statement to be added
@@ -277,13 +283,12 @@ class _Db:
         >>> lt.drop('test')
         >>> lt.create('test'
         ...     ,{
-        ...         'id':'integer'
-        ...         ,'score':'real'
-        ...         ,'amt':'integer'
-        ...         ,'cat':'text'
-        ...         ,'time':'text'
-        ...         ,'constraint df_pk':
-        ...             'primary key (id)'
+        ...         'id': 'integer'
+        ...         ,'score': 'real'
+        ...         ,'amt': 'integer'
+        ...         ,'cat': 'text'
+        ...         ,'time': 'text'
+        ...         ,'constraint df_pk': 'primary key (id)'
         ...     })
         """
         if dtypes is None:
@@ -295,13 +300,16 @@ class _Db:
             cls += f"\n    ,{col} {dtype}"
         self.run(f"create table {tbl_nme}(" f"\n    {cls[6:]}" "\n)")
 
-    def write(self, tbl, tbl_nme):
+    def write(self, df, tbl_nme):
         """
         Make and run a insert many statement.
 
+        This should follow from a :meth:`dwopt.db._Db.create` call which sets up
+        the database table with column names, intended data types, and constraints.
+
         Parameters
         ----------
-        tbl : pandas.DataFrame
+        df : pandas.DataFrame
             Payload Dataframe with data to insert.
         tbl_nme : str
             Name of the database table to insert into.
@@ -309,34 +317,40 @@ class _Db:
         Notes
         -----
 
-        **Sql used**
+        **Statements used**
 
         .. code-block:: sql
 
             insert into tbl_nme (col1, col2, ...)
             values (:col1, :col2, ...)
 
-        With arguments to sql being:
+        With arguments to statement being the Dataframe in dictionary form:
 
         .. code-block:: python
 
-            {
-                ['col1' : data1, 'col2' : data2, ...]
-                ,['col1' : data3, 'col2' : data4, ...]
+            [
+                {'col1' : data1, 'col2' : data2, ...}
+                ,{'col1' : data3, 'col2' : data4, ...}
                 ...
-            }
+            ]
 
         **Datetime**
 
-        Datetime data type columns are converted into str before insertion.
-        The ``NaT`` objects on Datatime columns will be converted into None before
-        insertion.
+        Pandas Datetime64 columns are converted into object columns, and the
+        ``pandas.NaT`` objects are converted into ``None`` before insertion.
+        Consider convert datetime columns to str columns before insertion on sqlite
+        tables.
 
         **Reversibility**
 
-        When reading table from databases, Sqlalchemy returns date and datetime columns
-        as str, use ``datetime`` and ``pandas`` package to convert back to
-        python datetime data types.
+        Below examples use the :func:`dwopt.make_test_tbl` function to make testing
+        python dataframes with various data types,
+        and insert them into databases with relevant data types.
+        Then attempt to read the table back into python to reconcile with the original.
+
+        Sqlite date and datetime columns are read as str columns.
+        Use ``datetime`` and ``pandas`` package to convert back to
+        python date and datetime columns.
 
         .. code-block:: python
 
@@ -347,8 +361,8 @@ class _Db:
 
             lt, df = make_test_tbl('lt', 'test')
             tbl = lt.qry('test').run().assign(
-                date = lambda x:x["date"].apply(lambda x:
-                    datetime.date.fromisoformat(x) if x else None
+                date = lambda x:x["date"].apply(
+                    lambda x:datetime.date.fromisoformat(x) if x else None
                 ),
                 time = lambda x:pd.to_datetime(x.time)
             )
@@ -367,25 +381,23 @@ class _Db:
         >>> lt.create('test',{'col1':'int','col2':'text'})
         >>> lt.write(tbl,'test')
         """
-        L = len(tbl)
+        L = len(df)
         _logger.debug(f"writing to {tbl_nme}, len: {L}")
         if L == 0:
             return
-        tbl = tbl.copy()
-        cols = tbl.columns.tolist()
+        df = df.copy()
+        cols = df.columns.tolist()
         for col in cols:
-            if np.issubdtype(tbl[col].dtype, np.datetime64):
-                idx = tbl[col].isna()
-                tbl[col] = tbl[col].astype(str)
-                tbl.loc[idx, col] = None
+            if np.issubdtype(df[col].dtype, np.datetime64):
+                df[col] = df[col].astype(object).where(~df[col].isna(), None)
         _ = ",".join(f":{i}" for i in cols)
         sql = f"insert into {tbl_nme} ({','.join(cols)})" f" values ({_})"
-        self.run(sql, args=tbl.to_dict("records"))
+        self.run(sql, args=df.to_dict("records"))
 
     def write_nodup(self, tbl, tbl_nme, pkey, where=None):
         """Insert many statement without creating duplicates.
 
-        Implemented as below process:
+        Does below:
 
         1. Make and run a select statement with optionally provided
            where clause.
@@ -405,26 +417,9 @@ class _Db:
         where : str
             where clause in str form. The ``where`` keyword is not needed.
 
-        Notes
+        See also
         --------
-        **Sql used**:
-
-        .. code-block:: sql
-
-            select * from tbl_nme where :where_clause;
-
-            insert into tbl_nme (col1, col2, ...)
-            values (:col1, :col2, ...)
-
-        With arguments to sql being:
-
-        .. code-block:: python
-
-            {
-                ['col1' : data1, 'col2' : data2, ...]
-                ,['col1' : data3, 'col2' : data4, ...]
-                ...
-            }
+        :meth:dwopt.db._Db.write
 
         Examples
         --------
@@ -558,15 +553,18 @@ class _Db:
 
     def qry(self, *args, **kwargs):
         """
-        Make query object. Different database operator object method returns
-        different query object.
+        Make a query object.
+
+        Different database operator object provide different query object,
+        tailored to relevant databases.
+        See the :doc:`query objects <qry>` section for details.
 
         Parameters
         ----------
         *args :
-            Positional arguments of the query object.
+            Positional arguments of the :class:`query class <dwopt._qry._Qry>`.
         **kwargs :
-            keyword arguments of the query object.
+            keyword arguments of the :class:`query class <dwopt._qry._Qry>`.
 
         Returns
         -------

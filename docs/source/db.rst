@@ -1,8 +1,11 @@
-The Database Operator Class
-===========================
+The Database Operator Objects
+=============================
 
-Database operators provide access to DDL/DML statements, metadata queries, and
-the relevant query objects. Categories of methods:
+The database operator objects are the interface to databases and give access to
+the :doc:`query objects <qry>`, which hold the summary query templates.
+
+See below :class:`class description <dwopt.db._Db>` for ways to instantiate.
+Available methods are grouped into 3 catagories as below:
 
 * :ref:`db-ops-mtd`
 * :ref:`db-qry-mtd`
@@ -17,7 +20,8 @@ the relevant query objects. Categories of methods:
 The operation methods
 ---------------------
 
-Include the ``run`` method which is the core of the package,
+Include the :meth:`~dwopt.db._Db.run` method which is the package's most fundamental
+database interface,
 and various convenience wrapers for common DDL and DML statements:
 
 .. autosummary::
@@ -51,7 +55,7 @@ The query method
 The metadata methods
 --------------------
 
-Various convenience wrapers for common metadata statements:
+Various convenience wrapers for common metadata queries:
 
 .. autosummary::
    :nosignatures:

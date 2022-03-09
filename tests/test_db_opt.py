@@ -1,114 +1,142 @@
 from pandas.testing import assert_frame_equal
-from dwopt import Pg, Lt, Oc, make_test_tbl
+from dwopt import Pg, Lt, Oc
 import pandas as pd
 import datetime
+import pytest
 
 
-def test_db_opt_run(db_df):
-    db, df = db_df
-    db.run("select * from test limit 1")
-
-    act = db.run("select * from test limit 1")
-    exp = df.iloc[0:1, :]
-    assert_frame_equal(act, exp)
-
-    act = db.run(
-        "select * from test where score > :score limit 2", args={"score": "0.9"}
-    )
-    exp = df.loc[lambda x: x.score > 0.9, :].reset_index(drop=True).iloc[0:2, :]
-    assert_frame_equal(act, exp)
-
-    act = db.run("select * from test where score > :score limit 2", score=0.9)
-    assert_frame_equal(act, exp)
+def assert_frame_equal_reset_index(a, b):
+    assert_frame_equal(a.reset_index(drop=True), b.reset_index(drop=True))
 
 
-def test_db_opt_create(db_df):
-    db, df = db_df
+def test_db_opt_run(test_tbl):
+    db, df = test_tbl
+
+    if isinstance(db, Lt):
+        exp = df.assign(
+            date=lambda x: x.date.astype(str).where(~x.date.isna(), None),
+            time=lambda x: x.time.astype(str).where(~x.time.isna(), None),
+        ).loc[lambda x: x.id <= 9, :]
+    elif isinstance(db, Pg):
+        exp = df.loc[lambda x: x.id <= 9, :]
+    elif isinstance(db, Oc):
+        exp = df.loc[lambda x: x.id <= 9, :]
+    else:
+        raise ValueError
+
+    act = db.run("select * from test where id <= 9 order by id")
+    assert_frame_equal_reset_index(act, exp)
+
+    act = db.run("select * from test where id <= :id order by id", args={"id": 9})
+    assert_frame_equal_reset_index(act, exp)
+
+    act = db.run("select * from test where id <= :id order by id", mods={"id": 9})
+    assert_frame_equal_reset_index(act, exp)
+
+    act = db.run("select * from test where id <= :id order by id", id=9)
+    assert_frame_equal_reset_index(act, exp)
+
+
+def test_db_opt_create(test_tbl, test_tbl2):
+    db, df = test_tbl
 
     if isinstance(db, Pg):
-        db.drop("test2")
         db.create(
             tbl_nme="test2",
             dtypes={
-                "id": "bigint",
+                "id": "bigint primary key",
                 "score": "float8",
                 "amt": "bigint",
                 "cat": "varchar(20)",
-                "time": "varchar(20)",
-                "constraint df2_pk": "primary key (id)",
+                "date": "date",
+                "time": "timestamp",
             },
         )
     elif isinstance(db, Lt):
-        db.drop("test2")
         db.create(
             tbl_nme="test2",
             dtypes={
-                "id": "integer",
+                "id": "integer primary key",
                 "score": "real",
                 "amt": "integer",
                 "cat": "text",
+                "date": "text",
                 "time": "text",
-                "constraint df2_pk": "primary key (id)",
             },
         )
     elif isinstance(db, Oc):
-        raise NotImplementedError
+        db.create(
+            tbl_nme="test2",
+            dtypes={
+                "id": "number primary key",
+                "score": "float",
+                "amt": "number",
+                "cat": "varchar2(20)",
+                "date": "date",
+                "time": "timestamp",
+            },
+        )
+    else:
+        raise ValueError
 
-    act = db.run("select * from test2").columns.tolist()
-    exp = db.run("select * from test").columns.tolist()
-    assert act == exp
+    db.run("insert into test2 select * from test")
+    act = db.run("select * from test2 order by id")
+    exp = db.run("select * from test order by id")
+    assert_frame_equal_reset_index(act, exp)
 
 
-def test_db_opt_add_pkey(db_df):
-    db, df = db_df
+def test_db_opt_add_pkey(test_tbl, test_tbl2):
+    db, df = test_tbl
     if isinstance(db, Pg):
-        db.drop("test2")
         db.run("create table test2 as select * from test")
         db.add_pkey("test2", "id")
     elif isinstance(db, Lt):
-        pass
+        return True
     elif isinstance(db, Oc):
-        raise NotImplementedError
+        return True
+    else:
+        raise ValueError
 
 
-def test_db_opt_drop(db_df):
-    db, df = db_df
-    db.drop("test2")
+def test_db_opt_drop(test_tbl, test_tbl2):
+    db, df = test_tbl
     db.run("create table test2 as select * from test")
     db.drop("test2")
+    with pytest.raises(Exception) as e_info:
+        db.run("select count(1) from test2")
 
 
-def test_db_opt_write(db_df):
-    db, df = db_df
-    db.drop("test2")
+def test_db_opt_write_nodup(test_tbl, test_tbl2):
+    db, df = test_tbl
     db.run("create table test2 as select * from test where 1=2")
-    db.write(df, "test2")
-    act = db.run("select * from test order by id")
-    exp = db.run("select * from test2 order by id")
-    assert_frame_equal(act, exp)
-
-
-def test_db_opt_write_reverse():
-    lt, df = make_test_tbl("lt", "test")
-    tbl = (
-        lt.qry("test")
-        .run()
-        .assign(
-            date=lambda x: x["date"].apply(
-                lambda x: datetime.date.fromisoformat(x) if x else None
-            ),
-            time=lambda x: pd.to_datetime(x.time),
+    if isinstance(db, Pg):
+        db.write(df, "test2")
+        db.write_nodup(df, "test2", ["id"])
+        tbl = db.run("select * from test2 order by id")
+    elif isinstance(db, Lt):
+        db.write(
+            df.assign(time=lambda x: x.time.astype(str).where(~x.time.isna(), None)),
+            "test2",
         )
-    )
-    assert_frame_equal(tbl, df)
-
-
-def test_db_opt_write_nodup(db_df):
-    db, df = db_df
-    db.drop("test2")
-    db.run("create table test2 as select * from test where 1=2")
-    db.write(df, "test2")
-    db.write_nodup(df, "test2", ["id"])
-    act = db.run("select * from test order by id")
-    exp = db.run("select * from test2 order by id")
-    assert_frame_equal(act, exp)
+        db.write_nodup(
+            df.assign(time=lambda x: x.time.astype(str).where(~x.time.isna(), None)),
+            "test2",
+            ["id"],
+        )
+        tbl = (
+            db.qry("test2")
+            .run()
+            .assign(
+                date=lambda x: x["date"].apply(
+                    lambda x: datetime.date.fromisoformat(x) if x else None
+                ),
+                time=lambda x: pd.to_datetime(x.time),
+            )
+        )
+    elif isinstance(db, Oc):
+        db.write(df, "test2")
+        db.write_nodup(df, "test2", ["id"])
+        tbl = db.run("select * from test2 order by id")
+    else:
+        raise ValueError
+    assert_frame_equal_reset_index(tbl, df)

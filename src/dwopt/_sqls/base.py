@@ -319,7 +319,7 @@ def mimx(self, col):
 
 def valc(self, group_by, agg=None, order_by=None, n=True):
     """Value count of a column or combination of columns.
-    
+
     A value count is a
     group by query, with total number of row of each group calculated.
     Also allow custom summary calculation, and custom order by clauses

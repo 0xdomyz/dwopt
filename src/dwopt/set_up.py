@@ -46,8 +46,8 @@ def save_url(db_nme, url, method="keyring"):
       the raw url string.
 
     Base 64 encoding is done to prevent raw password being stored on files.
-    User could rewrite the ``_encode`` and the ``_decode`` functions to implement a
-    sophiticated encryption algorithm.
+    User could rewrite the ``_encode`` and the ``_decode`` functions to implement
+    custom encryption algorithm.
 
     Parameters
     ----------
@@ -173,7 +173,7 @@ def make_eng(url):
     Instantiate and use a database operator object.
 
     >>> from dwopt import make_eng, Pg
-    >>> url = "postgresql://scott:tiger@localhost/mydatabase"
+    >>> url = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
     >>> pg_eng = make_eng(url)
     >>> pg = Pg(pg_eng)
     >>> pg.run('select count(1) from test')

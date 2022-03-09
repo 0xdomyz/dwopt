@@ -1,9 +1,17 @@
-from pandas.testing import assert_frame_equal, assert_series_equal
+from pandas.testing import assert_frame_equal
 from dwopt import Pg, Lt, Oc
+import dwopt
 
 
-def test_db_meta_list_tables(db_df):
-    db, df = db_df
+def test_db_meta_qry(test_tbl):
+    db, df = test_tbl
+    act = db.qry("test")
+    exp = dwopt._qry._Qry
+    assert isinstance(act, exp)
+
+
+def test_db_meta_list_tables(test_tbl):
+    db, df = test_tbl
     if isinstance(db, Pg):
         sql = """
 select
@@ -32,8 +40,8 @@ group by owner,table_name
     assert_frame_equal(act, exp)
 
 
-def test_db_meta_table_cols(db_df):
-    db, df = db_df
+def test_db_meta_table_cols(test_tbl):
+    db, df = test_tbl
     if isinstance(db, Pg):
         sql = """
 select column_name, data_type
@@ -56,8 +64,8 @@ and table_name = 'test'
     assert_frame_equal(act, exp)
 
 
-def test_db_meta_table_sizes(db_df):
-    db, df = db_df
+def test_db_meta_table_sizes(test_tbl):
+    db, df = test_tbl
     if isinstance(db, Pg):
         return True
     elif isinstance(db, Lt):
@@ -75,8 +83,8 @@ group by tablespace_name,segment_type,segment_name
     assert_frame_equal(act, exp)
 
 
-def test_db_meta_list_cons(db_df):
-    db, df = db_df
+def test_db_meta_list_cons(test_tbl):
+    db, df = test_tbl
     if isinstance(db, Pg):
         sql = """
 select * from information_schema.constraint_table_usage
