@@ -8,22 +8,6 @@ from sqlalchemy.dialects.postgresql import BIGINT
 import logging
 
 _logger = logging.getLogger(__file__)
-
-"""Set up.
-
-Postgre set up::
-
-    psql -U postgres
-    CREATE DATABASE dwopt_test;
-    CREATE USER dwopt_tester WITH PASSWORD '1234';
-    GRANT ALL PRIVILEGES ON DATABASE dwopt_test to dwopt_tester;
-
-Oracel set up:
-
-Install oracle db from
-`link <https://www.oracle.com/database/technologies/xe-downloads.html>`.
-test_schema
-"""
 _TEST_PG_URL = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
 _TEST_LT_URL = "sqlite://"
 _TEST_OC_URL = "oracle://dwopt_tester:1234@localhost/dwopt_test"
@@ -209,12 +193,14 @@ def make_test_tbl(db, tbl_nme, n=10000):
     time   timestamp   text    timestamp
     ====== =========== ======= ============
 
-    These datatypes are enforced via relevant
+    These datatypes are implemented via respective
     `Sqlalchemy datatypes <https://docs.sqlalchemy.org/en/14/core/type_basics.html>`_.
 
     The ``id`` column will be made primary key in the test database tables.
 
-    The ``time`` column ``NaT`` objects are converted into None before insertion for
+    *Datetime types*
+
+    The ``time`` column's ``NaT`` objects are converted into None before insertion for
     Postgre and Oracle.
     The ``time`` column are converted into str and None before insertion for Sqlite.
 
@@ -226,6 +212,22 @@ def make_test_tbl(db, tbl_nme, n=10000):
     * ``pg``: ``postgresql://dwopt_tester:1234@localhost/dwopt_test``
     * ``lt``: ``sqlite://``
     * ``oc``: Not implemented.
+
+    **Set-up testing databases**
+
+    *Postgre*::
+
+        psql -U postgres
+        CREATE DATABASE dwopt_test;
+        CREATE USER dwopt_tester WITH PASSWORD '1234';
+        GRANT ALL PRIVILEGES ON DATABASE dwopt_test to dwopt_tester;
+
+    *Oracel*
+
+    * Install oracle db from the
+      `link <https://www.oracle.com/database/technologies/xe-downloads.html>`_.
+    * Schema: test_schema
+    * Not implemented.
 
     Examples
     ----------

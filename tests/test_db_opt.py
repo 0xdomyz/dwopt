@@ -48,9 +48,9 @@ def test_db_opt_create(test_tbl, test_tbl2):
                 "score": "float8",
                 "amt": "bigint",
                 "cat": "varchar(20)",
-                "date": "date",
-                "time": "timestamp",
             },
+            date="date",
+            time="timestamp",
         )
     elif isinstance(db, Lt):
         db.create(
@@ -59,10 +59,10 @@ def test_db_opt_create(test_tbl, test_tbl2):
                 "id": "integer primary key",
                 "score": "real",
                 "amt": "integer",
-                "cat": "text",
-                "date": "text",
-                "time": "text",
+                "cat": "text"
             },
+            date="text",
+            time="text"
         )
     elif isinstance(db, Oc):
         db.create(
@@ -72,9 +72,9 @@ def test_db_opt_create(test_tbl, test_tbl2):
                 "score": "float",
                 "amt": "number",
                 "cat": "varchar2(20)",
-                "date": "date",
-                "time": "timestamp",
             },
+            date="date",
+            time="timestamp",
         )
     else:
         raise ValueError

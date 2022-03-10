@@ -260,11 +260,11 @@ class _Db:
         ========== =========== ======= ============
 
         Note `sqlite datetime functions <https://www.sqlite.org/lang_datefunc.html>`_
-        could be used to work with date data types stored as text.
+        are supposed to be used to work with datetime data types stored as text.
 
         **Other statements**
 
-        The dtypes mappings also allow other sql statements which are
+        The ``dtypes`` mappings also allow other sql statements which are
         part of a create statement to be added
         (`sqlite other <https://sqlite.org/lang_createtable.html>`_,
         `postgre other <https://www.postgresql.org/docs/current/
@@ -290,6 +290,8 @@ class _Db:
         ...         ,'time': 'text'
         ...         ,'constraint df_pk': 'primary key (id)'
         ...     })
+        >>> lt.drop('test2')
+        >>> lt.create('test2', id='integer', score='real', cat='text')
         """
         if dtypes is None:
             dtypes = kwargs
@@ -324,7 +326,7 @@ class _Db:
             insert into tbl_nme (col1, col2, ...)
             values (:col1, :col2, ...)
 
-        With arguments to statement being the Dataframe in dictionary form:
+        With arguments to statement being the dataframe in dictionary form:
 
         .. code-block:: python
 
@@ -338,35 +340,50 @@ class _Db:
 
         Pandas Datetime64 columns are converted into object columns, and the
         ``pandas.NaT`` objects are converted into ``None`` before insertion.
-        Consider convert datetime columns to str columns before insertion on sqlite
-        tables.
+        For sqlite tables, datetime columns should be manually converted to str
+        and None before insertion.
 
         **Reversibility**
 
-        Below examples use the :func:`dwopt.make_test_tbl` function to make testing
-        python dataframes with various data types,
-        and insert them into databases with relevant data types.
-        Then attempt to read the table back into python to reconcile with the original.
+        Ideally python dataframe written to database should allow a exact same
+        dataframe to be read back into python. Whether this is true depends on the
+        database, data types and object types on the dataframe,
+        and data types on the database table.
 
-        Sqlite date and datetime columns are read as str columns.
-        Use ``datetime`` and ``pandas`` package to convert back to
-        python date and datetime columns.
+        With the set up used in the :func:`dwopt.make_test_tbl` function, we have
+        following results (Actual tests see the test script relevant for this
+        method):
 
-        .. code-block:: python
+        * Postgre example has reversibility except for row ordering and auto generated
+          pandas dataframe index. These can be strightened as below.
 
-            from dwopt import make_test_tbl
-            import pandas as pd
-            import datetime
-            from pandas.testing import assert_frame_equal
+          .. code-block:: python
 
-            lt, df = make_test_tbl('lt', 'test')
-            tbl = lt.qry('test').run().assign(
-                date = lambda x:x["date"].apply(
-                    lambda x:datetime.date.fromisoformat(x) if x else None
-                ),
-                time = lambda x:pd.to_datetime(x.time)
-            )
-            assert_frame_equal(tbl, df)
+              df.reset_index(drop=True).sort_values('id')
+
+        * Sqlite stores datetime datatypes as text, this causes a str type column to
+          be read back. One strategy is to convert from datatime and NaT to
+          str and None before insertion, and convert back to date and datetime
+          when read back. Use ``datetime`` and ``pandas`` package for this.
+
+          .. code-block:: python
+
+              lt.write(
+                  df.assign(
+                      time=lambda x: x.time.astype(str).where(~x.time.isna(), None)),
+                  "test2",
+              )
+              tbl = (
+                  db.qry("test2").run()
+                  .assign(
+                      date=lambda x: x["date"].apply(
+                          lambda x: datetime.date.fromisoformat(x) if x else None
+                      ),
+                      time=lambda x: pd.to_datetime(x.time),
+                  )
+              )
+
+        * Oracle is similiar to postgre.
 
         Examples
         --------
@@ -404,7 +421,8 @@ class _Db:
         2. If step 1 returns any results and the payload table in non-empty
            , remove duplicates on the payload table, using the provided primary
            key columns as judge of duplication.
-        3. Make insert statement on the non-duplicating payload data.
+        3. Make insert statement on the non-duplicating payload data via the
+           :meth:`dwopt.db._Db.write` method.
 
         Parameters
         ----------
@@ -419,7 +437,7 @@ class _Db:
 
         See also
         --------
-        :meth:dwopt.db._Db.write
+        :meth:`dwopt.db._Db.write`
 
         Examples
         --------
