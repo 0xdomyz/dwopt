@@ -3,8 +3,85 @@ API Reference
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
 
    set_up.rst
    db.rst
    qry.rst
 
+
+.. rubric:: The set-up functions
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt.save_url
+   dwopt.db
+   dwopt.Db
+   dwopt.make_eng
+   dwopt.make_test_tbl
+
+
+.. rubric:: Database operator object - operation methods
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt.db._Db.run
+   dwopt.db._Db.create
+   dwopt.db._Db.add_pkey
+   dwopt.db._Db.drop
+   dwopt.db._Db.write
+   dwopt.db._Db.write_nodup
+   dwopt.db._Db.qry
+
+
+.. rubric:: Database operator object - metadata methods
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt.db._Db.list_tables
+   dwopt.db._Db.table_cols
+   dwopt.db._Db.table_sizes
+   dwopt.db._Db.list_cons
+
+
+.. rubric:: Query object - query operation methods
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt._qry._Qry.print
+   dwopt._qry._Qry.run
+
+
+.. rubric:: Query object - clause methods
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt._qry._Qry.select
+   dwopt._qry._Qry.case
+   dwopt._qry._Qry.from_
+   dwopt._qry._Qry.join
+   dwopt._qry._Qry.where
+   dwopt._qry._Qry.group_by
+   dwopt._qry._Qry.having
+   dwopt._qry._Qry.order_by
+   dwopt._qry._Qry.sql
+
+
+.. rubric:: Query object - summary methods
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt._qry._Qry.top
+   dwopt._qry._Qry.cols
+   dwopt._qry._Qry.head
+   dwopt._qry._Qry.len
+   dwopt._qry._Qry.dist
+   dwopt._qry._Qry.mimx
+   dwopt._qry._Qry.valc
+   dwopt._qry._Qry.hash

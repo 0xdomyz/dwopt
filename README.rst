@@ -48,9 +48,6 @@ Walk Through
 .. |save_url| replace:: ``save_url``
 .. _save_url: https://dwopt.readthedocs.io/en/stable/urls.html#dwopt.save_url
 
-.. |make_eng| replace:: ``make_eng``
-.. _make_eng: https://dwopt.readthedocs.io/en/stable/urls.html#dwopt.make_eng
-
 .. |run| replace:: ``run``
 .. _run: https://dwopt.readthedocs.io/en/stable/db.html#dwopt.db._Db.run
 
@@ -83,24 +80,33 @@ Walk Through
 Run query with less friction using default credentials
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-On import, the package gives 3 different `operator object`_
-(``pg``, ``lt``, ``oc``, one for each supported database),
+On import, the package gives ready-to-be-used `operator object`_
+(e.g. ``pg``, ``lt``, ``oc``, one for each supported database),
 with default credentials
-(Use the |save_url|_ function to save to the system keyring).
-These allow frictionless running of sql from any python window.
+(Saved prior by user to the system keyring using the |save_url|_ function).
+These allow frictionless running of sql from any python/console window.
 
 >>> from dwopt import pg
 >>> pg.run('select count(1) from test')
     42
->>> pg.qry('test').len()
-    42
 
-Alternatively, use the |make_eng|_ function and the `operator constructors`_
-(``Pg``, ``Lt``, ``Oc``) to access database.
+Combined with the sql templates, back-of-envelope data insights can be
+achieved quickly.
 
->>> from dwopt import make_eng, Pg
+>>> from dwopt import lt
+>>> lt.make_iris()
+>>> lt.qry('iris').valc('species', 'avg(sepal_length)')
+       species   n  avg(sepal_length)
+    0  sicolor  50              5.936
+    1   setosa  50              5.006
+    2  rginica  50              6.588
+
+Alternatively, use the `operator constructors`_ (e.g. ``Pg``, ``Lt``, ``Oc``)
+and the database engine url to access database.
+
+>>> from dwopt import Pg
 >>> url = "postgresql://scott:tiger@localhost/mydatabase"
->>> pg = Pg(make_eng(url))
+>>> pg = Pg(url)
 >>> pg.run('select count(1) from test')
     42
 
