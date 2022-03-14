@@ -2,13 +2,9 @@ class _Qry:
     """
     The base query class.
 
-    All methods on this base class and all methods on it's child classes
-    are documented here on the base class for convenience.
-
     User should not instantiated the query class directly.
-    Instead call the ``qry`` methods on the database operator objects to
-    instantiate query objects.
-    See :ref:`qry-build-framework` section and the examples.
+    Instead instantiate via the :meth:`db.qry <dwopt.db._Db.qry>` methods from the
+    :doc:`database operator objects <db>`.
 
     Parameters
     ----------
@@ -33,11 +29,56 @@ class _Qry:
 
     Notes
     -----
-    The child classes:
+    **The child classes**
 
     * ``dwopt._qry.PgQry``: Relevant for the Postgre database.
     * ``dwopt._qry.LtQry``: Relevant for the Sqlite database.
     * ``dwopt._qry.OcQry``: Relevant for the Oracle database.
+
+    .. _qry-build-framework:
+
+    **The query building framework**
+
+    Queries are flexibly built as a combination of a ``sub query``
+    and a ``summary query``. For example:
+
+    .. code-block:: sql
+
+        -- Sub query
+        with x as (
+            select
+                a.*
+                ,case when amt < 1000 then amt*1.2 else amt end as amt
+            from test a
+            where score > 0.5
+        )
+        -- Summary query
+        select
+            time,cat
+            ,count(1) n
+            ,avg(score) avgscore, round(sum(amt)/1e3,2) total
+        from x
+        group by time,cat
+        order by n desc
+
+    The ``sub query`` is an arbituary query within a with clause
+    named as ``x``.
+    It functions as a pre-processing step of the overall query.
+
+    Use the query objects' ``clause methods`` to iteratively
+    piece together a query, or use the ``sql`` method to provide
+    an arbituary query. This created query will then be placed inside a
+    with block on invocation of any ``summary methods``.
+
+    The ``summary query`` is a parameterized pre-built summary query template.
+    Call the query objects' ``summary methods`` to invoke these templates,
+    which completes the query and immediately runs it.
+
+    The ``summary query`` operates on top of the sub query, therefore
+    heavy intermediate results from the sub query are never realized
+    outside of the database engine.
+    These templates are the core of the package and achieve the bulk of
+    efficiency and convenience gains.
 
     Examples
     --------
