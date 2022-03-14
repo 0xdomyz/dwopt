@@ -451,7 +451,7 @@ class _Db:
         >>> lt.create('test2', id='integer', score='real', cat='text')
         >>> lt.run("select * from test2")
         Empty DataFrame
-        Columns: [id, score, cat]        
+        Columns: [id, score, cat]
         Index: []
         """
         if dtypes is None:
@@ -557,7 +557,7 @@ class _Db:
             tbl_nme, self.meta, *[alc.Column(col) for col in cols], schema=sch
         )
         with self.eng.connect() as conn:
-            _logger.info(f"running:\ninsert statments")
+            _logger.info("running:\ninsert statments")
             conn.execute(
                 tbl.insert(),
                 df.to_dict("records"),
@@ -603,7 +603,7 @@ class _Db:
             *[alc.Column(col, self._guess_dtype(df[col].dtype)) for col in df.columns],
             schema=sch,
         )
-        _logger.info(f"running:\ncreate statments")
+        _logger.info("running:\ncreate statments")
         tbl.create(self.eng)
         _logger.info("done")
         self.write(df, sch_tbl_nme)
@@ -709,7 +709,7 @@ class _Db:
         sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
         self._remove_sch_tbl(sch_tbl_nme)
         with self.eng.connect() as conn:
-            _logger.info(f"running:\ndrop statments")
+            _logger.info("running:\ndrop statments")
             alc.Table(tbl_nme, self.meta, schema=sch).drop(conn, checkfirst=True)
             _logger.info("done")
 

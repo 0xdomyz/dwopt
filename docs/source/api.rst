@@ -27,13 +27,13 @@ API Reference
 .. autosummary::
    :nosignatures:
 
-   dwopt.db._Db.run
-   dwopt.db._Db.create
-   dwopt.db._Db.add_pkey
-   dwopt.db._Db.drop
-   dwopt.db._Db.write
-   dwopt.db._Db.write_nodup
-   dwopt.db._Db.qry
+   dwopt.dbo._Db.run
+   dwopt.dbo._Db.create
+   dwopt.dbo._Db.add_pkey
+   dwopt.dbo._Db.drop
+   dwopt.dbo._Db.write
+   dwopt.dbo._Db.write_nodup
+   dwopt.dbo._Db.qry
 
 
 .. rubric:: Database operator object - metadata methods
@@ -41,10 +41,10 @@ API Reference
 .. autosummary::
    :nosignatures:
 
-   dwopt.db._Db.list_tables
-   dwopt.db._Db.table_cols
-   dwopt.db._Db.table_sizes
-   dwopt.db._Db.list_cons
+   dwopt.dbo._Db.list_tables
+   dwopt.dbo._Db.table_cols
+   dwopt.dbo._Db.table_sizes
+   dwopt.dbo._Db.list_cons
 
 
 .. rubric:: Query object - query operation methods
