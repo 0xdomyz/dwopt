@@ -1,4 +1,7 @@
 import pandas as pd
+import numpy as np
+import sqlalchemy as alc
+from sqlalchemy.dialects.oracle import NUMBER
 
 # db method
 
@@ -34,6 +37,13 @@ def table_cols(self, sch_tbl_nme):
         f"\nand table_name = '{tbl_nme.upper()}'"
     )
     return self.run(sql)
+
+
+def _guess_dtype(self, dtype):
+    if np.issubdtype(dtype, np.int64):
+        return NUMBER
+    else:
+        return super(type(self), self)._guess_dtype(dtype)
 
 
 # qry method

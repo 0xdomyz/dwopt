@@ -1,3 +1,7 @@
+import numpy as np
+import sqlalchemy as alc
+from sqlalchemy.dialects.postgresql import BIGINT
+
 # db method
 
 
@@ -25,6 +29,15 @@ def table_cols(self, sch_tbl_nme):
 def list_cons(self):
     sql = "SELECT * FROM information_schema.constraint_table_usage"
     return self.run(sql)
+
+
+def _guess_dtype(self, dtype):
+    if np.issubdtype(dtype, np.int64):
+        return BIGINT
+    elif np.issubdtype(dtype, np.float64):
+        return alc.Float(8)
+    else:
+        return super(type(self), self)._guess_dtype(dtype)
 
 
 # qry method

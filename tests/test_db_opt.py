@@ -42,7 +42,7 @@ def test_db_opt_create(test_tbl, test_tbl2):
 
     if isinstance(db, Pg):
         db.create(
-            tbl_nme="test2",
+            "test2",
             dtypes={
                 "id": "bigint primary key",
                 "score": "float8",
@@ -54,19 +54,19 @@ def test_db_opt_create(test_tbl, test_tbl2):
         )
     elif isinstance(db, Lt):
         db.create(
-            tbl_nme="test2",
+            "test2",
             dtypes={
                 "id": "integer primary key",
                 "score": "real",
                 "amt": "integer",
-                "cat": "text"
+                "cat": "text",
             },
             date="text",
-            time="text"
+            time="text",
         )
     elif isinstance(db, Oc):
         db.create(
-            tbl_nme="test2",
+            "test2",
             dtypes={
                 "id": "number primary key",
                 "score": "float",
@@ -137,6 +137,42 @@ def test_db_opt_write_nodup(test_tbl, test_tbl2):
         db.write(df, "test2")
         db.write_nodup(df, "test2", ["id"])
         tbl = db.run("select * from test2 order by id")
+    else:
+        raise ValueError
+    assert_frame_equal_reset_index(tbl, df)
+
+
+def test_db_opt_cwrite(test_tbl, test_tbl2):
+    db, df = test_tbl
+    if isinstance(db, Pg):
+        db.cwrite(df, "test2")
+        tbl = db.run("select * from test2 order by id").assign(
+            date=lambda x: x["date"].apply(
+                lambda x: datetime.date.fromisoformat(x) if x else None
+            )
+        )
+    elif isinstance(db, Lt):
+        db.cwrite(
+            df.assign(time=lambda x: x.time.astype(str).where(~x.time.isna(), None)),
+            "test2",
+        )
+        tbl = (
+            db.qry("test2")
+            .run()
+            .assign(
+                date=lambda x: x["date"].apply(
+                    lambda x: datetime.date.fromisoformat(x) if x else None
+                ),
+                time=lambda x: pd.to_datetime(x.time),
+            )
+        )
+    elif isinstance(db, Oc):
+        db.cwrite(df, "test2")
+        tbl = db.run("select * from test2 order by id").assign(
+            date=lambda x: x["date"].apply(
+                lambda x: datetime.date.fromisoformat(x) if x else None
+            )
+        )
     else:
         raise ValueError
     assert_frame_equal_reset_index(tbl, df)
