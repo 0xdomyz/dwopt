@@ -6,9 +6,13 @@ import sqlalchemy
 import logging
 import base64
 
+
 _logger = logging.getLogger(__name__)
 _CONFIG_PTH = Path.home() / ".dwopt"
 _KEYRING_SERV_ID = Path(__file__).parent.resolve().as_posix()
+_TEST_PG_URL = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
+_TEST_LT_URL = "sqlite://"
+_TEST_OC_URL = "oracle://dwopt_tester:1234@localhost/dwopt_test"
 
 
 def save_url(db_nme, url, method="keyring"):
@@ -19,7 +23,7 @@ def save_url(db_nme, url, method="keyring"):
 
     On package import, default url are taken firstly from keyring if available,
     then the config file if available, then the environment variable
-    if available, lastly a set of hard-coded dummy urls.
+    if available, lastly a set of hard-coded testing urls.
 
     A `sqlalchemy engine url <https://docs.sqlalchemy.org/en/14/core/
     engines.html#database-urls>`_
@@ -126,11 +130,11 @@ def _get_url(db_nme):
         return url
 
     if db_nme == "pg":
-        url = "postgresql://scott:tiger@localhost/mydatabase"
+        url = _TEST_PG_URL
     elif db_nme == "lt":
-        url = "sqlite://"
+        url = _TEST_LT_URL
     elif db_nme == "oc":
-        url = "oracle://scott:tiger@tnsname"
+        url = _TEST_OC_URL
     else:
         raise ValueError("Invalid db_nme, either 'pg', 'lt' or 'oc'")
     _logger.debug(f"{db_nme} url obtained from hardcoded dummy")

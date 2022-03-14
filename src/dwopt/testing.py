@@ -2,15 +2,13 @@ import random
 import pandas as pd
 import datetime
 from dwopt import make_eng, Pg, Lt, Oc
+from dwopt.set_up import _TEST_PG_URL, _TEST_LT_URL, _TEST_OC_URL
 import sqlalchemy as alc
 from sqlalchemy.dialects.oracle import NUMBER
 from sqlalchemy.dialects.postgresql import BIGINT
 import logging
 
 _logger = logging.getLogger(__file__)
-_TEST_PG_URL = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
-_TEST_LT_URL = "sqlite://"
-_TEST_OC_URL = "oracle://dwopt_tester:1234@localhost/dwopt_test"
 
 
 def make_test_df(n=10000):
@@ -77,7 +75,7 @@ def _make_pg_tbl(df, eng, tbl_nme):
     )
     try:
         with eng.connect() as conn:
-            conn.execute(test_tbl.delete())
+            test_tbl.drop(conn)
     except Exception as ex:
         _logger.debug(ex)
     meta.create_all(eng)
@@ -104,7 +102,7 @@ def _make_lt_tbl(df, eng, tbl_nme):
     )
     try:
         with eng.connect() as conn:
-            conn.execute(test_tbl.delete())
+            test_tbl.drop(conn)
     except Exception as ex:
         _logger.debug(ex)
     meta.create_all(eng)
@@ -131,7 +129,7 @@ def _make_oc_tbl(df, eng, tbl_nme):
     )
     try:
         with eng.connect() as conn:
-            conn.execute(test_tbl.delete())
+            test_tbl.drop(conn)
     except Exception as ex:
         _logger.debug(ex)
     meta.create_all(eng)
@@ -151,7 +149,7 @@ def make_test_tbl(db, tbl_nme, n=10000):
 
     Parameters
     ------------
-    db: dwopt._Db, or str
+    db: dwopt.dbo._Db, or str
         Dwopt database operator object. Or one of ``'pg'``, ``'lt'``, and ``'oc'``,
         indicating usage of pre-defined testing database engines.
     tbl_nme: str
@@ -161,7 +159,7 @@ def make_test_tbl(db, tbl_nme, n=10000):
 
     Returns
     ----------
-    (Dwopt._Db, pandas.DataFrame):
+    (dwopt.dbo._Db, pandas.DataFrame):
         Tuple of database operator used, and the test dataframe.
 
     Notes
@@ -204,7 +202,7 @@ def make_test_tbl(db, tbl_nme, n=10000):
     Postgre and Oracle.
     The ``time`` column are converted into str and None before insertion for Sqlite.
 
-    See :meth:`dwopt.db._Db.write` for discussion on
+    See :meth:`dwopt.dbo._Db.write` for discussion on
     datetime columns and reversibility of insert statements.
 
     **Pre-defined testing database engines**
@@ -222,7 +220,7 @@ def make_test_tbl(db, tbl_nme, n=10000):
         CREATE USER dwopt_tester WITH PASSWORD '1234';
         GRANT ALL PRIVILEGES ON DATABASE dwopt_test to dwopt_tester;
 
-    *Oracel*
+    *Oracle*
 
     * Install oracle db from the
       `link <https://www.oracle.com/database/technologies/xe-downloads.html>`_.
@@ -259,6 +257,7 @@ def make_test_tbl(db, tbl_nme, n=10000):
         _make_oc_tbl(df, db.eng, tbl_nme)
     else:
         raise ValueError(
-            "Invalid db, must be a database operator object (dwopt.db._Db)"
+            "Invalid db, must be a database operator object, instances of "
+            "(dwopt.Pg, dwopt.Lt, dwopt.Oc)"
         )
     return db, df
