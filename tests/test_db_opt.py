@@ -91,9 +91,29 @@ def test_db_opt_add_pkey(test_tbl, test_tbl2):
         db.run("create table test2 as select * from test")
         db.add_pkey("test2", "id")
     elif isinstance(db, Lt):
-        return True
+        pass
     elif isinstance(db, Oc):
-        return True
+        pass
+    else:
+        raise ValueError
+
+def test_db_opt_create_schema(test_tbl, test_tbl2):
+    db, df = test_tbl
+    if isinstance(db, Pg):
+        try:
+            db.run("drop schema test cascade")
+        except Exception as ex:
+            if "does not exist" in str(ex):
+                pass
+            else:
+                raise(ex)
+        db.create_schema('test')
+        db.run("create table test.test (col int)")
+        db.run("drop schema test cascade")
+    elif isinstance(db, Lt):
+        pass
+    elif isinstance(db, Oc):
+        pass
     else:
         raise ValueError
 

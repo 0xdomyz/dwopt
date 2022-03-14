@@ -17,7 +17,7 @@ def list_tables(self):
 
 
 def table_cols(self, sch_tbl_nme):
-    sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
+    sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
     sql = (
         "select column_name, data_type from information_schema.columns"
         f"\nwhere table_schema = '{sch}' "
