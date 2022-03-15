@@ -170,7 +170,16 @@ class _Db:
             _logger.debug(f"replaced :{i} by {j}")
         return sql
 
-    from dwopt._sqls.base import _guess_dtype
+    def _guess_dtype(self, dtype):
+        """See :meth:`dwopt.dbo._Db.create`"""
+        if np.issubdtype(dtype, np.int64):
+            return alc.Integer
+        elif np.issubdtype(dtype, np.float64):
+            return alc.Float
+        elif np.issubdtype(dtype, np.datetime64):
+            return alc.DateTime
+        else:
+            return alc.String
 
     def _parse_sch_tbl_nme(self, sch_tbl_nme, split=True):
         """Resolve schema dot table name name into lower case components.
@@ -603,9 +612,80 @@ class _Db:
         if q:
             return self.qry(sch_tbl_nme)
 
-    from dwopt._sqls.base import list_cons
+    def list_cons(self):
+        """
+        List all constraints.
 
-    from dwopt._sqls.base import list_tables
+        Only works for postgre.
+
+        Returns
+        -------
+        pandas.DataFrame
+
+        Notes
+        -----
+
+        Postgre sql used, `information_schema.constraint_table_usage
+        <https://www.postgresql.org/docs/current/infoschema-
+        constraint-table-usage.html>`_:
+
+        .. code-block:: sql
+
+            select * from information_schema.constraint_table_usage
+
+        """
+        raise NotImplementedError
+
+    def list_tables(self, owner):
+        """
+        List all tables on database or specified schema.
+
+        Parameters
+        ----------
+        owner : str
+            Only applicable for oracle. Name of the schema.
+
+        Returns
+        -------
+        pandas.DataFrame
+
+        Notes
+        -----
+
+        Postgre sql used, `information_schema.tables
+        <https://www.postgresql.org/docs/current/infoschema-tables.html>`_:
+
+        .. code-block:: sql
+
+            select
+                table_catalog,table_schema,table_name
+                ,is_insertable_into,commit_action
+            from information_schema.tables
+            where table_schema
+            not in ('information_schema','pg_catalog')
+
+        Sqlite sql used, `sqlite_schema <https://www.sqlite.org/schematab.html>`_:
+
+        .. code-block:: sql
+
+            select * from sqlite_master
+            where type ='table'
+            and name NOT LIKE 'sqlite_%'
+
+        Oracle sql used, `all_tab_columns
+        <https://docs.oracle.com/en/database/oracle/oracle-database/21/
+        refrn/ALL_TAB_COLUMNS.html>`_:
+
+        .. code-block:: sql
+
+            select/*+PARALLEL (4)*/ owner,table_name
+                ,max(column_name),min(column_name)
+            from all_tab_columns
+            where owner = ':owner'
+            group by owner,table_name
+
+        """
+        raise NotImplementedError
 
     def mtcars(self, sch_tbl_nme="mtcars", q=False):
         """Create the mtcars test table on the database.
@@ -772,9 +852,70 @@ class _Db:
             sql = self._bind_mods(sql, mods, **kwargs)
         return self._run(sql, args)
 
-    from dwopt._sqls.base import table_cols
+    def table_cols(self, sch_tbl_nme):
+        """
+        Show information of specified table's columns.
 
-    from dwopt._sqls.base import table_sizes
+        Notes
+        -----
+
+        Postgre sql used, `information_schema.columns
+        <https://www.postgresql.org/docs/current/infoschema-columns.html>`_:
+
+        .. code-block:: sql
+
+            select column_name, data_type
+            from information_schema.columns
+            where table_schema = ':schema_nme'
+            and table_name = ':tbl_nme'
+
+        Oracle sql used, `all_tab_columns
+        <https://docs.oracle.com/en/database/oracle/oracle-database/21/
+        refrn/ALL_TAB_COLUMNS.html>`_:
+
+        .. code-block:: sql
+
+            select/*+PARALLEL (4)*/ *
+            from all_tab_columns
+            where owner = ':schema_nme'
+            and table_name = ':tbl_nme'
+
+        Parameters
+        ----------
+        sch_tbl_nme : str
+            Table name in format: `schema.table`.
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
+        raise NotImplementedError
+
+    def table_sizes(self):
+        """
+        List sizes of all tables in current schema.
+
+        Returns
+        -------
+        pandas.DataFrame
+
+        Notes
+        -----
+
+        Oracle sql used, `user_extents
+        <https://docs.oracle.com/en/database/oracle/oracle-database/21/refrn/
+        USER_EXTENTS.html>`_:
+
+        .. code-block:: sql
+
+            select/*+PARALLEL (4)*/
+                tablespace_name,segment_type,segment_name
+                ,sum(bytes)/1024/1024 table_size_mb
+            from user_extents
+            group by tablespace_name,segment_type,segment_name
+
+        """
+        raise NotImplementedError
 
     def update(self):
         """WIP"""
@@ -951,25 +1092,95 @@ class Pg(_Db):
     def qry(self, *args, **kwargs):
         return PgQry(self, *args, **kwargs)
 
-    from dwopt._sqls.pg import _guess_dtype
-    from dwopt._sqls.pg import list_cons
-    from dwopt._sqls.pg import list_tables
-    from dwopt._sqls.pg import table_cols
+    def _guess_dtype(self, dtype):
+        if np.issubdtype(dtype, np.int64):
+            return alc.dialects.postgresql.BIGINT
+        elif np.issubdtype(dtype, np.float64):
+            return alc.Float(8)
+        else:
+            return super(type(self), self)._guess_dtype(dtype)
+
+    def list_cons(self):
+        sql = "SELECT * FROM information_schema.constraint_table_usage"
+        return self.run(sql)
+
+    def list_tables(self):
+        sql = (
+            "select table_catalog,table_schema,table_name"
+            "\n    ,is_insertable_into,commit_action"
+            "\nfrom information_schema.tables"
+            "\nwhere table_schema"
+            "\n   not in ('information_schema','pg_catalog')"
+        )
+        return self.run(sql)
+
+    def table_cols(self, sch_tbl_nme):
+        sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
+        sql = (
+            "select column_name, data_type from information_schema.columns"
+            f"\nwhere table_schema = '{sch}' "
+            f"\nand table_name = '{tbl_nme}'"
+        )
+        return self.run(sql)
 
 
 class Lt(_Db):
     def qry(self, *args, **kwargs):
         return LtQry(self, *args, **kwargs)
 
-    from dwopt._sqls.lt import _guess_dtype
-    from dwopt._sqls.lt import list_tables
+    def _guess_dtype(self, dtype):
+        if np.issubdtype(dtype, np.float64):
+            return alc.REAL
+        elif np.issubdtype(dtype, np.datetime64):
+            return alc.String
+        else:
+            return super(type(self), self)._guess_dtype(dtype)
+
+    def list_tables(self):
+        sql = (
+            "select * from sqlite_master "
+            "\nwhere type ='table' "
+            "\nand name NOT LIKE 'sqlite_%' "
+        )
+        return self.run(sql)
 
 
 class Oc(_Db):
     def qry(self, *args, **kwargs):
         return OcQry(self, *args, **kwargs)
 
-    from dwopt._sqls.oc import _guess_dtype
-    from dwopt._sqls.oc import list_tables
-    from dwopt._sqls.oc import table_cols
-    from dwopt._sqls.oc import table_sizes
+    def _guess_dtype(self, dtype):
+        if np.issubdtype(dtype, np.int64):
+            return alc.dialects.oracle.NUMBER
+        else:
+            return super(type(self), self)._guess_dtype(dtype)
+
+    def list_tables(self, owner):
+        sql = (
+            "select/*+PARALLEL (4)*/ owner,table_name"
+            "\n    ,max(column_name),min(column_name)"
+            "\nfrom all_tab_columns"
+            f"\nwhere owner = '{owner.upper()}'"
+            "\ngroup by owner,table_name"
+        )
+        return self.run(sql)
+
+    def table_cols(self, sch_tbl_nme):
+        sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
+        sql = (
+            "select/*+PARALLEL (4)*/ *"
+            "\nfrom all_tab_columns"
+            f"\nwhere owner = '{sch.upper()}'"
+            f"\nand table_name = '{tbl_nme.upper()}'"
+        )
+        return self.run(sql)
+
+    def table_sizes(self):
+        sql = (
+            "select/*+PARALLEL (4)*/"
+            "\n    tablespace_name,segment_type,segment_name"
+            "\n    ,sum(bytes)/1024/1024 table_size_mb"
+            "\nfrom user_extents"
+            "\ngroup by tablespace_name,segment_type,segment_name"
+        )
+        return self.run(sql)

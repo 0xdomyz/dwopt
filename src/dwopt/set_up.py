@@ -475,4 +475,3 @@ def _make_mtcars_df():
         "carb",
     ]
     return res
-

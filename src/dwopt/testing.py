@@ -60,6 +60,7 @@ def make_test_df(n=10000):
 
     return df
 
+
 def _parse_sch_tbl_nme(sch_tbl_nme):
     return Pg._parse_sch_tbl_nme(Pg, sch_tbl_nme)
 
@@ -76,7 +77,7 @@ def _make_pg_tbl(df, eng, sch_tbl_nme):
         alc.Column("cat", alc.String(20)),
         alc.Column("date", alc.Date),
         alc.Column("time", alc.DateTime),
-        schema=sch
+        schema=sch,
     )
     with eng.connect() as conn:
         test_tbl.drop(conn, checkfirst=True)
@@ -102,7 +103,7 @@ def _make_lt_tbl(df, eng, sch_tbl_nme):
         alc.Column("cat", alc.String),
         alc.Column("date", alc.String),
         alc.Column("time", alc.String),
-        schema=sch
+        schema=sch,
     )
     with eng.connect() as conn:
         test_tbl.drop(conn, checkfirst=True)
@@ -128,7 +129,7 @@ def _make_oc_tbl(df, eng, sch_tbl_nme):
         alc.Column("cat", alc.String(20)),
         alc.Column("date", alc.Date),
         alc.Column("time", alc.DateTime),
-        schema=sch
+        schema=sch,
     )
     with eng.connect() as conn:
         test_tbl.drop(conn, checkfirst=True)
