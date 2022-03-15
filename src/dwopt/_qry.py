@@ -4,8 +4,8 @@ class _Qry:
 
     See examples for quick-start.
 
-    Automatically instantiated via the :meth:`dwopt.dbo._Db.qry` method from the
-    :class:`dwopt.dbo._Db` class.
+    Automatically instantiated via the :meth:`~dwopt.dbo._Db.qry` method from the
+    :class:`database operator <dwopt.dbo._Db>` class.
 
     It is possible to pass in all needed parameters when calling the method.
     But it is clearer to only pass in one positional argument as table name,
@@ -81,7 +81,7 @@ class _Qry:
         )
 
     Use the :ref:`clause methods` to iteratively
-    piece together a query, or use the :meth:`dwopt._qry._Qry.sql` method to provide
+    piece together a query, or use the :meth:`~dwopt._qry._Qry.sql` method to provide
     an arbituary query. This created query will then be placed inside a
     with block and become the ``sub query`` on invocation of any :ref:`summary methods`.
 
@@ -96,8 +96,8 @@ class _Qry:
     Examples
     --------
 
-    Create and use qry object using the :meth:`dwopt.dbo._Db.qry` method from the
-    :class:`dwopt.dbo._Db` class::
+    Create and use qry object using the :meth:`~dwopt.dbo._Db.qry` method from the
+    :class:`database operator <dwopt.dbo._Db>` class::
 
         from dwopt import lt
         lt.iris()
