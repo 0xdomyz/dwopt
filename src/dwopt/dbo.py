@@ -74,7 +74,7 @@ def db(eng):
 
 
 def Db(eng):
-    """Alias for :func:`dwopt.dbo`"""
+    """Alias for :func:`dwopt.db`"""
     return db(eng)
 
 
@@ -157,6 +157,77 @@ class _Db:
             self.eng = eng
         self.meta = alc.MetaData()
 
+    def _bind_mods(self, sql, mods=None, **kwargs):
+        """Apply modification to sql statement"""
+        if mods is None:
+            mods = kwargs
+        else:
+            mods.update(kwargs)
+        for i, j in mods.items():
+            sql = re.sub(f":{i}(?=[^a-zA-Z0-9]|$)", str(j), sql)
+            _logger.debug(f"replaced :{i} by {j}")
+        return sql
+
+    from dwopt._sqls.base import _guess_dtype
+
+    def _parse_sch_tbl_nme(self, sch_tbl_nme, split=True):
+        """Resolve schema dot table name name into lower case components.
+
+        Args
+        ------
+        sch_tbl_nme: str
+            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
+        split: bool
+            Split form or not.
+
+        Returns
+        ----------
+        str or (str, str, str)
+            parsed names, all elements can be None.
+
+        Examples
+        ---------
+        >>> import dwopt
+        >>> d = dwopt.dbo._Db
+        >>> f = lambda x:d._parse_sch_tbl_nme(d, x, split=True)
+        >>> g = lambda x:d._parse_sch_tbl_nme(d, x)
+        >>> for i in ['ab', 'Ab', 'ab.ab', 'Ab.Ab', 'Ab.Ab.Ab', '', None, 3]:
+        ...     print(f"{i = }, {f(i) = }, {g(i) = }")
+        i = 'ab', f(i) = ('ab', None, 'ab'), g(i) = 'ab'
+        i = 'Ab', f(i) = ('ab', None, 'ab'), g(i) = 'ab'
+        i = 'ab.ab', f(i) = ('ab.ab', 'ab', 'ab'), g(i) = 'ab.ab'
+        i = 'Ab.Ab', f(i) = ('ab.ab', 'ab', 'ab'), g(i) = 'ab.ab'
+        i = 'Ab.Ab.Ab', f(i) = ('ab.ab.ab', 'ab', 'ab.ab'), g(i) = 'ab.ab.ab'
+        i = '', f(i) = ('', None, ''), g(i) = ''
+        i = None, f(i) = (None, None, None), g(i) = None
+        i = 3, f(i) = (None, None, None), g(i) = None
+        """
+        try:
+            clean = sch_tbl_nme.lower()
+            items = clean.split(".")
+        except AttributeError:
+            sch = None
+            tbl_nme = None
+            full_nme = None
+        else:
+            n = len(items)
+            if n == 1:
+                sch = None
+                tbl_nme = items[0]
+                full_nme = tbl_nme
+            elif n == 2:
+                sch = items[0]
+                tbl_nme = items[1]
+                full_nme = clean
+            else:
+                sch = items[0]
+                tbl_nme = ".".join(items[1:n])
+                full_nme = clean
+        if split:
+            return full_nme, sch, tbl_nme
+        else:
+            return full_nme
+
     def _remove_sch_tbl(self, sch_tbl_nme):
         """Remove sch_tbl from meta.
 
@@ -207,17 +278,6 @@ class _Db:
         if sch_tbl_nme in self.meta.tables:
             self.meta.remove(self.meta.tables[sch_tbl_nme])
 
-    def _bind_mods(self, sql, mods=None, **kwargs):
-        """Apply modification to sql statement"""
-        if mods is None:
-            mods = kwargs
-        else:
-            mods.update(kwargs)
-        for i, j in mods.items():
-            sql = re.sub(f":{i}(?=[^a-zA-Z0-9]|$)", str(j), sql)
-            _logger.debug(f"replaced :{i} by {j}")
-        return sql
-
     def _run(self, sql, args=None):
         """Run sql statement with argument passing"""
         with self.eng.begin() as c:
@@ -230,6 +290,393 @@ class _Db:
             _logger.info("done")
             if r.returns_rows:
                 return pd.DataFrame(r.all(), columns=r.keys())
+
+    def add_pkey(self, sch_tbl_nme, pkey):
+        """Make and run an add primary key statement.
+
+        Work on postgre and oracle.
+
+        Args
+        ----------
+        sch_tbl_nme: str
+            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
+        pkey : str
+            columns names in form "col1, col2, ...".
+
+        Examples
+        --------
+        >>> from dwopt import pg
+        >>> _ = pg.mtcars()
+        >>> pg.add_pkey('mtcars', 'name')
+        """
+        sql = f"alter table {sch_tbl_nme} add primary key ({pkey})"
+        return self.run(sql)
+
+    def create(self, sch_tbl_nme, dtypes=None, **kwargs):
+        """
+        Make and run a create table statment.
+
+        Args
+        ----------
+        sch_tbl_nme: str
+            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
+        dtypes : dict, optional
+            Dictionary of column names to data types mappings.
+        **kwargs :
+            Convenient way to add mappings.
+            Keyword to argument mappings will be added to the dtypes
+            dictionary.
+            The keyword cannot be one of the positional parameter names.
+
+        Notes
+        -----
+        **Datatypes**
+
+        Datatypes vary across databses
+        (`postgre type <https://www.postgresql.org/docs/current/
+        datatype.html>`_,
+        `sqlite type <https://www.sqlite.org/datatype3.html>`_,
+        `oracle type <https://docs.oracle.com/en/database/oracle/
+        oracle-database/21/sqlqr/Data-Types.html>`_),
+        common example below:
+
+        ========== =========== ======= ============
+        Type       Postgre     Sqlite  Oracle
+        ========== =========== ======= ============
+        integer    bigint      integer number
+        float      float8      real    float
+        string     varchar(20) text    varchar2(20)
+        datetime   timestamp   text    timestamp
+        date       date        text    date
+        ========== =========== ======= ============
+
+        Note `sqlite datetime functions <https://www.sqlite.org/lang_datefunc.html>`_
+        are supposed to be used to work with datetime data types stored as text.
+
+        **Other statements**
+
+        The ``dtypes`` mappings also allow other sql statements which are
+        part of a create statement to be added
+        (`sqlite other <https://sqlite.org/lang_createtable.html>`_,
+        `postgre other <https://www.postgresql.org/docs/current/
+        sql-createtable.html>`_,
+        `oracle other <https://docs.oracle.com/en/database/oracle/
+        oracle-database/21/sqlrf/CREATE-TABLE.html>`_).
+        For example a primary key constraint.
+
+        Examples
+        --------
+        >>> from dwopt import lt
+        >>> lt.drop('test')
+        >>> lt.create('test'
+        ...     ,{
+        ...         'id': 'integer'
+        ...         ,'score': 'real'
+        ...         ,'amt': 'integer'
+        ...         ,'cat': 'text'
+        ...         ,'time': 'text'
+        ...         ,'constraint df_pk': 'primary key (id)'
+        ...     })
+        >>> lt.run("select * from test")
+        Empty DataFrame
+        Columns: [id, score, amt, cat, time]
+        Index: []
+
+        >>> lt.drop('test2')
+        >>> lt.create('test2', id='integer', score='real', cat='text')
+        >>> lt.run("select * from test2")
+        Empty DataFrame
+        Columns: [id, score, cat]
+        Index: []
+        """
+        if dtypes is None:
+            dtypes = kwargs
+        else:
+            dtypes.update(kwargs)
+        cls = ""
+        for col, dtype in dtypes.items():
+            cls += f"\n    ,{col} {dtype}"
+        self.run(f"create table {sch_tbl_nme}(" f"\n    {cls[6:]}" "\n)")
+
+    def create_schema(self, sch_nme):
+        """Make and run a create schema statement.
+
+        Work on postgre.
+
+        Args
+        ----------
+        sch_nme: str
+            Schema name.
+
+        Examples
+        --------
+        >>> from dwopt import pg
+        >>> pg.create_schema('test')
+        >>> pg.iris('test.iris').len()
+        150
+        """
+        try:
+            self.run(f"create schema {sch_nme}")
+        except Exception as ex:
+            if "already exists" in str(ex):
+                pass
+            else:
+                raise (ex)
+
+    def cwrite(self, df, sch_tbl_nme):
+        """
+        Create table and insert based on dataframe.
+
+        Replace '.' by '_' in dataframe column names.
+
+        Args
+        ----------
+        df : pandas.DataFrame
+            Payload Dataframe with data to insert.
+        sch_tbl_nme: str
+            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
+
+        See also
+        ----------
+        Data types infered based on the :meth:`dwopt.dbo._Db.create` method notes.
+        Datetime and reversibility issue see :meth:`dwopt.dbo._Db.write` method notes.
+
+        Examples
+        --------
+        ::
+
+            import pandas as pd
+            from dw import lt
+            tbl = pd.DataFrame({'col1': [1, 2], 'col2': ['a', 'b']})
+            lt.drop('test')
+            lt.cwrite(tbl, 'test')
+            lt.run("select * from test")
+        """
+        df = df.copy()
+        df.columns = [_.lower().replace(".", "_") for _ in df.columns]
+        sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
+        self._remove_sch_tbl(sch_tbl_nme)
+        tbl = alc.Table(
+            tbl_nme,
+            self.meta,
+            *[alc.Column(col, self._guess_dtype(df[col].dtype)) for col in df.columns],
+            schema=sch,
+        )
+        _logger.info("running:\ncreate statments")
+        tbl.create(self.eng)
+        _logger.info("done")
+        self.write(df, sch_tbl_nme)
+
+    def delete(self):
+        """WIP"""
+        raise NotImplementedError
+
+    def drop(self, sch_tbl_nme):
+        """Drop table if exist.
+
+        Args
+        ----------
+        sch_tbl_nme : str
+            Table name in form 'myschema.mytable', or 'mytable'.
+
+        See also
+        ----------
+        :meth:`dwopt.dbo._Db.exist`
+
+        Examples
+        --------
+        >>> from dwopt import lt
+        >>> lt.drop('iris')
+        >>> _ = lt.iris()
+        >>> lt.drop('iris')
+        >>> lt.list_tables()
+        Empty DataFrame
+        Columns: [type, name, tbl_name, rootpage, sql]
+        Index: []
+
+        >>> from dwopt import pg
+        >>> pg.create_schema('test')
+        >>> tbl = 'test.iris'
+        >>> pg.iris(tbl)
+        >>> pg.exist(tbl)
+        True
+        >>> pg.drop(tbl)
+        >>> pg.exist(tbl)
+        False
+        """
+        sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
+        self._remove_sch_tbl(sch_tbl_nme)
+        with self.eng.connect() as conn:
+            _logger.info("running:\ndrop statments")
+            alc.Table(tbl_nme, self.meta, schema=sch).drop(conn, checkfirst=True)
+            _logger.info("done")
+
+    def exist(self, sch_tbl_nme):
+        """Check if table exist.
+
+        Args
+        ------
+        sch_tbl_nme: str
+            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
+
+        Returns
+        ----------
+        bool
+
+        Examples
+        ---------
+        >>> from dwopt import lt
+        >>> _ = lt.iris()
+        >>> lt.drop('mtcars')
+        >>> lt.exist('iris')
+        True
+        >>> lt.exist('mtcars')
+        False
+
+        >>> from dwopt import pg as d
+        >>> d.create_schema('test')
+        >>> _ = d.iris('test.iris')
+        >>> d.drop('test.mtcars')
+        >>> d.exist('test.iris')
+        True
+        >>> d.exist('test.mtcars')
+        False
+        """
+        sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
+        self._remove_sch_tbl(sch_tbl_nme)
+        try:
+            self.meta.reflect(self.eng, schema=sch, only=[tbl_nme])
+            return True
+        except Exception as ex:
+            if "Could not reflect: requested table(s) not available in Engine" in str(
+                ex
+            ):
+                _logger.debug(ex)
+                return False
+            else:
+                raise ex
+
+    def iris(self, sch_tbl_nme="iris"):
+        """
+        Create the iris test table on the database.
+
+        Drop and recreate if already exist.
+        Sourced from `UCI iris <https://archive.ics.uci.edu/ml/datasets/Iris/>`_.
+
+        args
+        -------
+        sch_tbl_nme: str
+            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
+            Default "iris".
+
+        Returns
+        -------
+        dwopt._qry._Qry
+            Query object with sch_tbl_nme loaded for convenience.
+
+        Examples
+        --------
+        >>> from dwopt import lt
+        >>> lt.iris()
+        >>> lt.run('select count(*) from iris')
+           count(*)
+        0       150
+
+        >>> from dwopt import lt
+        >>> lt.iris().valc('species', 'avg(petal_length)')
+           species   n  avg(petal_length)
+        0  sicolor  50              4.260
+        1   setosa  50              1.462
+        2  rginica  50              5.552
+
+        >>> from dwopt import pg
+        >>> pg.create_schema('test')
+        >>> pg.iris('test.iris').len()
+        150
+        """
+        sch_tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme, split=False)
+        self.drop(sch_tbl_nme)
+        self.cwrite(_make_iris_df(), sch_tbl_nme)
+        return self.qry(sch_tbl_nme)
+
+    from dwopt._sqls.base import list_cons
+
+    from dwopt._sqls.base import list_tables
+
+    def mtcars(self, sch_tbl_nme="mtcars"):
+        """
+        Create the mtcars test table on the database.
+
+        Drop and recreate if already exist.
+        Sourced from `R mtcars <https://www.rdocumentation.org/packages/datasets
+        /versions/3.6.2/topics/mtcars>`_.
+
+        args
+        -------
+        sch_tbl_nme: str
+            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
+            Default "mtcars".
+
+        Returns
+        -------
+        dwopt._qry._Qry
+            Query object with sch_tbl_nme loaded for convenience.
+
+        Examples
+        --------
+        >>> from dwopt import lt
+        >>> lt.mtcars()
+        >>> lt.run('select count(*) from mtcars')
+           count(*)
+        0        32
+
+        >>> from dwopt import lt
+        >>> lt.mtcars().valc('cyl', 'avg(mpg)')
+           cyl   n   avg(mpg)
+        0    8  14  15.100000
+        1    4  11  26.663636
+        2    6   7  19.742857
+
+        >>> from dwopt import pg
+        >>> pg.create_schema('test')
+        >>> pg.mtcars('test.mtcars').len()
+        32
+        """
+        sch_tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme, split=False)
+        self.drop(sch_tbl_nme)
+        self.cwrite(_make_mtcars_df(), sch_tbl_nme)
+        return self.qry(sch_tbl_nme)
+
+    def qry(self, *args, **kwargs):
+        """
+        Make a query object.
+
+        Different database operator object provide different query object,
+        tailored to relevant databases.
+        See the :doc:`query objects <qry>` section for details.
+
+        Args
+        ----------
+        *args :
+            Positional arguments of the :class:`dwopt._qry._Qry`>.
+        **kwargs :
+            keyword arguments of the :class:`dwopt._qry._Qry`.
+
+        Returns
+        -------
+        dwopt._qry._Qry
+
+        Examples
+        --------
+
+        Make query object from sqlite database operator object.
+
+        >>> from dwopt import lt
+        >>> lt.qry("test").where("x>5").print()
+        select * from test
+        where x>5
+        """
+        raise NotImplementedError
 
     def run(self, sql=None, args=None, pth=None, mods=None, **kwargs):
         """
@@ -319,149 +766,13 @@ class _Db:
             sql = self._bind_mods(sql, mods, **kwargs)
         return self._run(sql, args)
 
-    def _parse_sch_tbl_nme(self, sch_tbl_nme, split=True):
-        """Resolve schema dot table name name into lower case components.
+    from dwopt._sqls.base import table_cols
 
-        Args
-        ------
-        sch_tbl_nme: str
-            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
-        split: bool
-            Split form or not.
+    from dwopt._sqls.base import table_sizes
 
-        Returns
-        ----------
-        str or (str, str, str)
-            parsed names, all elements can be None.
-
-        Examples
-        ---------
-        >>> import dwopt
-        >>> d = dwopt.dbo._Db
-        >>> f = lambda x:d._parse_sch_tbl_nme(d, x, split=True)
-        >>> g = lambda x:d._parse_sch_tbl_nme(d, x)
-        >>> for i in ['ab', 'Ab', 'ab.ab', 'Ab.Ab', 'Ab.Ab.Ab', '', None, 3]:
-        ...     print(f"{i = }, {f(i) = }, {g(i) = }")
-        i = 'ab', f(i) = ('ab', None, 'ab'), g(i) = 'ab'
-        i = 'Ab', f(i) = ('ab', None, 'ab'), g(i) = 'ab'
-        i = 'ab.ab', f(i) = ('ab.ab', 'ab', 'ab'), g(i) = 'ab.ab'
-        i = 'Ab.Ab', f(i) = ('ab.ab', 'ab', 'ab'), g(i) = 'ab.ab'
-        i = 'Ab.Ab.Ab', f(i) = ('ab.ab.ab', 'ab', 'ab.ab'), g(i) = 'ab.ab.ab'
-        i = '', f(i) = ('', None, ''), g(i) = ''
-        i = None, f(i) = (None, None, None), g(i) = None
-        i = 3, f(i) = (None, None, None), g(i) = None
-        """
-        try:
-            clean = sch_tbl_nme.lower()
-            items = clean.split(".")
-        except AttributeError:
-            sch = None
-            tbl_nme = None
-            full_nme = None
-        else:
-            n = len(items)
-            if n == 1:
-                sch = None
-                tbl_nme = items[0]
-                full_nme = tbl_nme
-            elif n == 2:
-                sch = items[0]
-                tbl_nme = items[1]
-                full_nme = clean
-            else:
-                sch = items[0]
-                tbl_nme = ".".join(items[1:n])
-                full_nme = clean
-        if split:
-            return full_nme, sch, tbl_nme
-        else:
-            return full_nme
-
-    def create(self, sch_tbl_nme, dtypes=None, **kwargs):
-        """
-        Make and run a create table statment.
-
-        Args
-        ----------
-        sch_tbl_nme: str
-            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
-        dtypes : dict, optional
-            Dictionary of column names to data types mappings.
-        **kwargs :
-            Convenient way to add mappings.
-            Keyword to argument mappings will be added to the dtypes
-            dictionary.
-            The keyword cannot be one of the positional parameter names.
-
-        Notes
-        -----
-        **Datatypes**
-
-        Datatypes vary across databses
-        (`postgre type <https://www.postgresql.org/docs/current/
-        datatype.html>`_,
-        `sqlite type <https://www.sqlite.org/datatype3.html>`_,
-        `oracle type <https://docs.oracle.com/en/database/oracle/
-        oracle-database/21/sqlqr/Data-Types.html>`_),
-        common example below:
-
-        ========== =========== ======= ============
-        Type       Postgre     Sqlite  Oracle
-        ========== =========== ======= ============
-        integer    bigint      integer number
-        float      float8      real    float
-        string     varchar(20) text    varchar2(20)
-        datetime   timestamp   text    timestamp
-        date       date        text    date
-        ========== =========== ======= ============
-
-        Note `sqlite datetime functions <https://www.sqlite.org/lang_datefunc.html>`_
-        are supposed to be used to work with datetime data types stored as text.
-
-        **Other statements**
-
-        The ``dtypes`` mappings also allow other sql statements which are
-        part of a create statement to be added
-        (`sqlite other <https://sqlite.org/lang_createtable.html>`_,
-        `postgre other <https://www.postgresql.org/docs/current/
-        sql-createtable.html>`_,
-        `oracle other <https://docs.oracle.com/en/database/oracle/
-        oracle-database/21/sqlrf/CREATE-TABLE.html>`_).
-        For example a primary key constraint.
-
-        Examples
-        --------
-        >>> from dwopt import lt
-        >>> lt.drop('test')
-        >>> lt.create('test'
-        ...     ,{
-        ...         'id': 'integer'
-        ...         ,'score': 'real'
-        ...         ,'amt': 'integer'
-        ...         ,'cat': 'text'
-        ...         ,'time': 'text'
-        ...         ,'constraint df_pk': 'primary key (id)'
-        ...     })
-        >>> lt.run("select * from test")
-        Empty DataFrame
-        Columns: [id, score, amt, cat, time]
-        Index: []
-
-        >>> lt.drop('test2')
-        >>> lt.create('test2', id='integer', score='real', cat='text')
-        >>> lt.run("select * from test2")
-        Empty DataFrame
-        Columns: [id, score, cat]
-        Index: []
-        """
-        if dtypes is None:
-            dtypes = kwargs
-        else:
-            dtypes.update(kwargs)
-        cls = ""
-        for col, dtype in dtypes.items():
-            cls += f"\n    ,{col} {dtype}"
-        self.run(f"create table {sch_tbl_nme}(" f"\n    {cls[6:]}" "\n)")
+    def update(self):
+        """WIP"""
+        raise NotImplementedError
 
     def write(self, df, sch_tbl_nme):
         """
@@ -564,52 +875,8 @@ class _Db:
             )
             _logger.info("done")
 
-    def cwrite(self, df, sch_tbl_nme):
-        """
-        Create a table and insert into it based on a dataframe.
-
-        Replace '.' by '_' in dataframe column names.
-
-        Args
-        ----------
-        df : pandas.DataFrame
-            Payload Dataframe with data to insert.
-        sch_tbl_nme: str
-            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
-
-        See also
-        ----------
-        Data types infered based on the :meth:`dwopt.dbo._Db.create` method notes.
-        Datetime and reversibility issue see :meth:`dwopt.dbo._Db.write` method notes.
-
-        Examples
-        --------
-        ::
-
-            import pandas as pd
-            from dw import lt
-            tbl = pd.DataFrame({'col1': [1, 2], 'col2': ['a', 'b']})
-            lt.drop('test')
-            lt.cwrite(tbl, 'test')
-            lt.run("select * from test")
-        """
-        df = df.copy()
-        df.columns = [_.lower().replace(".", "_") for _ in df.columns]
-        sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
-        self._remove_sch_tbl(sch_tbl_nme)
-        tbl = alc.Table(
-            tbl_nme,
-            self.meta,
-            *[alc.Column(col, self._guess_dtype(df[col].dtype)) for col in df.columns],
-            schema=sch,
-        )
-        _logger.info("running:\ncreate statments")
-        tbl.create(self.eng)
-        _logger.info("done")
-        self.write(df, sch_tbl_nme)
-
     def write_nodup(self, tbl, sch_tbl_nme, pkey, where=None):
-        """Insert many statement without creating duplicates.
+        """Insert without creating duplicates.
 
         Does below:
 
@@ -673,288 +940,30 @@ class _Db:
         )
         self.write(dedup_tbl, sch_tbl_nme)
 
-    def drop(self, sch_tbl_nme):
-        """Drop table if exist.
-
-        Args
-        ----------
-        sch_tbl_nme : str
-            Table name in form 'myschema.mytable', or 'mytable'.
-
-        See also
-        ----------
-        :meth:`dwopt.dbo._Db.exist`
-
-        Examples
-        --------
-        >>> from dwopt import lt
-        >>> lt.drop('iris')
-        >>> _ = lt.iris()
-        >>> lt.drop('iris')
-        >>> lt.list_tables()
-        Empty DataFrame
-        Columns: [type, name, tbl_name, rootpage, sql]
-        Index: []
-
-        >>> from dwopt import pg
-        >>> pg.create_schema('test')
-        >>> tbl = 'test.iris'
-        >>> pg.iris(tbl)
-        >>> pg.exist(tbl)
-        True
-        >>> pg.drop(tbl)
-        >>> pg.exist(tbl)
-        False
-        """
-        sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
-        self._remove_sch_tbl(sch_tbl_nme)
-        with self.eng.connect() as conn:
-            _logger.info("running:\ndrop statments")
-            alc.Table(tbl_nme, self.meta, schema=sch).drop(conn, checkfirst=True)
-            _logger.info("done")
-
-    def update(self):
-        pass
-
-    def delete(self):
-        pass
-
-    def exist(self, sch_tbl_nme):
-        """Check if table exist.
-
-        Args
-        ------
-        sch_tbl_nme: str
-            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
-
-        Returns
-        ----------
-        bool
-
-        Examples
-        ---------
-        >>> from dwopt import lt
-        >>> _ = lt.iris()
-        >>> lt.drop('mtcars')
-        >>> lt.exist('iris')
-        True
-        >>> lt.exist('mtcars')
-        False
-
-        >>> from dwopt import pg as d
-        >>> d.create_schema('test')
-        >>> _ = d.iris('test.iris')
-        >>> d.drop('test.mtcars')
-        >>> d.exist('test.iris')
-        True
-        >>> d.exist('test.mtcars')
-        False
-        """
-        sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
-        self._remove_sch_tbl(sch_tbl_nme)
-        try:
-            self.meta.reflect(self.eng, schema=sch, only=[tbl_nme])
-            return True
-        except Exception as ex:
-            if "Could not reflect: requested table(s) not available in Engine" in str(
-                ex
-            ):
-                _logger.debug(ex)
-                return False
-            else:
-                raise ex
-
-    def create_schema(self, sch_nme):
-        """Make and run a create schema statement.
-
-        Work on postgre.
-
-        Args
-        ----------
-        sch_nme: str
-            Schema name.
-
-        Examples
-        --------
-        >>> from dwopt import pg
-        >>> pg.create_schema('test')
-        >>> pg.iris('test.iris').len()
-        150
-        """
-        try:
-            self.run(f"create schema {sch_nme}")
-        except Exception as ex:
-            if "already exists" in str(ex):
-                pass
-            else:
-                raise (ex)
-
-    def add_pkey(self, sch_tbl_nme, pkey):
-        """Make and run an add primary key statement.
-
-        Work on postgre and oracle.
-
-        Args
-        ----------
-        sch_tbl_nme: str
-            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
-        pkey : str
-            columns names in form "col1, col2, ...".
-
-        Examples
-        --------
-        >>> from dwopt import pg
-        >>> _ = pg.mtcars()
-        >>> pg.add_pkey('mtcars', 'name')
-        """
-        sql = f"alter table {sch_tbl_nme} add primary key ({pkey})"
-        return self.run(sql)
-
-    def iris(self, sch_tbl_nme="iris"):
-        """
-        Create the iris test table on the database.
-
-        Drop and recreate if already exist.
-
-        args
-        -------
-        sch_tbl_nme: str
-            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
-            Default "iris".
-
-        Returns
-        -------
-        dwopt._qry._Qry
-            Query object with sch_tbl_nme loaded for convenience.
-
-        Examples
-        --------
-        >>> from dwopt import lt
-        >>> lt.iris()
-        >>> lt.run('select count(*) from iris')
-           count(*)
-        0       150
-
-        >>> from dwopt import lt
-        >>> lt.iris().valc('species', 'avg(petal_length)')
-           species   n  avg(petal_length)
-        0  sicolor  50              4.260
-        1   setosa  50              1.462
-        2  rginica  50              5.552
-
-        >>> from dwopt import pg
-        >>> pg.create_schema('test')
-        >>> pg.iris('test.iris').len()
-        150
-        """
-        sch_tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme, split=False)
-        self.drop(sch_tbl_nme)
-        self.cwrite(_make_iris_df(), sch_tbl_nme)
-        return self.qry(sch_tbl_nme)
-
-    def mtcars(self, sch_tbl_nme="mtcars"):
-        """
-        Create the mtcars test table on the database.
-
-        Drop and recreate if already exist.
-
-        args
-        -------
-        sch_tbl_nme: str
-            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
-            Default "mtcars".
-
-        Returns
-        -------
-        dwopt._qry._Qry
-            Query object with sch_tbl_nme loaded for convenience.
-
-        Examples
-        --------
-        >>> from dwopt import lt
-        >>> lt.mtcars()
-        >>> lt.run('select count(*) from mtcars')
-           count(*)
-        0        32
-
-        >>> from dwopt import lt
-        >>> lt.mtcars().valc('cyl', 'avg(mpg)')
-           cyl   n   avg(mpg)
-        0    8  14  15.100000
-        1    4  11  26.663636
-        2    6   7  19.742857
-
-        >>> from dwopt import pg
-        >>> pg.create_schema('test')
-        >>> pg.mtcars('test.mtcars').len()
-        32
-        """
-        sch_tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme, split=False)
-        self.drop(sch_tbl_nme)
-        self.cwrite(_make_mtcars_df(), sch_tbl_nme)
-        return self.qry(sch_tbl_nme)
-
-    def qry(self, *args, **kwargs):
-        """
-        Make a query object.
-
-        Different database operator object provide different query object,
-        tailored to relevant databases.
-        See the :doc:`query objects <qry>` section for details.
-
-        Args
-        ----------
-        *args :
-            Positional arguments of the :class:`dwopt._qry._Qry`>.
-        **kwargs :
-            keyword arguments of the :class:`dwopt._qry._Qry`.
-
-        Returns
-        -------
-        dwopt._qry._Qry
-
-        Examples
-        --------
-
-        Make query object from sqlite database operator object.
-
-        >>> from dwopt import lt
-        >>> lt.qry("test").where("x>5").print()
-        select * from test
-        where x>5
-        """
-        raise NotImplementedError
-
-    from dwopt._sqls.base import list_tables
-    from dwopt._sqls.base import table_sizes
-    from dwopt._sqls.base import table_cols
-    from dwopt._sqls.base import list_cons
-    from dwopt._sqls.base import _guess_dtype
-
 
 class Pg(_Db):
     def qry(self, *args, **kwargs):
         return PgQry(self, *args, **kwargs)
 
+    from dwopt._sqls.pg import _guess_dtype
+    from dwopt._sqls.pg import list_cons
     from dwopt._sqls.pg import list_tables
     from dwopt._sqls.pg import table_cols
-    from dwopt._sqls.pg import list_cons
-    from dwopt._sqls.pg import _guess_dtype
 
 
 class Lt(_Db):
     def qry(self, *args, **kwargs):
         return LtQry(self, *args, **kwargs)
 
-    from dwopt._sqls.lt import list_tables
     from dwopt._sqls.lt import _guess_dtype
+    from dwopt._sqls.lt import list_tables
 
 
 class Oc(_Db):
     def qry(self, *args, **kwargs):
         return OcQry(self, *args, **kwargs)
 
-    from dwopt._sqls.oc import list_tables
-    from dwopt._sqls.oc import table_sizes
-    from dwopt._sqls.oc import table_cols
     from dwopt._sqls.oc import _guess_dtype
+    from dwopt._sqls.oc import list_tables
+    from dwopt._sqls.oc import table_cols
+    from dwopt._sqls.oc import table_sizes

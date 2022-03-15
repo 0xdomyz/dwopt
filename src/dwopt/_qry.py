@@ -181,6 +181,10 @@ class _Qry:
             self._sql,
         )
 
+    def __str__(self):
+        self._make_qry()
+        return self._qry
+
     def _args2str(self, args, sep):
         """
         Parse a tuple of str, or iterator of str,
@@ -225,43 +229,36 @@ class _Qry:
             res = sep.join(args)
         return res
 
-    def select(self, *args, sep=","):
-        """
-        Add the select clause to query.
+    def _make_cls(self, key, load, na=""):
+        """Add keyword to clause payload"""
+        return f"{key}{load}" if load is not None else na
 
-        Parameters
-        ----------
-        *args : str or [str]
-            Column name str as positional arguments
-            , or an iterator of str column names.
-        sep : str
-            Symbol used for seperating column names, default ``,``.
-
-        Returns
-        -------
-        dwopt._qry._Qry
-            New query object with clause added.
-
-        Examples
-        --------
-        >>> from dwopt import lt
-        >>> lt.qry('test').select("id,score,amt").print()
-            select id,score,amt
-            from test
-        >>> lt.qry('test').select(["id","score","amt"]).print()
-            select id,score,amt
-            from test
-        >>> lt.qry('test').select("id","score","amt").print()
-            select id,score,amt
-            from test
-        """
-        _ = self.__copy__()
-        _._select = self._args2str(args, sep)
-        return _
+    def _make_qry(self):
+        """Combine query components."""
+        if self._sql is not None:
+            self._qry = self._sql
+        else:
+            select = self._make_cls("select ", self._select, "select *")
+            from_ = self._make_cls("from ", self._from_, "from test")
+            join = self._make_cls("\n", self._join)
+            where = self._make_cls("\nwhere ", self._where)
+            group_by = self._make_cls("\ngroup by ", self._group_by)
+            having = self._make_cls("\nhaving ", self._having)
+            order_by = self._make_cls("\norder by ", self._order_by)
+            self._qry = (
+                select
+                + (" " if select == "select *" else "\n")
+                + from_
+                + join
+                + where
+                + group_by
+                + having
+                + order_by
+            )
 
     def case(self, col, *args, cond=None, els="NULL"):
-        """
-        Add a case when statement to select clause in query.
+        """Add a case when clause to the select clause.
+        
         Calling this method multiple times would add multiple statements.
 
         Parameters
@@ -357,83 +354,6 @@ class _Qry:
         _._from_ = from_
         return _
 
-    def join(self, tbl, *args, how="left"):
-        """
-        Add a join clause to query.
-        Calling this method multiple times would add multiple clauses.
-
-        Parameters
-        ----------
-        tbl : str
-            Table name to join to in str format.
-        *args : str
-            Joining conditions in str format.
-        how : str
-            The join keyword in str format, for example: ``inner``, ``cross``.
-            Default ``left``.
-
-        Returns
-        -------
-        dwopt._qry._Qry
-            New query object with clause added.
-
-        Examples
-        --------
-        >>> from dwopt import lt
-        >>> lt.qry('test x') \\
-        ... .select('x.id','y.id as yid','x.score','z.score as zscore') \\
-        ... .join("test y","x.id = y.id+1","x.id <= y.id+1") \\
-        ... .join("test z","x.id = z.id+2","x.id >= z.id+1") \\
-        ... .print()
-            select x.id,y.id as yid,x.score,z.score as zscore
-            from test x
-            left join test y
-                on x.id = y.id+1
-                and x.id <= y.id+1
-            left join test z
-                on x.id = z.id+2
-                and x.id >= z.id+1
-        """
-        _ = self.__copy__()
-        on = self._args2str(args, "\n    and ")
-        cls = f"{how} join {tbl}" f"\n    on {on}"
-        if _._join is not None:
-            _._join = _._join + "\n" + cls
-        else:
-            _._join = cls
-        return _
-
-    def where(self, *args):
-        """
-        Add the where clause to query.
-
-        Parameters
-        ----------
-        *args : str or [str]
-            Conditions in str format, or iterator of condition str.
-
-        Returns
-        -------
-        dwopt._qry._Qry
-            New query object with clause added.
-
-        Examples
-        --------
-        >>> from dwopt import lt
-        >>> lt.qry('test').where('x>5','x<10').print()
-            select * from test
-            where x>5
-                and x<10
-        >>> lt.qry('test').where(['x>5','x<10','y <> 5']).print()
-            select * from test
-            where x>5
-                and x<10
-                and y <> 5
-        """
-        _ = self.__copy__()
-        _._where = self._args2str(args, "\n    and ")
-        return _
-
     def group_by(self, *args):
         """
         Add the group by clause to query.
@@ -492,6 +412,52 @@ class _Qry:
         _._having = self._args2str(args, "\n    and ")
         return _
 
+    def join(self, tbl, *args, how="left"):
+        """
+        Add a join clause to query.
+        Calling this method multiple times would add multiple clauses.
+
+        Parameters
+        ----------
+        tbl : str
+            Table name to join to in str format.
+        *args : str
+            Joining conditions in str format.
+        how : str
+            The join keyword in str format, for example: ``inner``, ``cross``.
+            Default ``left``.
+
+        Returns
+        -------
+        dwopt._qry._Qry
+            New query object with clause added.
+
+        Examples
+        --------
+        >>> from dwopt import lt
+        >>> lt.qry('test x') \\
+        ... .select('x.id','y.id as yid','x.score','z.score as zscore') \\
+        ... .join("test y","x.id = y.id+1","x.id <= y.id+1") \\
+        ... .join("test z","x.id = z.id+2","x.id >= z.id+1") \\
+        ... .print()
+            select x.id,y.id as yid,x.score,z.score as zscore
+            from test x
+            left join test y
+                on x.id = y.id+1
+                and x.id <= y.id+1
+            left join test z
+                on x.id = z.id+2
+                and x.id >= z.id+1
+        """
+        _ = self.__copy__()
+        on = self._args2str(args, "\n    and ")
+        cls = f"{how} join {tbl}" f"\n    on {on}"
+        if _._join is not None:
+            _._join = _._join + "\n" + cls
+        else:
+            _._join = cls
+        return _
+
     def order_by(self, *args):
         """
         Add the order by clause to query.
@@ -520,63 +486,6 @@ class _Qry:
         _ = self.__copy__()
         _._order_by = self._args2str(args, ",")
         return _
-
-    def sql(self, sql):
-        """
-        Replace entire query by specified sql.
-        This allows arbituary advanced sql to be incorporated into framework.
-
-        Parameters
-        ----------
-        sql : str
-            Sql code in str format.
-
-        Returns
-        -------
-        dwopt._qry._Qry
-            New query object with clause added.
-
-        Examples
-        --------
-        >>> from dwopt import lt
-        >>> lt.qry().sql("select * from test \\nconnect by level <= 5").print()
-            select * from test
-            connect by level <= 5
-        """
-        _ = self.__copy__()
-        _._sql = sql
-        return _
-
-    def _make_cls(self, key, load, na=""):
-        """Add keyword to clause payload"""
-        return f"{key}{load}" if load is not None else na
-
-    def _make_qry(self):
-        """Stitch together query components."""
-        if self._sql is not None:
-            self._qry = self._sql
-        else:
-            select = self._make_cls("select ", self._select, "select *")
-            from_ = self._make_cls("from ", self._from_, "from test")
-            join = self._make_cls("\n", self._join)
-            where = self._make_cls("\nwhere ", self._where)
-            group_by = self._make_cls("\ngroup by ", self._group_by)
-            having = self._make_cls("\nhaving ", self._having)
-            order_by = self._make_cls("\norder by ", self._order_by)
-            self._qry = (
-                select
-                + (" " if select == "select *" else "\n")
-                + from_
-                + join
-                + where
-                + group_by
-                + having
-                + order_by
-            )
-
-    def __str__(self):
-        self._make_qry()
-        return self._qry
 
     def print(self):
         """Print the underlying query.
@@ -632,14 +541,109 @@ class _Qry:
             qry = self._qry
         return self._ops.run(qry, *args, **kwargs)
 
-    from dwopt._sqls.base import head
-    from dwopt._sqls.base import top
+    def select(self, *args, sep=","):
+        """
+        Add the select clause to query.
+
+        Parameters
+        ----------
+        *args : str or [str]
+            Column name str as positional arguments
+            , or an iterator of str column names.
+        sep : str
+            Symbol used for seperating column names, default ``,``.
+
+        Returns
+        -------
+        dwopt._qry._Qry
+            New query object with clause added.
+
+        Examples
+        --------
+        >>> from dwopt import lt
+        >>> lt.qry('test').select("id,score,amt").print()
+            select id,score,amt
+            from test
+        >>> lt.qry('test').select(["id","score","amt"]).print()
+            select id,score,amt
+            from test
+        >>> lt.qry('test').select("id","score","amt").print()
+            select id,score,amt
+            from test
+        """
+        _ = self.__copy__()
+        _._select = self._args2str(args, sep)
+        return _
+
+    def sql(self, sql):
+        """
+        Replace entire query by specified sql.
+        This allows arbituary advanced sql to be incorporated into framework.
+
+        Parameters
+        ----------
+        sql : str
+            Sql code in str format.
+
+        Returns
+        -------
+        dwopt._qry._Qry
+            New query object with clause added.
+
+        Examples
+        --------
+        >>> from dwopt import lt
+        >>> lt.qry().sql("select * from test \\nconnect by level <= 5").print()
+            select * from test
+            connect by level <= 5
+        """
+        _ = self.__copy__()
+        _._sql = sql
+        return _
+
+    def where(self, *args):
+        """
+        Add the where clause to query.
+
+        Parameters
+        ----------
+        *args : str or [str]
+            Conditions in str format, or iterator of condition str.
+
+        Returns
+        -------
+        dwopt._qry._Qry
+            New query object with clause added.
+
+        Examples
+        --------
+        >>> from dwopt import lt
+        >>> lt.qry('test').where('x>5','x<10').print()
+            select * from test
+            where x>5
+                and x<10
+        >>> lt.qry('test').where(['x>5','x<10','y <> 5']).print()
+            select * from test
+            where x>5
+                and x<10
+                and y <> 5
+        """
+        _ = self.__copy__()
+        _._where = self._args2str(args, "\n    and ")
+        return _
+
     from dwopt._sqls.base import cols
-    from dwopt._sqls.base import len
+    from dwopt._sqls.base import bin
     from dwopt._sqls.base import dist
-    from dwopt._sqls.base import mimx
-    from dwopt._sqls.base import valc
+    from dwopt._sqls.base import five
     from dwopt._sqls.base import hash
+    from dwopt._sqls.base import head
+    from dwopt._sqls.base import len
+    from dwopt._sqls.base import mimx
+    from dwopt._sqls.base import pct
+    from dwopt._sqls.base import piv
+    from dwopt._sqls.base import top
+    from dwopt._sqls.base import valc
 
 
 class PgQry(_Qry):
@@ -655,6 +659,6 @@ class OcQry(_Qry):
         super()._make_qry()
         self._qry = self._qry.replace("select", "select /*+PARALLEL (4)*/")
 
+    from dwopt._sqls.oc import hash
     from dwopt._sqls.oc import head
     from dwopt._sqls.oc import top
-    from dwopt._sqls.oc import hash

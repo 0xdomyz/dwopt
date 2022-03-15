@@ -3,7 +3,14 @@ import numpy as np
 import sqlalchemy as alc
 from sqlalchemy.dialects.oracle import NUMBER
 
-# db method
+# db
+
+
+def _guess_dtype(self, dtype):
+    if np.issubdtype(dtype, np.int64):
+        return NUMBER
+    else:
+        return super(type(self), self)._guess_dtype(dtype)
 
 
 def list_tables(self, owner):
@@ -13,17 +20,6 @@ def list_tables(self, owner):
         "\nfrom all_tab_columns"
         f"\nwhere owner = '{owner.upper()}'"
         "\ngroup by owner,table_name"
-    )
-    return self.run(sql)
-
-
-def table_sizes(self):
-    sql = (
-        "select/*+PARALLEL (4)*/"
-        "\n    tablespace_name,segment_type,segment_name"
-        "\n    ,sum(bytes)/1024/1024 table_size_mb"
-        "\nfrom user_extents"
-        "\ngroup by tablespace_name,segment_type,segment_name"
     )
     return self.run(sql)
 
@@ -39,28 +35,18 @@ def table_cols(self, sch_tbl_nme):
     return self.run(sql)
 
 
-def _guess_dtype(self, dtype):
-    if np.issubdtype(dtype, np.int64):
-        return NUMBER
-    else:
-        return super(type(self), self)._guess_dtype(dtype)
+def table_sizes(self):
+    sql = (
+        "select/*+PARALLEL (4)*/"
+        "\n    tablespace_name,segment_type,segment_name"
+        "\n    ,sum(bytes)/1024/1024 table_size_mb"
+        "\nfrom user_extents"
+        "\ngroup by tablespace_name,segment_type,segment_name"
+    )
+    return self.run(sql)
 
 
-# qry method
-
-
-def head(self):
-    return self.run("select * from x where rownum<=5")
-
-
-def top(self):
-    res = self.run("select * from x where rownum<=1")
-    if res.empty:
-        return pd.Series(index=res.columns)
-    else:
-        return res.iloc[
-            0,
-        ]
+# qry
 
 
 def hash(self, *args):
@@ -76,3 +62,17 @@ def hash(self, *args):
         "from x"
     )
     return self.run(_).iloc[0, 0]
+
+
+def head(self):
+    return self.run("select * from x where rownum<=5")
+
+
+def top(self):
+    res = self.run("select * from x where rownum<=1")
+    if res.empty:
+        return pd.Series(index=res.columns)
+    else:
+        return res.iloc[
+            0,
+        ]
