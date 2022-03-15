@@ -82,10 +82,27 @@ class _Db:
     """
     The base database operator class.
 
-    User should not instantiated the base class directly.
-    Instead instantiate the child classes tailored for the intended database,
-    or use the pre-instantiated objects on package import.
-    See the notes and the examples.
+    See examples for quick-start.
+
+    Instantiate the child classes for different databases via one of below ways:
+
+    * The factory function: :func:`dwopt.db`.
+    * The pre-instantiated objects on package import.
+    * The relevant child classes.
+
+    The child classes and the pre-instantiated objects:
+
+    ========== =================== ========================
+    Database    Child class        Pre-instantiated object
+    ========== =================== ========================
+    Postgre     ``dwopt.Pg(eng)``   ``dwopt.pg``
+    Sqlite      ``dwopt.Lt(eng)``   ``dwopt.lt``
+    Oracle      ``dwopt.Oc(eng)``   ``dwopt.oc``
+    ========== =================== ========================
+
+    Pre-instantiation uses the default credentials set-up prior by the user
+    via the :func:`dwopt.save_url` function.
+
 
     Args
     ----------
@@ -108,21 +125,6 @@ class _Db:
         `sqlalchemy.schema.MetaData <https://docs.sqlalchemy.org/en/14/core/
         metadata.html#sqlalchemy.schema.MetaData>`_
 
-    Notes
-    -----
-    The child classes and the pre-instantiated objects:
-
-    ========== =================== ========================
-    Database    Child class        Pre-instantiated object
-    ========== =================== ========================
-    Postgre     ``dwopt.Pg(eng)``   ``dwopt.pg``
-    Sqlite      ``dwopt.Lt(eng)``   ``dwopt.lt``
-    Oracle      ``dwopt.Oc(eng)``   ``dwopt.oc``
-    ========== =================== ========================
-
-    Pre-instantiation uses the default credentials set-up prior by the user
-    via the :func:`dwopt.save_url` function.
-
     Examples
     --------
     Instantiate and use a Sqlite database operator object via factory:
@@ -134,13 +136,6 @@ class _Db:
        count(1)
     0        32
 
-    Instantiate and use a Postgre database operator object via the Class:
-
-    >>> from dwopt import Pg
-    >>> p = Pg("postgresql://dwopt_tester:1234@localhost/dwopt_test")
-    >>> p.mtcars().len()
-    32
-
     Use the pre-instantiated Sqlite database operator object:
 
     >>> from dwopt import lt
@@ -148,6 +143,13 @@ class _Db:
     >>> lt.run('select count(1) from iris')
        count(1)
     0       150
+
+    Instantiate and use a Postgre database operator object via the class:
+
+    >>> from dwopt import Pg
+    >>> p = Pg("postgresql://dwopt_tester:1234@localhost/dwopt_test")
+    >>> p.mtcars().len()
+    32
     """
 
     def __init__(self, eng):

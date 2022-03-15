@@ -2,9 +2,20 @@ class _Qry:
     """
     The base query class.
 
-    User should not instantiated the query class directly.
-    Instead instantiate via the :meth:`db.qry <dwopt.db._Db.qry>` methods from the
-    :doc:`database operator objects <db>`.
+    See examples for quick-start.
+
+    Automatically instantiated via the :meth:`dwopt.dbo._Db.qry` method from the
+    :class:`dwopt.dbo._Db` class.
+
+    It is possible to pass in all needed parameters when calling the method.
+    But it is clearer to only pass in one positional argument as table name,
+    and use the :ref:`clause methods` to build up a query instead.
+
+    The child classes relevant for different databases:
+
+    * ``dwopt._qry.PgQry``: the Postgre database.
+    * ``dwopt._qry.LtQry``: the Sqlite database.
+    * ``dwopt._qry.OcQry``: the Oracle database.
 
     Parameters
     ----------
@@ -29,95 +40,83 @@ class _Qry:
 
     Notes
     -----
-    **The child classes**
-
-    * ``dwopt._qry.PgQry``: Relevant for the Postgre database.
-    * ``dwopt._qry.LtQry``: Relevant for the Sqlite database.
-    * ``dwopt._qry.OcQry``: Relevant for the Oracle database.
-
-    .. _qry-build-framework:
+    .. _The query building framework:
 
     **The query building framework**
 
     Queries are flexibly built as a combination of a ``sub query``
-    and a ``summary query``. For example:
+    and a ``summary query`` from templates.
+    Point of ``sub query`` is to be a flexible complementary pre-processing step,
+    productivity gain comes from the ``summary query`` templates.
+
+    Example:
 
     .. code-block:: sql
 
-        -- Sub query
+        -- Sub query: arbituary query within a with clause named x
         with x as (
-            select
-                a.*
+            select a.*
                 ,case when amt < 1000 then amt*1.2 else amt end as amt
             from test a
             where score > 0.5
         )
-        -- Summary query
+        -- Summary query: generated from templates
         select
-            time,cat
+            date,cat
             ,count(1) n
             ,avg(score) avgscore, round(sum(amt)/1e3,2) total
         from x
-        group by time,cat
+        group by date,cat
         order by n desc
 
-    The ``sub query`` is an arbituary query within a with clause
-    named as ``x``.
-    It functions as a pre-processing step of the overall query.
+    Corresponding code::
 
-    Use the query objects' ``clause methods`` to iteratively
-    piece together a query, or use the ``sql`` method to provide
+        from dwopt import lt, make_test_tbl
+        _ = make_test_tbl(lt)
+        (
+            lt.qry('test a')
+            .select('a.*').case("amt", "amt < 1000 then amt*1.2", els="amt")
+            .where("score > 0.5")
+            .valc("date,cat", "avg(score) avgscore, round(sum(amt)/1e3,2) total")
+        )
+
+    Use the :ref:`clause methods` to iteratively
+    piece together a query, or use the :meth:`dwopt._qry._Qry.sql` method to provide
     an arbituary query. This created query will then be placed inside a
-    with block on invocation of any ``summary methods``.
+    with block and become the ``sub query`` on invocation of any :ref:`summary methods`.
 
     The ``summary query`` is a parameterized pre-built summary query template.
-    Call the query objects' ``summary methods`` to invoke these templates,
-    which completes the query and immediately runs it.
+    Call the :ref:`summary methods` to complete the whole query
+    and to immediately run it.
 
-    The ``summary query`` operates on top of the sub query, therefore
-    heavy intermediate results from the sub query are never realized
-    outside of the database engine.
-    These templates are the core of the package and achieve the bulk of
-    efficiency and convenience gains.
+    This way for large tables, heavy intermediate results from the ``sub query``
+    are never realized outside of the database engine,
+    while light summary results are placed in python for analysis.
 
     Examples
     --------
 
-    Create various qry objects relevant to various databases.
+    Create and use qry object using the :meth:`dwopt.dbo._Db.qry` method from the
+    :class:`dwopt.dbo._Db` class::
 
-    .. code-block:: python
+        from dwopt import lt
+        lt.iris()
+        lt.qry('iris').len()
+        lt.qry('iris').valc('species', 'avg(petal_length)')
+        lt.qry('iris').where('sepal_length > 3').valc('species', print=1)
 
-        from dwopt import pg, lt, oc
-        pg.qry('test').len()
-        lt.qry().from_('test').print()
-        oc.qry('test').run()
+    Use the :ref:`summary methods` for analysis::
 
-    Create and run a query with a sub query and summary query component.
+        from dwopt import pg as d
+        d.iris('iris')
+        q = d.qry('iris').where('sepal_length > 2.5')
+        q.top()
+        q.head()
+        q.len()
+        agg = ', '.join(f'avg({col})' for col in q.cols() if col != 'species')
+        q.valc('species', agg)
 
-    .. code-block:: python
-
-        lt.qry("test").where('score > 0.5').valc('time, cat')
-
-    The query that would be run:
-
-    .. code-block:: sql
-
-        with x as (
-            select * from test
-            where score > 0.5
-        )
-        select
-            time, cat
-            ,count(1) n
-        from x
-        group by time, cat
-        order by n desc
-
-    Iteratively piece together a query, instead of calling a summary method
-    to transform it into a sub query, call a operation method to
-    directly use the built query.
-
-    .. code-block:: python
+    Iteratively piece together a query using the :ref:`clause methods`::
 
         (
             lt.qry('test x')
@@ -128,7 +127,8 @@ class _Qry:
             .group_by('x.cat,y.cat')
             .having('count(1) > 50','sum(y.score) > 100')
             .order_by('x.cat desc','sum(y.score) desc')
-            .print() -- run()
+            .print()
+            #.run()
         )
 
     .. code-block:: sql

@@ -10,6 +10,8 @@ API Reference
    qry.rst
 
 
+.. _set-up functions:
+
 .. rubric:: The set-up functions
 
 .. autosummary::
@@ -21,6 +23,8 @@ API Reference
    dwopt.make_eng
    dwopt.make_test_tbl
 
+
+.. _operation methods:
 
 .. rubric:: Database operator object - operation methods
 
@@ -43,6 +47,8 @@ API Reference
    dwopt.dbo._Db.write_nodup
 
 
+.. _metadata methods:
+
 .. rubric:: Database operator object - metadata methods
 
 .. autosummary::
@@ -53,6 +59,8 @@ API Reference
    dwopt.dbo._Db.table_cols
    dwopt.dbo._Db.table_sizes
 
+
+.. _clause methods:
 
 .. rubric:: Query object - clause methods
 
@@ -71,6 +79,8 @@ API Reference
    dwopt._qry._Qry.sql
    dwopt._qry._Qry.where
 
+
+.. _summary methods:
 
 .. rubric:: Query object - summary methods
 
