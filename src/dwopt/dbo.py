@@ -33,7 +33,7 @@ def db(eng):
 
     >>> from dwopt import db
     >>> d = db("sqlite://")
-    >>> _ = d.mtcars()
+    >>> d.mtcars()
     >>> d.run('select count(1) from mtcars')
        count(1)
     0        32
@@ -42,14 +42,14 @@ def db(eng):
 
         from dwopt import db
         url = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
-        db(url).iris().len()
+        db(url).iris(q=True).len()
         150
 
     Use engine instead of url::
 
         from dwopt import db, make_eng
         eng = make_eng("sqlite://")
-        db(eng).mtcars().len()
+        db(eng).mtcars(q=1).len()
 
     Oracle::
 
@@ -131,7 +131,7 @@ class _Db:
 
     >>> from dwopt import db
     >>> d = db("sqlite://")
-    >>> _ = d.mtcars()
+    >>> d.mtcars()
     >>> d.run('select count(1) from mtcars')
        count(1)
     0        32
@@ -139,7 +139,7 @@ class _Db:
     Use the pre-instantiated Sqlite database operator object:
 
     >>> from dwopt import lt
-    >>> _ = lt.iris()
+    >>> lt.iris()
     >>> lt.run('select count(1) from iris')
        count(1)
     0       150
@@ -148,7 +148,7 @@ class _Db:
 
     >>> from dwopt import Pg
     >>> p = Pg("postgresql://dwopt_tester:1234@localhost/dwopt_test")
-    >>> p.mtcars().len()
+    >>> p.mtcars(q=1).len()
     32
     """
 
@@ -308,7 +308,7 @@ class _Db:
         Examples
         --------
         >>> from dwopt import pg
-        >>> _ = pg.mtcars()
+        >>> pg.mtcars()
         >>> pg.add_pkey('mtcars', 'name')
         """
         sql = f"alter table {sch_tbl_nme} add primary key ({pkey})"
@@ -489,7 +489,7 @@ class _Db:
         --------
         >>> from dwopt import lt
         >>> lt.drop('iris')
-        >>> _ = lt.iris()
+        >>> lt.iris()
         >>> lt.drop('iris')
         >>> lt.list_tables()
         Empty DataFrame
@@ -528,7 +528,7 @@ class _Db:
         Examples
         ---------
         >>> from dwopt import lt
-        >>> _ = lt.iris()
+        >>> lt.iris()
         >>> lt.drop('mtcars')
         >>> lt.exist('iris')
         True
@@ -537,7 +537,7 @@ class _Db:
 
         >>> from dwopt import pg as d
         >>> d.create_schema('test')
-        >>> _ = d.iris('test.iris')
+        >>> d.iris('test.iris')
         >>> d.drop('test.mtcars')
         >>> d.exist('test.iris')
         True
@@ -558,9 +558,8 @@ class _Db:
             else:
                 raise ex
 
-    def iris(self, sch_tbl_nme="iris"):
-        """
-        Create the iris test table on the database.
+    def iris(self, sch_tbl_nme="iris", q=False):
+        """Create the iris test table on the database.
 
         Drop and recreate if already exist.
         Sourced from `UCI iris <https://archive.ics.uci.edu/ml/datasets/Iris/>`_.
@@ -570,10 +569,12 @@ class _Db:
         sch_tbl_nme: str
             Table name in form ``my_schema1.my_table1`` or ``my_table1``.
             Default "iris".
+        q: bool
+            Return query object or not. Default False.
 
         Returns
         -------
-        dwopt._qry._Qry
+        None or dwopt._qry._Qry
             Query object with sch_tbl_nme loaded for convenience.
 
         Examples
@@ -585,7 +586,7 @@ class _Db:
         0       150
 
         >>> from dwopt import lt
-        >>> lt.iris().valc('species', 'avg(petal_length)')
+        >>> lt.iris(q=True).valc('species', 'avg(petal_length)')
            species   n  avg(petal_length)
         0  sicolor  50              4.260
         1   setosa  50              1.462
@@ -593,21 +594,21 @@ class _Db:
 
         >>> from dwopt import pg
         >>> pg.create_schema('test')
-        >>> pg.iris('test.iris').len()
+        >>> pg.iris('test.iris', q=1).len()
         150
         """
         sch_tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme, split=False)
         self.drop(sch_tbl_nme)
         self.cwrite(_make_iris_df(), sch_tbl_nme)
-        return self.qry(sch_tbl_nme)
+        if q:
+            return self.qry(sch_tbl_nme)
 
     from dwopt._sqls.base import list_cons
 
     from dwopt._sqls.base import list_tables
 
-    def mtcars(self, sch_tbl_nme="mtcars"):
-        """
-        Create the mtcars test table on the database.
+    def mtcars(self, sch_tbl_nme="mtcars", q=False):
+        """Create the mtcars test table on the database.
 
         Drop and recreate if already exist.
         Sourced from `R mtcars <https://www.rdocumentation.org/packages/datasets
@@ -618,10 +619,12 @@ class _Db:
         sch_tbl_nme: str
             Table name in form ``my_schema1.my_table1`` or ``my_table1``.
             Default "mtcars".
+        q: bool
+            Return query object or not. Default False.
 
         Returns
         -------
-        dwopt._qry._Qry
+        None or dwopt._qry._Qry
             Query object with sch_tbl_nme loaded for convenience.
 
         Examples
@@ -633,7 +636,7 @@ class _Db:
         0        32
 
         >>> from dwopt import lt
-        >>> lt.mtcars().valc('cyl', 'avg(mpg)')
+        >>> lt.mtcars(q=True).valc('cyl', 'avg(mpg)')
            cyl   n   avg(mpg)
         0    8  14  15.100000
         1    4  11  26.663636
@@ -641,13 +644,14 @@ class _Db:
 
         >>> from dwopt import pg
         >>> pg.create_schema('test')
-        >>> pg.mtcars('test.mtcars').len()
+        >>> pg.mtcars('test.mtcars', q=1).len()
         32
         """
         sch_tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme, split=False)
         self.drop(sch_tbl_nme)
         self.cwrite(_make_mtcars_df(), sch_tbl_nme)
-        return self.qry(sch_tbl_nme)
+        if q:
+            return self.qry(sch_tbl_nme)
 
     def qry(self, *args, **kwargs):
         """
@@ -743,7 +747,7 @@ class _Db:
         Run sql::
 
             from dwopt import lt
-            _ = lt.iris()
+            lt.iris()
             lt.run("select * from iris limit 1")
 
         Run sql with argument passing::
