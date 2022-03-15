@@ -60,8 +60,12 @@ def make_test_df(n=10000):
 
     return df
 
+def _parse_sch_tbl_nme(sch_tbl_nme):
+    return Pg._parse_sch_tbl_nme(Pg, sch_tbl_nme)
 
-def _make_pg_tbl(df, eng, tbl_nme):
+
+def _make_pg_tbl(df, eng, sch_tbl_nme):
+    _, sch, tbl_nme = _parse_sch_tbl_nme(sch_tbl_nme)
     meta = alc.MetaData()
     test_tbl = alc.Table(
         tbl_nme,
@@ -72,12 +76,10 @@ def _make_pg_tbl(df, eng, tbl_nme):
         alc.Column("cat", alc.String(20)),
         alc.Column("date", alc.Date),
         alc.Column("time", alc.DateTime),
+        schema=sch
     )
-    try:
-        with eng.connect() as conn:
-            test_tbl.drop(conn)
-    except Exception as ex:
-        _logger.debug(ex)
+    with eng.connect() as conn:
+        test_tbl.drop(conn, checkfirst=True)
     meta.create_all(eng)
     with eng.connect() as conn:
         conn.execute(
@@ -88,7 +90,8 @@ def _make_pg_tbl(df, eng, tbl_nme):
         )
 
 
-def _make_lt_tbl(df, eng, tbl_nme):
+def _make_lt_tbl(df, eng, sch_tbl_nme):
+    _, sch, tbl_nme = _parse_sch_tbl_nme(sch_tbl_nme)
     meta = alc.MetaData()
     test_tbl = alc.Table(
         tbl_nme,
@@ -99,12 +102,10 @@ def _make_lt_tbl(df, eng, tbl_nme):
         alc.Column("cat", alc.String),
         alc.Column("date", alc.String),
         alc.Column("time", alc.String),
+        schema=sch
     )
-    try:
-        with eng.connect() as conn:
-            test_tbl.drop(conn)
-    except Exception as ex:
-        _logger.debug(ex)
+    with eng.connect() as conn:
+        test_tbl.drop(conn, checkfirst=True)
     meta.create_all(eng)
     with eng.connect() as conn:
         conn.execute(
@@ -115,7 +116,8 @@ def _make_lt_tbl(df, eng, tbl_nme):
         )
 
 
-def _make_oc_tbl(df, eng, tbl_nme):
+def _make_oc_tbl(df, eng, sch_tbl_nme):
+    _, sch, tbl_nme = _parse_sch_tbl_nme(sch_tbl_nme)
     meta = alc.MetaData()
     test_tbl = alc.Table(
         tbl_nme,
@@ -126,12 +128,10 @@ def _make_oc_tbl(df, eng, tbl_nme):
         alc.Column("cat", alc.String(20)),
         alc.Column("date", alc.Date),
         alc.Column("time", alc.DateTime),
+        schema=sch
     )
-    try:
-        with eng.connect() as conn:
-            test_tbl.drop(conn)
-    except Exception as ex:
-        _logger.debug(ex)
+    with eng.connect() as conn:
+        test_tbl.drop(conn, checkfirst=True)
     meta.create_all(eng)
     with eng.connect() as conn:
         conn.execute(
@@ -142,7 +142,7 @@ def _make_oc_tbl(df, eng, tbl_nme):
         )
 
 
-def make_test_tbl(db, tbl_nme, n=10000):
+def make_test_tbl(db, sch_tbl_nme="test", n=10000):
     """Make or remake a test table on database.
 
     Uses Sqlalchemy toolkits for table drop, creation, insertion.
@@ -152,8 +152,8 @@ def make_test_tbl(db, tbl_nme, n=10000):
     db: dwopt.dbo._Db, or str
         Dwopt database operator object. Or one of ``'pg'``, ``'lt'``, and ``'oc'``,
         indicating usage of pre-defined testing database engines.
-    tbl_nme: str
-        Test table name.
+    sch_tbl_nme: str
+        Table name in form ``my_schema1.my_table1`` or ``my_table1``.
     n: int
         Number of records.
 
@@ -211,7 +211,7 @@ def make_test_tbl(db, tbl_nme, n=10000):
     * ``lt``: ``sqlite://``
     * ``oc``: Not implemented.
 
-    **Set-up testing databases**
+    **Install testing databases**
 
     *Postgre*::
 
@@ -223,7 +223,7 @@ def make_test_tbl(db, tbl_nme, n=10000):
     *Oracle*
 
     * Install oracle db from the
-      `link <https://www.oracle.com/database/technologies/xe-downloads.html>`_.
+      `oracle xe <https://www.oracle.com/database/technologies/xe-downloads.html>`_.
     * Schema: test_schema
     * Not implemented.
 
@@ -250,11 +250,11 @@ def make_test_tbl(db, tbl_nme, n=10000):
             raise ValueError("Invalid db str, use one of 'pg', 'lt', or 'oc'")
     df = make_test_df(n)
     if isinstance(db, Pg):
-        _make_pg_tbl(df, db.eng, tbl_nme)
+        _make_pg_tbl(df, db.eng, sch_tbl_nme)
     elif isinstance(db, Lt):
-        _make_lt_tbl(df, db.eng, tbl_nme)
+        _make_lt_tbl(df, db.eng, sch_tbl_nme)
     elif isinstance(db, Oc):
-        _make_oc_tbl(df, db.eng, tbl_nme)
+        _make_oc_tbl(df, db.eng, sch_tbl_nme)
     else:
         raise ValueError(
             "Invalid db, must be a database operator object, instances of "

@@ -403,7 +403,7 @@ class _Db:
     def create_schema(self, sch_nme):
         """Make and run a create schema statement.
 
-        Work on postgre.
+        Works on postgre.
 
         Args
         ----------

@@ -103,7 +103,7 @@ class _Qry:
         lt.iris()
         lt.qry('iris').len()
         lt.qry('iris').valc('species', 'avg(petal_length)')
-        lt.qry('iris').where('sepal_length > 3').valc('species', print=1)
+        lt.qry('iris').where('petal_length > 2').valc('species', print=1)
 
     Use the :ref:`summary methods` for analysis::
 
