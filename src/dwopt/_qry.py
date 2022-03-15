@@ -258,7 +258,7 @@ class _Qry:
 
     def case(self, col, *args, cond=None, els="NULL"):
         """Add a case when clause to the select clause.
-        
+
         Calling this method multiple times would add multiple statements.
 
         Parameters
