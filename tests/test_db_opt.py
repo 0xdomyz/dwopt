@@ -97,6 +97,7 @@ def test_db_opt_add_pkey(test_tbl, test_tbl2):
     else:
         raise ValueError
 
+
 def test_db_opt_create_schema(test_tbl, test_tbl2):
     db, df = test_tbl
     if isinstance(db, Pg):
@@ -106,8 +107,8 @@ def test_db_opt_create_schema(test_tbl, test_tbl2):
             if "does not exist" in str(ex):
                 pass
             else:
-                raise(ex)
-        db.create_schema('test')
+                raise (ex)
+        db.create_schema("test")
         db.run("create table test.test (col int)")
         db.run("drop schema test cascade")
     elif isinstance(db, Lt):
