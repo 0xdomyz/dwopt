@@ -4,7 +4,7 @@ import numpy as np
 import logging
 import re
 from dwopt._qry import PgQry, LtQry, OcQry
-from dwopt._sqls.base import _make_iris_df, _make_mtcars_df
+from dwopt.set_up import _make_iris_df, _make_mtcars_df
 
 _logger = logging.getLogger(__name__)
 
