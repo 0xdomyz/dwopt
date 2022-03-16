@@ -8,7 +8,7 @@ class _Qry:
     See examples for quick-start.
 
     Automatically instantiated via the :meth:`~dwopt.dbo._Db.qry` method from the
-    :class:`database operator <dwopt.dbo._Db>` class.
+    :class:`database operator <dwopt.dbo._Db>` objects.
 
     It is possible to pass in all needed parameters when calling the method.
     But it is clearer to only pass in one positional argument as table name,
@@ -88,9 +88,9 @@ class _Qry:
     an arbituary query. This created query will then be placed inside a
     with block and become the ``sub query`` on invocation of any :ref:`summary methods`.
 
-    The ``summary query`` is a parameterized pre-built summary query template.
-    Call the :ref:`summary methods` to complete the whole query
-    and to immediately run it.
+    The ``summary query`` is built from parameterized templates via
+    the :ref:`summary methods`. Calling one of them completes the whole query
+    and immediately runs it.
 
     This way for large tables, heavy intermediate results from the ``sub query``
     are never realized outside of the database engine,
@@ -100,7 +100,7 @@ class _Qry:
     --------
 
     Create and use qry object using the :meth:`~dwopt.dbo._Db.qry` method from the
-    :class:`database operator <dwopt.dbo._Db>` class::
+    :class:`database operator <dwopt.dbo._Db>` objects::
 
         from dwopt import lt
         lt.iris()
@@ -259,6 +259,10 @@ class _Qry:
                 + order_by
             )
 
+    def bin(self):
+        """WIP"""
+        raise NotImplementedError
+
     def case(self, col, *args, cond=None, els="NULL"):
         """Add a case when clause to the select clause.
 
@@ -332,6 +336,68 @@ class _Qry:
             _._select = _._select + cls
         return _
 
+    def cols(self):
+        """Fetch column names of the sub query table.
+
+        Returns
+        -------
+        Column names as list of str
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> from dwopt import lt
+        >>>
+        >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
+        >>> lt.drop('test')
+        >>> lt.create('test',{'col1':'int','col2':'int'})
+        >>> lt.write(tbl,'test')
+        >>> lt.qry("test").cols()
+            ['col1', 'col2']
+        """
+        return self.run("select * from x where 1=2").columns.tolist()
+
+    def dist(self, *args):
+        """Count number of distinct occurances of data.
+
+        Works on specified columns, or combination of columns, of the sub query table.
+
+        Parameters
+        ----------
+        *args : str or [str]
+            Either column names as str, or iterator of column name str.
+
+        Returns
+        -------
+        pandas.Series
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> from dwopt import lt
+        >>>
+        >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
+        >>> lt.drop('test')
+        >>> lt.create('test',{'col1':'int','col2':'int'})
+        >>> lt.write(tbl,'test')
+        >>> lt.qry("test").where("col1 < 5").dist('col1','col2',['col1','col2'])
+            count(distinct col1)                   5
+            count(distinct col2)                   5
+            count(distinct col1 || '_' || col2)    5
+            Name: 0, dtype: int64
+        """
+        _ = (" || '_' || ".join(_) if not isinstance(_, str) else _ for _ in args)
+        _ = "".join(
+            f"    ,count(distinct {j})\n" if i else f"    count(distinct {j})\n"
+            for i, j in enumerate(_)
+        )
+        _ = "select \n" f"{_}" "from x"
+        return self.run(_).iloc[0, :]
+
+    def five(self):
+        """WIP"""
+        raise NotImplementedError
+
     def from_(self, from_):
         """
         Add the from clause to query. Alternative to simply specifying table
@@ -387,6 +453,39 @@ class _Qry:
         _._group_by = self._args2str(args, ",")
         return _
 
+    def hash(self, *args):
+        """Calculate a simple oracle hash for table.
+
+        Arrive at a indicative hash value for a number of columns or all columns of
+        a sub query table.
+        Hash value is a number or symbol that is calculated from data
+        , and is sensitive to any small changes in data. It serves as method to
+        detect if any data element in data is changed.
+
+        Parameters
+        ----------
+        *args : str
+            Column names in str. If no value is given, a cols method will be
+            performed to fetch the list of all columns, from which a hash will be
+            calculated.
+
+        Returns
+        -------
+        int
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> from dwopt import oc
+        >>>
+        >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
+        >>> oc.drop('test')
+        >>> oc.create('test',{'col1':'int','col2':'int'})
+        >>> oc.write(tbl,'test')
+        >>> oc.qry("test").where("col1 < 5").hash()
+        """
+        raise NotImplementedError
+
     def having(self, *args):
         """
         Add the having clause to query.
@@ -414,6 +513,32 @@ class _Qry:
         _ = self.__copy__()
         _._having = self._args2str(args, "\n    and ")
         return _
+
+    def head(self):
+        """Fetch top 5 rows of the sub query table.
+
+        Returns
+        -------
+        pandas.DataFrame
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> from dwopt import lt
+        >>>
+        >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
+        >>> lt.drop('test')
+        >>> lt.create('test',{'col1':'int','col2':'int'})
+        >>> lt.write(tbl,'test')
+        >>> lt.qry("test").where("col1 < 5").head()
+                col1  col2
+            0     0    10
+            1     1    11
+            2     2    12
+            3     3    13
+            4     4    14
+        """
+        return self.run("select * from x limit 5")
 
     def join(self, tbl, *args, how="left"):
         """
@@ -461,6 +586,56 @@ class _Qry:
             _._join = cls
         return _
 
+    def len(self):
+        """Length of the sub query table.
+
+        Returns
+        -------
+        int
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> from dwopt import lt
+        >>>
+        >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
+        >>> lt.drop('test')
+        >>> lt.create('test',{'col1':'int','col2':'int'})
+        >>> lt.write(tbl,'test')
+        >>> lt.qry("test").len()
+            10
+        """
+        return self.run("select count(1) from x").iloc[0, 0]
+
+    def mimx(self, col):
+        """Fetch maximum and minimum values of a column.
+
+        Parameters
+        ----------
+        col : str
+            Column name as str.
+
+        Returns
+        -------
+        pandas.Series
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> from dwopt import lt
+        >>>
+        >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
+        >>> lt.drop('test')
+        >>> lt.create('test',{'col1':'int','col2':'int'})
+        >>> lt.write(tbl,'test')
+        >>> lt.qry("test").where("col1 < 5").mimx('col1')
+            max(col1)    4
+            min(col1)    0
+            Name: 0, dtype: int64
+        """
+        _ = "select \n" f"    max({col}),min({col})\n" "from x"
+        return self.run(_).iloc[0, :]
+
     def order_by(self, *args):
         """
         Add the order by clause to query.
@@ -490,59 +665,86 @@ class _Qry:
         _._order_by = self._args2str(args, ",")
         return _
 
-    def print(self):
-        """Print the underlying query.
+    def pct(self):
+        """WIP"""
+        raise NotImplementedError
+
+    def piv(self):
+        """WIP"""
+        raise NotImplementedError
+
+    def print(self, sum_qry=None):
+        """Print the built query.
+
+        * If the ``sum_qry`` argument is not given value,
+          print underlying query as it is.
+        * If a value is given, enclose the underlying query into a with
+          clause, attach the summary query after it, print the full query.
+
+        See also
+        ---------
+        :meth:`dwopt._qry._Qry.str`
+        :meth:`dwopt._qry._Qry.run`
 
         Examples
         --------
         >>> from dwopt import lt
-        >>> lt.qry().print()
-            select * from test
+        >>> lt.iris()
+        >>> lt.qry('iris').select('count(1)').print()
+        select count(1)
+        from iris
+        >>> lt.qry('iris').print('select count(1) from x')
+        with x as (
+            select * from iris
+        )
+        select count(1) from x
         """
-        self._make_qry()
-        print(self)
+        print(self.str(sum_qry))
 
-    def run(self, sql=None, *args, **kwargs):
-        """
-        Run the underlying query directly.
+    def run(self, sum_qry=None, **kwargs):
+        """Run the built query.
 
-        Primary usage of the query obejct is to make and run summary queries, instead
-        of using the operation methods.
+        * If the ``sum_qry`` argument is not given value,
+          run underlying query as it is.
+        * If a value is given, enclose the underlying query into a with
+          clause, attach the summary query after it, run the full query.
 
-        Parameters
+        Args
         ----------
-        sql :
-        *args :
-            Positional arguments to pass on to database operator's run method.
-        **kwargs :
+        sum_qry: str
+            Summary query string.
+        **kwargs:
             Keyword arguments to pass on to database operator's run method.
 
         Returns
         -------
         pandas.DataFrame or None
-            Returned by the database operator's run method.
+            Returned by the database operator's
+            :meth:`dwopt.dbo._Db.run` method.
+
+        See also
+        ---------
+        :meth:`dwopt._qry._Qry.str`
+        :meth:`dwopt._qry._Qry.print`
 
         Examples
         --------
-        >>> import pandas as pd
-        >>> from dw import lt
-        >>>
-        >>> tbl = pd.DataFrame({'col1': [1, 2], 'col2': ['a', 'b']})
-        >>> lt.drop('test')
-        >>> lt.create('test',{'col1':'int','col2':'text'})
-        >>> lt.write(tbl,'test')
-        >>> lt.qry("test").where("col2 = 'b'").run()
-            col1  col2
-        0     2     b
+        >>> from dwopt import lt
+        >>> lt.iris()
+        >>> lt.qry('iris').select('count(1)').run()
+           count(1)
+        0       150
+        >>> lt.qry('iris').run('select count(1) from x')
+           count(1)
+        0       150
+        >>> lt.qry('iris').where('petal_length>:x').run(
+        ...     'select count(1) from x', mods={'x':2}
+        ... )
+           count(1)
+        0       100
         """
-        self._make_qry()
-        if sql is not None:
-            _ = self._qry.replace("\n", "\n    ")
-            _ = "with x as (\n" f"    {_}\n" ")"
-            qry = f"{_}\n{sql}"
-        else:
-            qry = self._qry
-        return self._ops.run(qry, *args, **kwargs)
+        qry = self.str(sum_qry)
+        return self._ops.run(qry, **kwargs)
 
     def select(self, *args, sep=","):
         """
@@ -604,219 +806,45 @@ class _Qry:
         _._sql = sql
         return _
 
-    def where(self, *args):
-        """
-        Add the where clause to query.
+    def str(self, sum_qry=None):
+        """Return the built query as str.
 
-        Parameters
+        * If the ``sum_qry`` argument is not given value,
+          return underlying query as it is.
+        * If a value is given, enclose the underlying query into a with
+          clause, attach the summary query after it, return the full query.
+
+        Args
         ----------
-        *args : str or [str]
-            Conditions in str format, or iterator of condition str.
+        sum_qry: str
+            Summary query string.
 
         Returns
-        -------
-        dwopt._qry._Qry
-            New query object with clause added.
+        ---------
+        str
+
+        See also
+        ---------
+        :meth:`dwopt._qry._Qry.print`
+        :meth:`dwopt._qry._Qry.run`
 
         Examples
         --------
         >>> from dwopt import lt
-        >>> lt.qry('test').where('x>5','x<10').print()
-            select * from test
-            where x>5
-                and x<10
-        >>> lt.qry('test').where(['x>5','x<10','y <> 5']).print()
-            select * from test
-            where x>5
-                and x<10
-                and y <> 5
+        >>> lt.iris()
+        >>> lt.qry('iris').select('count(1)').str()
+        'select count(1)\\nfrom iris'
+        >>> lt.qry('iris').str('select count(1) from x')
+        'with x as (\\n    select * from iris\\n)\\nselect count(1) from x'
         """
-        _ = self.__copy__()
-        _._where = self._args2str(args, "\n    and ")
-        return _
-
-    def cols(self):
-        """Fetch column names of the sub query table.
-
-        Returns
-        -------
-        Column names as list of str
-
-        Examples
-        --------
-        >>> import pandas as pd
-        >>> from dwopt import lt
-        >>>
-        >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
-        >>> lt.drop('test')
-        >>> lt.create('test',{'col1':'int','col2':'int'})
-        >>> lt.write(tbl,'test')
-        >>> lt.qry("test").cols()
-            ['col1', 'col2']
-        """
-        return self.run("select * from x where 1=2").columns.tolist()
-
-    def bin(self):
-        """WIP"""
-        raise NotImplementedError
-
-    def dist(self, *args):
-        """Count number of distinct occurances of data.
-
-        Works on specified columns, or combination of columns, of the sub query table.
-
-        Parameters
-        ----------
-        *args : str or [str]
-            Either column names as str, or iterator of column name str.
-
-        Returns
-        -------
-        pandas.Series
-
-        Examples
-        --------
-        >>> import pandas as pd
-        >>> from dwopt import lt
-        >>>
-        >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
-        >>> lt.drop('test')
-        >>> lt.create('test',{'col1':'int','col2':'int'})
-        >>> lt.write(tbl,'test')
-        >>> lt.qry("test").where("col1 < 5").dist('col1','col2',['col1','col2'])
-            count(distinct col1)                   5
-            count(distinct col2)                   5
-            count(distinct col1 || '_' || col2)    5
-            Name: 0, dtype: int64
-        """
-        _ = (" || '_' || ".join(_) if not isinstance(_, str) else _ for _ in args)
-        _ = "".join(
-            f"    ,count(distinct {j})\n" if i else f"    count(distinct {j})\n"
-            for i, j in enumerate(_)
-        )
-        _ = "select \n" f"{_}" "from x"
-        return self.run(_).iloc[0, :]
-
-    def five(self):
-        """WIP"""
-        raise NotImplementedError
-
-    def hash(self, *args):
-        """Calculate a simple oracle hash for table.
-
-        Arrive at a indicative hash value for a number of columns or all columns of
-        a sub query table.
-        Hash value is a number or symbol that is calculated from data
-        , and is sensitive to any small changes in data. It serves as method to
-        detect if any data element in data is changed.
-
-        Parameters
-        ----------
-        *args : str
-            Column names in str. If no value is given, a cols method will be
-            performed to fetch the list of all columns, from which a hash will be
-            calculated.
-
-        Returns
-        -------
-        int
-
-        Examples
-        --------
-        >>> import pandas as pd
-        >>> from dwopt import oc
-        >>>
-        >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
-        >>> oc.drop('test')
-        >>> oc.create('test',{'col1':'int','col2':'int'})
-        >>> oc.write(tbl,'test')
-        >>> oc.qry("test").where("col1 < 5").hash()
-        """
-        raise NotImplementedError
-
-    def head(self):
-        """Fetch top 5 rows of the sub query table.
-
-        Returns
-        -------
-        pandas.DataFrame
-
-        Examples
-        --------
-        >>> import pandas as pd
-        >>> from dwopt import lt
-        >>>
-        >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
-        >>> lt.drop('test')
-        >>> lt.create('test',{'col1':'int','col2':'int'})
-        >>> lt.write(tbl,'test')
-        >>> lt.qry("test").where("col1 < 5").head()
-                col1  col2
-            0     0    10
-            1     1    11
-            2     2    12
-            3     3    13
-            4     4    14
-        """
-        return self.run("select * from x limit 5")
-
-    def len(self):
-        """Length of the sub query table.
-
-        Returns
-        -------
-        int
-
-        Examples
-        --------
-        >>> import pandas as pd
-        >>> from dwopt import lt
-        >>>
-        >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
-        >>> lt.drop('test')
-        >>> lt.create('test',{'col1':'int','col2':'int'})
-        >>> lt.write(tbl,'test')
-        >>> lt.qry("test").len()
-            10
-        """
-        return self.run("select count(1) from x").iloc[0, 0]
-
-    def mimx(self, col):
-        """Fetch maximum and minimum values of a column.
-
-        Parameters
-        ----------
-        col : str
-            Column name as str.
-
-        Returns
-        -------
-        pandas.Series
-
-        Examples
-        --------
-        >>> import pandas as pd
-        >>> from dwopt import lt
-        >>>
-        >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
-        >>> lt.drop('test')
-        >>> lt.create('test',{'col1':'int','col2':'int'})
-        >>> lt.write(tbl,'test')
-        >>> lt.qry("test").where("col1 < 5").mimx('col1')
-            max(col1)    4
-            min(col1)    0
-            Name: 0, dtype: int64
-        """
-        _ = "select \n" f"    max({col}),min({col})\n" "from x"
-        return self.run(_).iloc[0, :]
-
-    def pct(self):
-        """WIP"""
-        raise NotImplementedError
-
-    def piv(self):
-        """WIP"""
-        raise NotImplementedError
+        self._make_qry()
+        if sum_qry is not None:
+            _ = self._qry.replace("\n", "\n    ")
+            _ = "with x as (\n" f"    {_}\n" ")"
+            qry = f"{_}\n{sum_qry}"
+        else:
+            qry = self._qry
+        return qry
 
     def top(self):
         """Fetch top row of the sub query table.
@@ -910,6 +938,37 @@ class _Qry:
             f"order by {order_by_cls}"
         )
         return self.run(_)
+
+    def where(self, *args):
+        """
+        Add the where clause to query.
+
+        Parameters
+        ----------
+        *args : str or [str]
+            Conditions in str format, or iterator of condition str.
+
+        Returns
+        -------
+        dwopt._qry._Qry
+            New query object with clause added.
+
+        Examples
+        --------
+        >>> from dwopt import lt
+        >>> lt.qry('test').where('x>5','x<10').print()
+            select * from test
+            where x>5
+                and x<10
+        >>> lt.qry('test').where(['x>5','x<10','y <> 5']).print()
+            select * from test
+            where x>5
+                and x<10
+                and y <> 5
+        """
+        _ = self.__copy__()
+        _._where = self._args2str(args, "\n    and ")
+        return _
 
 
 class PgQry(_Qry):

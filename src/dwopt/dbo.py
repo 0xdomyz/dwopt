@@ -438,7 +438,9 @@ class _Db:
         """
         Create table and insert based on dataframe.
 
-        Replace '.' by '_' in dataframe column names.
+        * Replace '.' by '_' in dataframe column names.
+        * Data types infered based on the :meth:`dwopt.dbo._Db.create` method notes.
+        * Datetime and reversibility issue see :meth:`dwopt.dbo._Db.write` method notes.
 
         Args
         ----------
@@ -446,11 +448,6 @@ class _Db:
             Payload Dataframe with data to insert.
         sch_tbl_nme: str
             Table name in form ``my_schema1.my_table1`` or ``my_table1``.
-
-        See also
-        ----------
-        Data types infered based on the :meth:`dwopt.dbo._Db.create` method notes.
-        Datetime and reversibility issue see :meth:`dwopt.dbo._Db.write` method notes.
 
         Examples
         --------

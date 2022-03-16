@@ -24,6 +24,14 @@ API Reference
    dwopt.make_test_tbl
 
 
+.. rubric:: Database operator object
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt.dbo._Db
+
+
 .. _operation methods:
 
 .. rubric:: Database operator object - operation methods
@@ -60,6 +68,14 @@ API Reference
    dwopt.dbo._Db.table_sizes
 
 
+.. rubric:: Query object
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt._qry._Qry
+
+
 .. _clause methods:
 
 .. rubric:: Query object - clause methods
@@ -77,6 +93,7 @@ API Reference
    dwopt._qry._Qry.run
    dwopt._qry._Qry.select
    dwopt._qry._Qry.sql
+   dwopt._qry._Qry.str
    dwopt._qry._Qry.where
 
 
@@ -87,8 +104,8 @@ API Reference
 .. autosummary::
    :nosignatures:
 
-   dwopt._qry._Qry.cols
    dwopt._qry._Qry.bin
+   dwopt._qry._Qry.cols
    dwopt._qry._Qry.dist
    dwopt._qry._Qry.five
    dwopt._qry._Qry.hash
