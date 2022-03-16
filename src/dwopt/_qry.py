@@ -3,7 +3,7 @@ import pandas as pd
 
 class _Qry:
     """
-    The base query class.
+    The query class.
 
     See examples for quick-start.
 
@@ -13,12 +13,6 @@ class _Qry:
     It is possible to pass in all needed parameters when calling the method.
     But it is clearer to only pass in one positional argument as table name,
     and use the :ref:`clause methods` to build up a query instead.
-
-    The child classes relevant for different databases:
-
-    * ``dwopt._qry.PgQry``: the Postgre database.
-    * ``dwopt._qry.LtQry``: the Sqlite database.
-    * ``dwopt._qry.OcQry``: the Oracle database.
 
     Parameters
     ----------
@@ -258,6 +252,8 @@ class _Qry:
                 + having
                 + order_by
             )
+            if self._ops._dialect == "oc":
+                self._qry = self._qry.replace("select", "select /*+PARALLEL (4)*/")
 
     def bin(self):
         """WIP"""
@@ -336,36 +332,68 @@ class _Qry:
             _._select = _._select + cls
         return _
 
-    def cols(self):
+    def cols(self, out=None):
         """Fetch column names of the sub query table.
+
+        Args
+        --------
+        out: int
+            Output mode. None to run full query, 1 to print full query,
+            2 to return full query as str. Default None.
 
         Returns
         -------
-        Column names as list of str
+        Column names as list of str. Or full query as str.
 
         Examples
         --------
-        >>> import pandas as pd
-        >>> from dwopt import lt
-        >>>
-        >>> tbl = pd.DataFrame({'col1': range(10), 'col2': range(10,20)})
-        >>> lt.drop('test')
-        >>> lt.create('test',{'col1':'int','col2':'int'})
-        >>> lt.write(tbl,'test')
-        >>> lt.qry("test").cols()
-            ['col1', 'col2']
-        """
-        return self.run("select * from x where 1=2").columns.tolist()
+        >>> from dwopt import lt as d
+        >>> d.iris()
+        >>> d.qry('iris').cols()
+        ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species']
 
-    def dist(self, *args):
+        Use the presentational out modes:
+
+        >>> from dwopt import pg
+        >>> pg.create_schema('test')
+        >>> q = pg.iris('test.iris', q=1)
+        >>> q.cols(out=1)
+        with x as (
+            select * from test.iris
+        )
+        select * from x where 1=2
+        >>> q.cols(out=2)
+        'with x as (\\n    select * from test.iris\\n)\\nselect * from x where 1=2'
+
+        Select all columns except for one of them:
+
+        >>> from dwopt import lt
+        >>> q = lt.iris(q=1)
+        >>> [i for i in q.cols() if i != 'species']
+        ['sepal_length', 'sepal_width', 'petal_length', 'petal_width']
+        """
+        q = "select * from x where 1=2"
+        if out is None:
+            return self.run(q).columns.tolist()
+        elif out == 1:
+            self.print(q)
+        elif out == 2:
+            return self.str(q)
+        else:
+            raise ValueError("Invalid out, one of: None, 1, 2")
+
+    def dist(self, *args, out=None):
         """Count number of distinct occurances of data.
 
         Works on specified columns, or combination of columns, of the sub query table.
 
-        Parameters
+        Args
         ----------
         *args : str or [str]
             Either column names as str, or iterator of column name str.
+        out: int
+            Output mode. None to run full query, 1 to print full query,
+            2 to return full query as str. Default None.
 
         Returns
         -------
@@ -391,10 +419,18 @@ class _Qry:
             f"    ,count(distinct {j})\n" if i else f"    count(distinct {j})\n"
             for i, j in enumerate(_)
         )
-        _ = "select \n" f"{_}" "from x"
-        return self.run(_).iloc[0, :]
+        q = "select \n" f"{_}" "from x"
 
-    def five(self):
+        if out is None:
+            return self.run(q).iloc[0, :]
+        elif out == 1:
+            self.print(q)
+        elif out == 2:
+            return self.str(q)
+        else:
+            raise ValueError("Invalid out, one of: None, 1, 2")
+
+    def five(self, out=None):
         """WIP"""
         raise NotImplementedError
 
@@ -453,7 +489,7 @@ class _Qry:
         _._group_by = self._args2str(args, ",")
         return _
 
-    def hash(self, *args):
+    def hash(self, *args, out=None):
         """Calculate a simple oracle hash for table.
 
         Arrive at a indicative hash value for a number of columns or all columns of
@@ -462,12 +498,15 @@ class _Qry:
         , and is sensitive to any small changes in data. It serves as method to
         detect if any data element in data is changed.
 
-        Parameters
+        Args
         ----------
         *args : str
             Column names in str. If no value is given, a cols method will be
             performed to fetch the list of all columns, from which a hash will be
             calculated.
+        out: int
+            Output mode. None to run full query, 1 to print full query,
+            2 to return full query as str. Default None.
 
         Returns
         -------
@@ -484,7 +523,27 @@ class _Qry:
         >>> oc.write(tbl,'test')
         >>> oc.qry("test").where("col1 < 5").hash()
         """
-        raise NotImplementedError
+        if self._ops._dialect != "oc":
+            raise NotImplementedError
+        if len(args) == 0:
+            args = self.cols()
+        _ = args[0] if len(args) == 1 and not isinstance(args[0], str) else args
+        _ = " || '_' || ".join(_)
+        q = (
+            "select/*+ PARALLEL(4) */ \n"
+            "    ora_hash(sum(ora_hash(\n"
+            f"        {_}\n"
+            "    ) - 4294967296/2)) hash\n"
+            "from x"
+        )
+        if out is None:
+            return self.run(q).iloc[0, 0]
+        elif out == 1:
+            self.print(q)
+        elif out == 2:
+            return self.str(q)
+        else:
+            raise ValueError("Invalid out, one of: None, 1, 2")
 
     def having(self, *args):
         """
@@ -514,8 +573,14 @@ class _Qry:
         _._having = self._args2str(args, "\n    and ")
         return _
 
-    def head(self):
+    def head(self, out=None):
         """Fetch top 5 rows of the sub query table.
+
+        Args
+        -------
+        out: int
+            Output mode. None to run full query, 1 to print full query,
+            2 to return full query as str. Default None.
 
         Returns
         -------
@@ -538,7 +603,18 @@ class _Qry:
             3     3    13
             4     4    14
         """
-        return self.run("select * from x limit 5")
+        if self._ops._dialect == "oc":
+            q = "select * from x where rownum <= 5"
+        else:
+            q = "select * from x limit 5"
+        if out is None:
+            return self.run(q)
+        elif out == 1:
+            self.print(q)
+        elif out == 2:
+            return self.str(q)
+        else:
+            raise ValueError("Invalid out, one of: None, 1, 2")
 
     def join(self, tbl, *args, how="left"):
         """
@@ -586,8 +662,14 @@ class _Qry:
             _._join = cls
         return _
 
-    def len(self):
+    def len(self, out=None):
         """Length of the sub query table.
+
+        Args
+        -------
+        out: int
+            Output mode. None to run full query, 1 to print full query,
+            2 to return full query as str. Default None.
 
         Returns
         -------
@@ -605,15 +687,26 @@ class _Qry:
         >>> lt.qry("test").len()
             10
         """
-        return self.run("select count(1) from x").iloc[0, 0]
+        q = "select count(1) from x"
+        if out is None:
+            return self.run(q).iloc[0, 0]
+        elif out == 1:
+            self.print(q)
+        elif out == 2:
+            return self.str(q)
+        else:
+            raise ValueError("Invalid out, one of: None, 1, 2")
 
-    def mimx(self, col):
+    def mimx(self, col, out=None):
         """Fetch maximum and minimum values of a column.
 
-        Parameters
+        Args
         ----------
         col : str
             Column name as str.
+        out: int
+            Output mode. None to run full query, 1 to print full query,
+            2 to return full query as str. Default None.
 
         Returns
         -------
@@ -633,8 +726,15 @@ class _Qry:
             min(col1)    0
             Name: 0, dtype: int64
         """
-        _ = "select \n" f"    max({col}),min({col})\n" "from x"
-        return self.run(_).iloc[0, :]
+        q = "select \n" f"    max({col}),min({col})\n" "from x"
+        if out is None:
+            return self.run(q).iloc[0, :]
+        elif out == 1:
+            self.print(q)
+        elif out == 2:
+            return self.str(q)
+        else:
+            raise ValueError("Invalid out, one of: None, 1, 2")
 
     def order_by(self, *args):
         """
@@ -846,8 +946,14 @@ class _Qry:
             qry = self._qry
         return qry
 
-    def top(self):
+    def top(self, out=None):
         """Fetch top row of the sub query table.
+
+        Args
+        -------
+        out: int
+            Output mode. None to run full query, 1 to print full query,
+            2 to return full query as str. Default None.
 
         Returns
         -------
@@ -867,15 +973,26 @@ class _Qry:
             col2    10
             Name: 0, dtype: int64
         """
-        res = self.run("select * from x limit 1")
-        if res.empty:
-            return pd.Series(index=res.columns)
+        if self._ops._dialect == "oc":
+            q = "select * from x where rownum<=1"
         else:
-            return res.iloc[
-                0,
-            ]
+            q = "select * from x limit 1"
+        if out is None:
+            res = self.run(q)
+            if res.empty:
+                return pd.Series(index=res.columns)
+            else:
+                return res.iloc[
+                    0,
+                ]
+        elif out == 1:
+            self.print(q)
+        elif out == 2:
+            return self.str(q)
+        else:
+            raise ValueError("Invalid out, one of: None, 1, 2")
 
-    def valc(self, group_by, agg=None, order_by=None, n=True):
+    def valc(self, group_by, agg=None, order_by=None, n=True, out=None):
         """Value count of a column or combination of columns.
 
         A value count is a
@@ -883,7 +1000,7 @@ class _Qry:
         Also allow custom summary calculation, and custom order by clauses
         to be added.
 
-        Parameters
+        Args
         ----------
         group_by : str
             Group by clause as str.
@@ -894,6 +1011,9 @@ class _Qry:
         n : Bool
             Should the value count column be automatically created or not. Default
             to be True.
+        out: int
+            Output mode. None to run full query, 1 to print full query,
+            2 to return full query as str. Default None.
 
         Returns
         -------
@@ -928,7 +1048,7 @@ class _Qry:
                 order_by_cls = group_by_cls
         else:
             order_by_cls = order_by
-        _ = (
+        q = (
             "select \n"
             f"    {group_by_cls}\n"
             f"{f'    ,count(1) n{chr(10)}' if n else ''}"
@@ -937,7 +1057,14 @@ class _Qry:
             f"group by {group_by_cls}\n"
             f"order by {order_by_cls}"
         )
-        return self.run(_)
+        if out is None:
+            return self.run(q)
+        elif out == 1:
+            self.print(q)
+        elif out == 2:
+            return self.str(q)
+        else:
+            raise ValueError("Invalid out, one of: None, 1, 2")
 
     def where(self, *args):
         """
@@ -969,43 +1096,3 @@ class _Qry:
         _ = self.__copy__()
         _._where = self._args2str(args, "\n    and ")
         return _
-
-
-class PgQry(_Qry):
-    pass
-
-
-class LtQry(_Qry):
-    pass
-
-
-class OcQry(_Qry):
-    def _make_qry(self):
-        super()._make_qry()
-        self._qry = self._qry.replace("select", "select /*+PARALLEL (4)*/")
-
-    def hash(self, *args):
-        if len(args) == 0:
-            args = self.cols()
-        _ = args[0] if len(args) == 1 and not isinstance(args[0], str) else args
-        _ = " || '_' || ".join(_)
-        _ = (
-            "select/*+ PARALLEL(4) */ \n"
-            "    ora_hash(sum(ora_hash(\n"
-            f"        {_}\n"
-            "    ) - 4294967296/2)) hash\n"
-            "from x"
-        )
-        return self.run(_).iloc[0, 0]
-
-    def head(self):
-        return self.run("select * from x where rownum<=5")
-
-    def top(self):
-        res = self.run("select * from x where rownum<=1")
-        if res.empty:
-            return pd.Series(index=res.columns)
-        else:
-            return res.iloc[
-                0,
-            ]

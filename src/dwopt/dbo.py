@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import logging
 import re
-from dwopt._qry import PgQry, LtQry, OcQry
+from dwopt._qry import _Qry
 from dwopt.set_up import _make_iris_df, _make_mtcars_df
 
 _logger = logging.getLogger(__name__)
@@ -158,6 +158,13 @@ class _Db:
         else:
             self.eng = eng
         self.meta = alc.MetaData()
+        _nme = self.eng.name
+        if _nme == "postgresql":
+            self._dialect = "pg"
+        elif _nme == "sqlite":
+            self._dialect = "lt"
+        elif _nme == "oracle":
+            self._dialect = "oc"
 
     def _bind_mods(self, sql, mods=None, **kwargs):
         """Apply modification to sql statement"""
@@ -759,7 +766,7 @@ class _Db:
         select * from test
         where x>5
         """
-        raise NotImplementedError
+        return _Qry(self, *args, **kwargs)
 
     def run(self, sql=None, args=None, pth=None, mods=None, **kwargs):
         """
@@ -1086,9 +1093,6 @@ class _Db:
 
 
 class Pg(_Db):
-    def qry(self, *args, **kwargs):
-        return PgQry(self, *args, **kwargs)
-
     def _guess_dtype(self, dtype):
         if np.issubdtype(dtype, np.int64):
             return alc.dialects.postgresql.BIGINT
@@ -1122,9 +1126,6 @@ class Pg(_Db):
 
 
 class Lt(_Db):
-    def qry(self, *args, **kwargs):
-        return LtQry(self, *args, **kwargs)
-
     def _guess_dtype(self, dtype):
         if np.issubdtype(dtype, np.float64):
             return alc.REAL
@@ -1143,9 +1144,6 @@ class Lt(_Db):
 
 
 class Oc(_Db):
-    def qry(self, *args, **kwargs):
-        return OcQry(self, *args, **kwargs)
-
     def _guess_dtype(self, dtype):
         if np.issubdtype(dtype, np.int64):
             return alc.dialects.oracle.NUMBER
