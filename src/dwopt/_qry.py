@@ -255,7 +255,7 @@ class _Qry:
             if self._ops._dialect == "oc":
                 self._qry = self._qry.replace("select", "select /*+PARALLEL (4)*/")
 
-    def bin(self):
+    def bin(self, out=None):
         """WIP"""
         raise NotImplementedError
 
