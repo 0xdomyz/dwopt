@@ -27,8 +27,15 @@ def make_test_df(n=10000):
 
     Examples
     ----------
-    >> from dwopt.testing import make_test_df
-    >> make_test_df(10000)
+    >>> from dwopt.testing import make_test_df
+    >>> make_test_df(10000).iloc[0,:]
+    id                                0
+    score                      4.066531
+    amt                             813
+    cat                            test
+    date                     2022-01-01
+    time     2022-03-03 10:19:35.071235
+    Name: 0, dtype: object
     """
     random.seed(0)
     df = pd.DataFrame(
@@ -230,15 +237,24 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
 
     Examples
     ----------
+    Make test table through user provided database operator:
+
     >>> from dwopt import lt, make_test_tbl
-    >>> make_test_tbl(lt, 'test')
+    >>> _ = make_test_tbl(lt)
+    >>> lt.qry('test').len()
+    10000
+
+    Use the function to make database operator linked to the pre-defined
+    test databases, then make test table on it:
 
     >>> from dwopt import make_test_tbl
-    >>> lt, df = make_test_tbl('lt', 'test', 999)
-    >>> lt.qry('test').len()
-        999
+    >>> lt, df = make_test_tbl('lt', 'foo', 999)
+    >>> lt.eng
+    Engine(sqlite://)
+    >>> lt.qry('foo').len()
+    999
     >>> len(df)
-        999
+    999
     """
     if isinstance(db, str):
         if db == "pg":

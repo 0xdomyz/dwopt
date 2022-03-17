@@ -77,17 +77,20 @@ def save_url(db_nme, url, method="keyring"):
     ``variable = value`` pair: ``dwopt_lt = sqlite:///:memory:``.
 
     >>> import dwopt
-    >>> dwopt.save_url('pg', 'postgresql://scott2:tiger@localhost/mydatabase')
-        'Saved pg url to keyring'
+    >>> dwopt.save_url('pg', 'postgresql://dwopt_tester:1234@localhost/dwopt_test')
+    'Saved pg url to keyring'
     >>> dwopt.save_url('oc', 'oracle://scott2:tiger@tnsname', 'config')
-        'Saved oc url to config'
+    'Saved oc url to config'
 
     Exit and re-enter python for changes to take effect.
 
     >>> from dwopt import pg, lt, oc
-    >>> pg.run('select * from test')
-    >>> lt.list_tables()
-    >>> oc.qry('dual').head()
+    >>> pg.eng
+    Engine(postgresql://dwopt_tester:***@localhost/dwopt_test)
+    >>> lt.eng
+    Engine(sqlite:///:memory:)
+    >>> oc.eng
+    Engine(oracle://scott2:***@tnsname)
     """
     url = _encode(url)
     if method == "keyring":

@@ -10,7 +10,7 @@ _logger = logging.getLogger(__name__)
 
 
 def db(eng):
-    """Database operator object factory.
+    """The :class:`database operator object <dwopt.dbo._Db>` factory.
 
     Args
     -----------
@@ -24,12 +24,12 @@ def db(eng):
 
     Returns
     -------
-    dwopt.dbo.Pg, or dwopt.dbo.Lt, or dwopt.dbo.Oc
+    dwopt.dbo._Db
         The relevant database operator object.
 
     Examples
     -------------
-    Sqlite:
+    Produce a sqlite database operator object:
 
     >>> from dwopt import db
     >>> d = db("sqlite://")
@@ -38,24 +38,26 @@ def db(eng):
        count(1)
     0        32
 
-    Postgre::
+    Produce a postgre database operator object:
 
-        from dwopt import db
-        url = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
-        db(url).iris(q=True).len()
-        150
+    >>> from dwopt import db
+    >>> url = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
+    >>> db(url).iris(q=True).len()
+    150
 
-    Use engine instead of url::
+    Produce using engine object:
 
-        from dwopt import db, make_eng
-        eng = make_eng("sqlite://")
-        db(eng).mtcars(q=1).len()
+    >>> from dwopt import db, make_eng
+    >>> eng = make_eng("sqlite://")
+    >>> db(eng).mtcars(q=1).len()
+    32
 
-    Oracle::
+    Produce an oracle database operator object:
 
-        from dwopt import db, Oc
-        url = "oracle://scott2:tiger@tnsname"
-        isinstance(db(url), Oc)
+    >>> from dwopt import db, Oc
+    >>> url = "oracle://scott2:tiger@tnsname"
+    >>> isinstance(db(url), Oc)
+    True
     """
     if isinstance(eng, str):
         eng = alc.create_engine(eng)
@@ -140,9 +142,8 @@ class _Db:
 
     >>> from dwopt import lt
     >>> lt.iris()
-    >>> lt.run('select count(1) from iris')
-       count(1)
-    0       150
+    >>> lt.qry('iris').len()
+    150
 
     Instantiate and use a Postgre database operator object via the class:
 
@@ -167,7 +168,17 @@ class _Db:
             self._dialect = "oc"
 
     def _bind_mods(self, sql, mods=None, **kwargs):
-        """Apply modification to sql statement"""
+        """Apply modification to sql statement
+
+        Examples
+        -----------
+        import re
+        def f(sql, i, j):
+            return re.sub(f":{i}(?=[^a-zA-Z0-9]|$)", str(j), sql)
+        f("from tbl_:yr_0304", 'yr', 2017)
+        f(f("from tbl_:yr_:yr1_0304", 'yr', 2017), 'yr1', 2018)
+        f("from tbl_:yr_mth_tbl", 'yr_mth', 2017)
+        """
         if mods is None:
             mods = kwargs
         else:
@@ -326,6 +337,11 @@ class _Db:
         >>> from dwopt import pg
         >>> pg.mtcars()
         >>> pg.add_pkey('mtcars', 'name')
+        >>> pg.qry('information_schema.constraint_table_usage').select(
+        ...     'table_name, constraint_name').where(
+        ...     "table_schema = 'public'", "table_name = 'mtcars'").run()
+          table_name constraint_name
+        0     mtcars     mtcars_pkey
         """
         sql = f"alter table {sch_tbl_nme} add primary key ({pkey})"
         return self.run(sql)
@@ -338,13 +354,12 @@ class _Db:
         ----------
         sch_tbl_nme: str
             Table name in form ``my_schema1.my_table1`` or ``my_table1``.
-        dtypes : dict, optional
+        dtypes : {str:str}, optional
             Dictionary of column names to data types mappings.
         **kwargs :
             Convenient way to add mappings.
             Keyword to argument mappings will be added to the dtypes
             dictionary.
-            The keyword cannot be one of the positional parameter names.
 
         Notes
         -----
@@ -386,8 +401,9 @@ class _Db:
         --------
         >>> from dwopt import lt
         >>> lt.drop('test')
-        >>> lt.create('test'
-        ...     ,{
+        >>> lt.create(
+        ...     'test',
+        ...     {
         ...         'id': 'integer'
         ...         ,'score': 'real'
         ...         ,'amt': 'integer'
@@ -445,7 +461,7 @@ class _Db:
         """
         Create table and insert based on dataframe.
 
-        * Replace '.' by '_' in dataframe column names.
+        * Replace ``.`` by ``_`` in dataframe column names.
         * Data types infered based on the :meth:`dwopt.dbo._Db.create` method notes.
         * Datetime and reversibility issue see :meth:`dwopt.dbo._Db.write` method notes.
 
@@ -458,14 +474,25 @@ class _Db:
 
         Examples
         --------
-        ::
+        >>> import pandas as pd
+        >>> from dwopt import lt
+        >>> tbl = pd.DataFrame({'col1': [1, 2], 'col2': ['a', 'b']})
+        >>> lt.drop('test')
+        >>> lt.cwrite(tbl, 'test')
+        >>> lt.qry('test').run()
+           col1 col2
+        0     1    a
+        1     2    b
 
-            import pandas as pd
-            from dw import lt
-            tbl = pd.DataFrame({'col1': [1, 2], 'col2': ['a', 'b']})
-            lt.drop('test')
-            lt.cwrite(tbl, 'test')
-            lt.run("select * from test")
+        Attempt to write a dataframe into database and query back the same dataframe.
+
+        >>> from dwopt import pg
+        >>> from pandas.testing import assert_frame_equal
+        >>> df = pg.mtcars(q=1).run().sort_values('name').reset_index(drop=True)
+        >>> pg.drop('mtcars2')
+        >>> pg.cwrite(df, 'mtcars2')
+        >>> df_back = pg.qry('mtcars2').run().sort_values('name').reset_index(drop=True)
+        >>> assert_frame_equal(df_back, df)
         """
         df = df.copy()
         df.columns = [_.lower().replace(".", "_") for _ in df.columns]
@@ -491,8 +518,8 @@ class _Db:
 
         Args
         ----------
-        sch_tbl_nme : str
-            Table name in form 'myschema.mytable', or 'mytable'.
+        sch_tbl_nme: str
+            Table name in form ``my_schema1.my_table1`` or ``my_table1``.
 
         See also
         ----------
@@ -581,7 +608,7 @@ class _Db:
         -------
         sch_tbl_nme: str
             Table name in form ``my_schema1.my_table1`` or ``my_table1``.
-            Default "iris".
+            Default ``iris``.
         q: bool
             Return query object or not. Default False.
 
@@ -621,33 +648,40 @@ class _Db:
         List all constraints.
 
         Only works for postgre.
+        Uses the postgre `information_schema.constraint_table_usage
+        <https://www.postgresql.org/docs/current/infoschema-
+        constraint-table-usage.html>`_ table.
 
         Returns
         -------
         pandas.DataFrame
 
-        Notes
-        -----
-
-        Postgre sql used, `information_schema.constraint_table_usage
-        <https://www.postgresql.org/docs/current/infoschema-
-        constraint-table-usage.html>`_:
-
-        .. code-block:: sql
-
-            select * from information_schema.constraint_table_usage
-
+        Examples
+        ----------
+        >>> from dwopt import pg
+        >>> pg.mtcars()
+        >>> pg.add_pkey('mtcars', 'name')
+        >>> pg.list_cons().loc[
+        ...     lambda x:(x.table_schema == 'public') & (x.table_name == 'mtcars'),
+        ...     ['table_name', 'constraint_name']
+        ... ]
+          table_name constraint_name
+        0     mtcars     mtcars_pkey
         """
-        raise NotImplementedError
+        if self._dialect == "pg":
+            sql = "SELECT * FROM information_schema.constraint_table_usage"
+            return self.run(sql)
+        else:
+            raise NotImplementedError
 
     def list_tables(self, owner):
         """
         List all tables on database or specified schema.
 
-        Parameters
+        Args
         ----------
         owner : str
-            Only applicable for oracle. Name of the schema.
+            Only applicable for oracle. Name of the schema(owner).
 
         Returns
         -------
@@ -688,6 +722,15 @@ class _Db:
             where owner = ':owner'
             group by owner,table_name
 
+        Examples
+        -----------
+        >>> from dwopt import lt
+        >>> lt.iris()
+        >>> lt.mtcars()
+        >>> lt.list_tables().iloc[:,:-1]
+            type    name tbl_name  rootpage
+        0  table    iris     iris         2
+        1  table  mtcars   mtcars         5
         """
         raise NotImplementedError
 
@@ -702,7 +745,7 @@ class _Db:
         -------
         sch_tbl_nme: str
             Table name in form ``my_schema1.my_table1`` or ``my_table1``.
-            Default "mtcars".
+            Default ``mtcars``.
         q: bool
             Return query object or not. Default False.
 
@@ -738,12 +781,7 @@ class _Db:
             return self.qry(sch_tbl_nme)
 
     def qry(self, *args, **kwargs):
-        """
-        Make a query object.
-
-        Different database operator object provide different query object,
-        tailored to relevant databases.
-        See the :doc:`query objects <qry>` section for details.
+        """Make a :class:`query object <dwopt._qry._Qry>`.
 
         Args
         ----------
@@ -758,13 +796,13 @@ class _Db:
 
         Examples
         --------
-
-        Make query object from sqlite database operator object.
-
         >>> from dwopt import lt
-        >>> lt.qry("test").where("x>5").print()
-        select * from test
-        where x>5
+        >>> lt.mtcars()
+        >>> lt.qry('mtcars').valc('cyl', 'avg(mpg)')
+           cyl   n   avg(mpg)
+        0    8  14  15.100000
+        1    4  11  26.663636
+        2    6   7  19.742857
         """
         return _Qry(self, *args, **kwargs)
 
@@ -772,13 +810,16 @@ class _Db:
         """
         Run sql statement.
 
-        Support argument passing, text replacement
-        and reading statements from sql script.
+        Features:
+
+        * Argument binding.
+        * Text replacement.
+        * Reading from sql script file.
 
         Args
         ----------
         sql : str, optional
-            The sql statement to run. Only 1 statement is allowed.
+            The sql statement to run.
         args : dict, or [dict], optional
             Dictionary or list of dictionary of argument name str to argument
             data object mappings.
@@ -787,8 +828,8 @@ class _Db:
             See the notes and the examples section for details.
         pth : str, optional
             Path to sql script, ignored if the sql parameter is not None.
-            The script can hold one and only one sql statement, typically
-            a significant piece of table creation statement.
+            The script can hold a sql statement, for example a significant piece
+            of table creation statement.
         mods : dict, optional
             Dictionary of modification name str to modification str mappings.
             Replaces modification name in the sql by the respective
@@ -812,41 +853,47 @@ class _Db:
 
         **The args and the mods parameter**
 
-        An argument name is denoted in the sql by prepending
-        a colon symbol ``:`` before a str.
+        An argument name or a modification name is denoted in the sql by prepending
+        a colon symbol ``:`` before a series of alphanumeric or underscore symbols.
 
-        Similiarly, a modification name is denoted by prepending a
-        colon symbol ``:`` before a str in the sql.
-        The end of str is to be followed by a symbol other than
-        a lower or upper case letter, or a number.
-        It is also ended before a line break.
+        In addition, the end of the series for the modification name is to be
+        followed by a non-alphanumeric or a end of line symbol. This is to distinguish
+        names such as ``:var`` and ``:var1``.
 
-        The args parameter method of passing arguments is less prone
-        to unintended sql injection, while the mods paramter method of
-        text replacement gives much more flexibility when it comes to
-        programatically generate sql statment.
+        The args parameter binding is recommanded where possible,
+        while the mods paramter method of text replacement gives
+        more flexibility when it comes to programatically generate sql statment.
 
         Examples
         --------
-        Run sql::
+        Run sql:
 
-            from dwopt import lt
-            lt.iris()
-            lt.run("select * from iris limit 1")
+        >>> from dwopt import lt
+        >>> lt.iris()
+        >>> lt.run("select * from iris limit 1")
+           sepal_length  sepal_width  petal_length  petal_width species
+        0           5.1          3.5           1.4          0.2  setosa
 
-        Run sql with argument passing::
+        Run sql with argument passing:
 
-            lt.run("select count(1) from iris where species = :x",args = {'x':'setoso'})
+        >>> from dwopt import lt
+        >>> lt.iris()
+        >>> lt.run("select count(1) from iris where species = :x",
+        ...     args = {'x':'setosa'})
+           count(1)
+        0        50
 
-        Run sql with text modification::
+        Run sql with text modification:
 
-            old = 'iris'
-            new = 'iris2'
-            lt.run("create table :x as select * from :y",
-                mods = {'x':new, 'y': old})
-            lt.run("drop table :tbl", tbl = old)
-            lt.run("select a.*, :col + 1 as :col_added from :tbl a"
-                   , mods = {'tbl': new}, col = 'petal_length')
+        >>> from dwopt import lt
+        >>> lt.iris()
+        >>> old = 'iris'
+        >>> new = 'iris2'
+        >>> lt.run("drop table if exists :var", var=new)
+        >>> lt.run("create table :x as select * from :y", mods={'x':new, 'y': old})
+        >>> lt.run("select count(1) from :tbl", tbl=new)
+           count(1)
+        0       150
         """
         if sql is None and pth is not None:
             with open(pth) as f:
@@ -892,6 +939,18 @@ class _Db:
         Returns
         -------
         pandas.DataFrame
+
+        Examples
+        -----------
+        >>> from dwopt import pg
+        >>> pg.iris()
+        >>> pg.table_cols('public.iris')
+            column_name          data_type
+        0  sepal_length               real
+        1   sepal_width               real
+        2  petal_length               real
+        3   petal_width               real
+        4       species  character varying
         """
         raise NotImplementedError
 
@@ -958,15 +1017,15 @@ class _Db:
         and data types on the database table.
 
         With the set up used in the :func:`dwopt.make_test_tbl` function, we have
-        following results (Actual tests see the test script relevant for this
-        method):
+        following results (See the examples and the test function relevant for
+        the :meth:`dwopt.dbo._Db.write_nodup` method):
 
         * Postgre example has reversibility except for row ordering and auto generated
           pandas dataframe index. These can be strightened as below.
 
           .. code-block:: python
 
-              df.reset_index(drop=True).sort_values('id')
+              df.sort_values('id').reset_index(drop=True)
 
         * Sqlite stores datetime datatypes as text, this causes a str type column to
           be read back. One strategy is to convert from datatime and NaT to
@@ -994,15 +1053,39 @@ class _Db:
 
         Examples
         --------
-        ::
+        Write dataframe into a table.
 
-            import pandas as pd
-            from dw import lt
-            tbl = pd.DataFrame({'col1': [1, 2], 'col2': ['a', 'b']})
-            lt.drop('test')
-            lt.create('test', col1='int', col2='text'})
-            lt.write(tbl,'test')
-            lt.run('select * from test')
+        >>> import pandas as pd
+        >>> from dwopt import lt
+        >>> tbl = pd.DataFrame({'col1': [1, 2], 'col2': ['a', 'b']})
+        >>> lt.drop('test')
+        >>> lt.create('test', col1='int', col2='text')
+        >>> lt.write(tbl,'test')
+        >>> lt.run('select * from test')
+           col1 col2
+        0     1    a
+        1     2    b
+
+        Attempt to write a dataframe into database and query back the same dataframe.
+
+        >>> from dwopt import make_test_tbl
+        >>> from pandas.testing import assert_frame_equal
+        >>> pg, df = make_test_tbl('pg')
+        >>> pg.drop('test')
+        >>> pg.create(
+        >>>     "test",
+        >>>     dtypes={
+        >>>         "id": "bigint primary key",
+        >>>         "score": "float8",
+        >>>         "amt": "bigint",
+        >>>         "cat": "varchar(20)",
+        >>>         "date":"date",
+        >>>         "time":"timestamp"
+        >>>     }
+        >>> )
+        >>> pg.write(df, 'test')
+        >>> df_back = pg.qry('test').run().sort_values('id').reset_index(drop=True)
+        >>> assert_frame_equal(df_back, df)
         """
         L = len(df)
         sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
