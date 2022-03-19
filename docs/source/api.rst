@@ -6,7 +6,7 @@ API Reference
    :hidden:
 
    set_up.rst
-   db.rst
+   dbo.rst
    qry.rst
 
 
