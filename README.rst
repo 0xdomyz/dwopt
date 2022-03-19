@@ -1,26 +1,21 @@
 DWOPT - Datawarehouse Operator
 ==============================
 
-**Dwopt** is a Python package that attempts to streamline
-the insight generation process when working with database tables.
+Getting insights out of database tables can often be unstreamlined.
+Does one read in millions of rows before doing any work on Python,
+or run sql elsewhere and use intermediate CSVs,
+or write sql strings in a python script?
 
-The interface between databases and python can often be unstreamlined.
-Does one read in millions of rows before doing anything,
-or run sql elsewhere and copy some CSVs around,
-or write up some embedded sql in the middle of a python script?
+**Dwopt** is a Python package that streamlines analytics on databases
+via pre-built sql templates and a flexible summary query building framework.
 
-**Dwopt** allows frictionless running of sql codes/scripts,
-default credentials on the system keyring,
-simple query generation via code,
-making & running common summary queries, DDL, DML statement
-via pre-built templates. It also logs the sql used along the way.
-
-All together, for common analytics,
-an Excel-pivot table or dataframe summary function like experience
-on large database tables could be effortlessly achieved,
-see examples in the Features & the Walk Through section.
+The goal is to have, at fingertips,
+Excel-pivot-table-like and dataframe-summary-methods-like API
+for common analytics on large database tables.
+See the Features and the Walk Through section for examples.
 
 .. end-of-readme-intro
+
 
 Installation
 ------------
@@ -33,120 +28,102 @@ Installation
 Features
 --------
 
-* `Run query with less friction using default credentials`_
-* `Automate processes with run sql from file, text replacement`_
-* `Programatically make and run simple query`_
-* `Sql template: Excel-pivot table experience`_
-* `Sql template: Dataframe summary function experience`_
-* `Sql template: DDL/DML statement, metadata queries`_
-* `Automatic logging with fully reproducible sql`_
+* `Run sql frictionlessly using saved credentials`_
+* `Run sql script with text replacement`_
+* `Programatically make simple sql query`_
+* `Templates: Excel-pivot-table-like API`_
+* `Templates: Dataframe-summary-methods-like API`_
+* `Templates: DDL/DML statements, metadata queries`_
+* `Standard logging with reproducible sql`_
 
 
 Walk Through
 ------------
 
-.. |save_url| replace:: ``save_url``
-.. _save_url: https://dwopt.readthedocs.io/en/stable/urls.html#dwopt.save_url
-
-.. |run| replace:: ``run``
-.. _run: https://dwopt.readthedocs.io/en/stable/db.html#dwopt.db._Db.run
-
-.. |qry| replace:: ``qry``
-.. _qry: https://dwopt.readthedocs.io/en/stable/db.html#dwopt.db._Db.qry
-
-.. |valc| replace:: ``valc``
-.. _valc: https://dwopt.readthedocs.io/en/stable/qry.html#dwopt._qry._Qry.valc
-
-.. |dataframe| replace:: ``dataframe``
-.. _dataframe: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html
-
-.. |pivot| replace:: ``pivot``
-.. _pivot: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.pivot.html
-
-.. |logging| replace:: ``logging``
-.. _logging: https://docs.python.org/3/library/logging.html#module-logging
-
-.. |INFO| replace:: ``INFO``
-.. _INFO: https://docs.python.org/3/howto/logging.html#when-to-use-logging
-
-.. _operator object: https://dwopt.readthedocs.io/en/stable/db.html#dwopt.db._Db
-.. _operator constructors: https://dwopt.readthedocs.io/en/stable/db.html#dwopt.db._Db
-.. _query object: https://dwopt.readthedocs.io/en/stable/qry.html#dwopt._qry._Qry
-.. _clause methods: https://dwopt.readthedocs.io/en/stable/api.html
-.. _summary methods: https://dwopt.readthedocs.io/en/stable/api.html
-.. _operation methods: https://dwopt.readthedocs.io/en/stable/api.html
-.. _metadata methods: https://dwopt.readthedocs.io/en/stable/api.html
-
-Run query with less friction using default credentials
+Run sql frictionlessly using saved credentials
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-On import, the package gives ready-to-be-used `operator object`_
+.. _database operator objects: https://dwopt.readthedocs.io/en/stable/dbo.html#dwopt.dbo._Db
+.. |dwopt.db| replace:: ``dwopt.db``
+.. _dwopt.db: https://dwopt.readthedocs.io/en/stable/set_up.html#dwopt.db
+.. |dwopt.save_url| replace:: ``dwopt.save_url``
+.. _dwopt.save_url: https://dwopt.readthedocs.io/en/stable/set_up.html#dwopt.save_url
+
+On import, the package gives ready-to-be-used `database operator objects`_
 (e.g. ``pg``, ``lt``, ``oc``, one for each supported database),
 with default credentials
-(Saved prior by user to the system keyring using the |save_url|_ function).
-These allow frictionless running of sql from any python/console window.
+(Saved prior by user to the system keyring using the |dwopt.save_url|_ function).
 
 >>> from dwopt import pg
->>> pg.run('select count(1) from test')
-    42
+>>> pg.iris()
+>>> pg.run('select count(1) from iris')
+150
 
-Combined with the sql templates, back-of-envelope data insights can be
-achieved quickly.
+This way, quick analysis can be done from any Python/Console window:
 
 >>> from dwopt import lt
->>> lt.make_iris()
->>> lt.qry('iris').valc('species', 'avg(sepal_length)')
-       species   n  avg(sepal_length)
-    0  sicolor  50              5.936
-    1   setosa  50              5.006
-    2  rginica  50              6.588
+>>> lt.iris()
+>>> lt.qry('iris').valc('species', 'avg(petal_length)')
+   species   n  avg(petal_length)
+0  sicolor  50              4.260
+1   setosa  50              1.462
+2  rginica  50              5.552
 
-Alternatively, use the `operator constructors`_ (e.g. ``Pg``, ``Lt``, ``Oc``)
+Alternatively, use the database operator object factory function |dwopt.db|_
 and the database engine url to access database.
 
->>> from dwopt import Pg
->>> url = "postgresql://scott:tiger@localhost/mydatabase"
->>> pg = Pg(url)
->>> pg.run('select count(1) from test')
-    42
+>>> from dwopt import db
+>>> d = db("postgresql://dwopt_tester:1234@localhost/dwopt_test")
+>>> d.mtcars()
+>>> d.run('select count(1) from mtcars')
+32
 
-Automate processes with run sql from file, text replacement
+
+Run sql script with text replacement
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The `operator object`_'s |run|_ method also allows running sql stored on a file.
-One could then replace parameters via a mapping dictionary,
-or simply supply the mappings to the function directly.
+.. |run| replace:: ``run``
+.. _run: https://dwopt.readthedocs.io/en/stable/dbo.html#dwopt.dbo._Db.run
 
-.. code-block:: python
+The database operator object's |run|_ method allows running sql stored on a file.
+One could then replace ``:`` marked parameters via mappings supplied on runtime.
 
-    from dwopt import oc
-    oc.run(pth = "E:/projects/my_sql_script.sql"
-        , my_run_date = '2022-01-31'
-        , my_label = '20220131'
-        , threshold = 10.5)
+>>> from dwopt import pg, make_test_tbl
+>>> _ = make_test_tbl(pg)
+>>> pg.run(pth = "E:/projects/my_sql_script.sql",
+...     my_run_date = '2022-03-03',
+...     my_label = '20220303',
+...     threshold = 5)
+   count
+0    137
 
 Above runs the sql stored on ``E:/projects/my_sql_script.sql`` as below:
 
 .. code-block:: sql
 
+    drop table if exists monthly_extract_:my_label;
     create table monthly_extract_:my_label as
     select * from test
-    where 
+    where
         date = to_date(':my_run_date','YYYY-MM-DD')
-        and measurement > :threshold
+        and score > :threshold;
+    select count(1) from monthly_extract_:my_label;
 
-On future releases, the package may migrate to
-the `jinja2 <https://jinja2docs.readthedocs.io/en/stable/>`_
-package's directive syntax.
 
-Programatically make and run simple query
+Programatically make simple sql query
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The `operator object`_'s |qry|_ method returns the `query object`_.
+.. _clause methods: https://dwopt.readthedocs.io/en/stable/api.html#clause-methods
+.. |qry| replace:: ``qry``
+.. _qry: https://dwopt.readthedocs.io/en/stable/dbo.html#dwopt.db._Db.qry
+.. _query object: https://dwopt.readthedocs.io/en/stable/qry.html#dwopt._qry._Qry
+.. _summary methods: https://dwopt.readthedocs.io/en/stable/api.html#summary-methods
+
+The database operator object's |qry|_ method returns the `query object`_.
 Use it's `clause methods`_ to make a simple sql query, as it's underlying query.
 The underlying query can be run directly, but the main usage is to act as
 the preprocessing step of the `summary methods`_
-explained in the following sections.
+explained in the subsequent sections.
 
 .. code-block:: python
 
@@ -175,36 +152,37 @@ Above prints:
     where score > 0.5
         and cat = 'test'
 
-On future releases, the package's query construction internals may
-be based on the `sqlalchemy <https://www.sqlalchemy.org/>`_ pakage's toolkit.
 
-Sql template: Excel-pivot table experience
+Templates: Excel-pivot-table-like API
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A few lines of code specifying minimal information could produce a summary
-table similiar to what could be achieved in Excel. Difference being
+.. |valc| replace:: ``valc``
+.. _valc: https://dwopt.readthedocs.io/en/stable/qry.html#dwopt._qry._Qry.valc
+
+A few lines of code specifying minimal information could produce a pivot-table
+similiar to what could be achieved in Excel. Difference being
 it is the efficient database engine doing the data processing work,
 and the flexible python machineries doing the presentation work.
-
-The `operator object`_'s |qry|_ method returns the `query object`_.
-Use it's `summary methods`_ to make and run summary queries.
-These methods operate on top of the underlying query.
 
 For example:
 
 .. code-block:: python
 
-    from dwopt import lt #1
-    lt.qry('test').where("score > 0.5") \ #2
-    .valc('time, cat',"avg(score) avgscore, round(sum(amt)/1e3,2) total") \ #3
-    .pivot('time','cat',['n','avgscore','total']) #4
+    from dwopt import lt, make_test_tbl #1
+    _ = make_test_tbl(lt)
+    (
+        lt.qry('test')
+        .where('score > 0.5', 'date is not null', 'cat is not null') #2
+        .valc('date, cat','avg(score) avgscore, round(sum(amt)/1e3,2) total') #3
+        .pivot('date', 'cat') #4
+    )
 
 Results:
 
 ==========  =====  =====  ========  ========  ======  ======
 cat           n           avgscore             total
 ----------  -----  -----  --------  --------  ------  ------
-time         test  train    test     train     test   train 
+date         test  train    test     train     test   train 
 ==========  =====  =====  ========  ========  ======  ======
 2013-01-02  816.0  847.0  0.746747  0.750452  398.34  417.31
 2013-02-02  837.0  858.0  0.748214  0.743094  419.11  447.04
@@ -213,15 +191,17 @@ time         test  train    test     train     test   train
 
 Explanation of lines:
 
-#. Get the default sqlite `operator object`_.
-#. Make, but do not run, an underlying sub query.
+.. |pivot| replace:: ``pivot``
+.. _pivot: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.pivot.html
+
+#. Set up the databse operator object and the test table.
+#. Make, but do not run, an underlying query.
 #. Make and run a value counts summary query (|valc|_) with 2 groups,
    custom calcs, with the previous step's underlying query placed
    inside a with clause.
-#. Query result comes back to python as a standard pandas |dataframe|_,
-   call it's |pivot|_ method.
+#. Query result comes back to python as a pandas dataframe, call it's |pivot|_ method.
 
-Automatic logs showing the sql that was ran on line 3:
+Automatic logs showing the sql that was ran on #3:
 
 .. code-block:: sql
 
@@ -239,23 +219,19 @@ Automatic logs showing the sql that was ran on line 3:
     order by n desc
     2022-01-23 11:08:13,413 [INFO] done
 
-On future releases, the package's templating internals may be
-driven by the
-`jinjasql <https://github.com/sripathikrishnan/jinjasql>`_
-package.
 
-Sql template: Dataframe summary function experience
+Templates: Dataframe-summary-methods-like API
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is possible to mimic what some of the dataframe summary functions
-would return, but implement via running sql templates.
+It is possible to mimic some of the dataframe's summary methods,
+but implement via sql templates.
 Difference being
 it is the efficient database engine doing the data processing work,
 and the flexible python machineries doing the presentation work.
 
-The `operator object`_'s |qry|_ method returns the `query object`_.
-Use it's `summary methods`_ to make and run summary queries.
-These methods operate on top of the underlying query.
+Use the `query object`_ and it's list of `summary methods`_
+to make and run summary queries.
+These methods works under the summary query building framework.
 
 For example:
 
@@ -270,26 +246,17 @@ For example:
     tbl.mimx('time')  #min and max of the column
     tbl.dist('time', 'time, cat') #count distinct on the column or columns
 
-Explanation of lines:
 
-#. Get the default sqlite `operator object`_.
-#. Make, but do not run, an underlying sub query.
-#. See the `summary methods`_ section for list of methods and
-   their descriptions, examples, underlying sql shown in logs.
-
-Sql template: DDL/DML statement, metadata queries
+Templates: DDL/DML statements, metadata queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The `operator object`_'s `operation methods`_ allows running of
-DDL/DML statements programatically, and enhances functionalities 
-where desirable. 
+.. _metadata methods: https://dwopt.readthedocs.io/en/stable/api.html#metadata-methods
+.. _operation methods: https://dwopt.readthedocs.io/en/stable/api.html#operation-methods
 
-Also, the `operator object`_'s `metadata methods`_ makes some useful
-metadata queries available.
+Use the list of `operation methods`_ to make and run some
+DDL/DML statements with convenient or enhanced functionalities. Example:
 
-Operation methods example:
-
-.. code-block:: python
+::
 
     from dwopt import lt
     lt.drop('test')
@@ -309,9 +276,10 @@ Operation methods example:
     lt.write(df,'test')
     lt.write_nodup(df,'test',['id']) #remove duplicates before inserting
 
-Metadata methods example:
+Use the list of `metadata methods`_ to make and run some useful metadata queries.
+Example:
 
-.. code-block:: python
+::
 
     from dwopt import pg
     pg.list_tables() #list all tables
@@ -319,10 +287,15 @@ Metadata methods example:
     pg.table_cons() #list constraints
 
 
-Automatic logging with fully reproducible sql
+Standard logging with reproducible sql
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Many of the package's methods are wired through the standard |logging|_ package.
+Many of the package's methods are wired through the standard
+`logging <https://docs.python.org/3/library/logging.html#module-logging>`_
+package.
+
+.. |INFO| replace:: ``INFO``
+.. _INFO: https://docs.python.org/3/howto/logging.html#when-to-use-logging
 
 In particular, the |run|_ method emits sql used as |INFO|_ level message.
 The relevant logger object has standard naming and is called ``dwopt.db``.
@@ -384,10 +357,60 @@ Example logs:
     order by n desc
     2022-01-23 11:08:13,413 [INFO] done
 
-On future releases, the package's logging functions may be
-changed to the `loguru <https://pypi.org/project/loguru/>`_ package.
+
+Development
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Testing
+"""""""""""""""""""""""
+
+Main tests and checks. Only test for sqlite:
+
+.. code-block:: console
+
+    tox
+
+Quick main test:
+
+.. code-block:: console
+
+    pytest
+
+.. |dwopt.make_test_tbl| replace:: ``dwopt.make_test_tbl``
+.. _dwopt.make_test_tbl: https://dwopt--10.org.readthedocs.build/en/10/set_up.html#dwopt.make_test_tbl
+
+Testing for sqlite, postgre, oracle.
+Set up environment based on |dwopt.make_test_tbl|_ function notes.
+Oracle test unimplemented:
+
+.. code-block:: console
+
+    pytest --db="pg"
+
+.. code-block:: console
+
+    pytest --db="pg" --db="oc"
+
+Future
+""""""""""""""""""""""""""
+
+* Set up oracle test environment.
+* Add more summary templates based on Python pandas, R tidyverse,
+  and Excel pivot table functionalities.
+* Add more DML/DDL, metadata templates.
+* For logging package, consider using
+  `loguru <https://pypi.org/project/loguru/>`_.
+* For sql syntax, consider using `sqlfluff <https://docs.sqlfluff.com/en/stable/>`_
+  style and toolkit.
+* For templating internals, consider using
+  `jinjasql <https://github.com/sripathikrishnan/jinjasql>`_ toolkit.
+* For query building internals, consider using
+  `sqlalchemy <https://www.sqlalchemy.org/>`_ toolkit.
+* For text replacement directives, consider using
+  `jinja2 <https://jinja2docs.readthedocs.io/en/stable/>`_ syntax.
 
 .. end-of-readme-usage
+
 
 Documentation
 -------------

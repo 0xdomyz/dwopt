@@ -37,9 +37,9 @@ class _Qry:
 
     Notes
     -----
-    .. _The query building framework:
+    .. _The summary query building framework:
 
-    **The query building framework**
+    **The summary query building framework**
 
     Queries are flexibly built as a combination of a ``sub query``
     and a ``summary query`` from templates.
