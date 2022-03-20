@@ -90,7 +90,7 @@ Run sql script with text replacement
 .. |run| replace:: ``run``
 .. _run: https://dwopt.readthedocs.io/en/stable/dbo.html#dwopt.dbo._Db.run
 
-Use the `database operator object's <database operator objects>`_
+Use the database operator object's
 |run|_ method to run sql script file.
 One could then replace ``:`` marked parameters via mappings supplied to the method.
 
@@ -185,12 +185,11 @@ Then call the result dataframe's |pivot|_ method to finalize the pivot table.
 .. code-block:: python
 
     from dwopt import lt, make_test_tbl
-    import logging
-    logging.basicConfig(level = logging.INFO)
     _ = make_test_tbl(lt)
     (
-        lt.qry('test').where('score>0.5', 'date is not null', 'cat is not null')
-        .valc('date, cat', 'avg(score) avgscore, round(sum(amt)/1e3,2) total')
+        lt.qry('test')
+        .where('score>0.5', 'date is not null', 'cat is not null')
+        .valc('date,cat', 'avg(score) avgscore, round(sum(amt)/1e3,2) total')
         .pivot('date', 'cat')
     )
 
@@ -218,11 +217,11 @@ logging.
             and cat is not null
     )
     select
-        date, cat
+        date,cat
         ,count(1) n
         ,avg(score) avgscore, round(sum(amt)/1e3,2) total
     from x
-    group by date, cat
+    group by date,cat
     order by n desc
 
 
