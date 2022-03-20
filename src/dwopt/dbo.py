@@ -504,7 +504,7 @@ class _Db:
             *[alc.Column(col, self._guess_dtype(df[col].dtype)) for col in df.columns],
             schema=sch,
         )
-        _logger.info(f"creating table via sqlalchemy:")
+        _logger.info("creating table via sqlalchemy:")
         for col in tbl.columns.items():
             _logger.info(f"{col}")
         tbl.create(self.eng)
@@ -591,7 +591,7 @@ class _Db:
         try:
             _logger.info(f"reflecting table via sqlalchemy: {sch_tbl_nme}")
             self.meta.reflect(self.eng, schema=sch, only=[tbl_nme])
-            _logger.info(f"done")
+            _logger.info("done")
             return True
         except Exception as ex:
             if "Could not reflect: requested table(s) not available in Engine" in str(
