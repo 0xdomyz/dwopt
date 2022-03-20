@@ -2,50 +2,50 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 from dwopt import Oc
 
 
-def test_qry_sum_top(db_df):
-    db, df = db_df
-    act = db.qry("test").top()
-    exp = df.iloc[0, :]
+def test_qry_sum_top(test_tbl):
+    db, df = test_tbl
+    act = db.qry("test").order_by("id").top()
+    exp = db.run("select * from test where id = 0").iloc[0, :]
     assert_series_equal(act, exp)
 
 
-def test_qry_sum_cols(db_df):
-    db, df = db_df
+def test_qry_sum_cols(test_tbl):
+    db, df = test_tbl
     act = db.qry("test").cols()
     exp = df.columns.tolist()
     assert act == exp
 
 
-def test_qry_sum_head(db_df):
-    db, df = db_df
-    act = db.qry("test").head()
-    exp = df.iloc[:5, :]
+def test_qry_sum_head(test_tbl):
+    db, df = test_tbl
+    act = db.qry("test").order_by("id").head()
+    exp = db.run("select * from test where id < 5")
     assert_frame_equal(act, exp)
 
 
-def test_qry_sum_len(db_df):
-    db, df = db_df
+def test_qry_sum_len(test_tbl):
+    db, df = test_tbl
     act = db.qry("test").len()
     exp = df.shape[0]
     assert act == exp
 
 
-def test_qry_sum_dist(db_df):
-    db, df = db_df
+def test_qry_sum_dist(test_tbl):
+    db, df = test_tbl
     act = db.qry("test").dist("id")[0]
     exp = df.loc[:, "id"].nunique()
     assert act == exp
 
 
-def test_qry_sum_mimx(db_df):
-    db, df = db_df
+def test_qry_sum_mimx(test_tbl):
+    db, df = test_tbl
     act = db.qry("test").mimx("amt").tolist()
     exp = [df.loc[:, "amt"].max(), df.loc[:, "amt"].min()]
     assert act == exp
 
 
-def test_qry_sum_valc(db_df):
-    db, df = db_df
+def test_qry_sum_valc(test_tbl):
+    db, df = test_tbl
     sql = """
 select cat,count(1) as n
 from test
@@ -57,8 +57,8 @@ order by n desc
     assert_frame_equal(act, exp)
 
 
-def test_qry_sum_hash(db_df):
-    db, df = db_df
+def test_qry_sum_hash(test_tbl):
+    db, df = test_tbl
     sql = """
 select
     ora_hash(sum(ora_hash(
@@ -71,4 +71,4 @@ from test
         exp = db.run(sql)
         assert_series_equal(act, exp)
     else:
-        assert 1 == 1
+        return True

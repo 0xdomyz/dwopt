@@ -1,9 +1,33 @@
-from pandas.testing import assert_frame_equal, assert_series_equal
-from dwopt import Pg, Lt, Oc
+from pandas.testing import assert_frame_equal
+from dwopt import Pg, Lt, Oc, make_eng
+from dwopt._qry import _Qry
+from dwopt.testing import _TEST_PG_URL, _TEST_LT_URL, _TEST_OC_URL
 
 
-def test_db_meta_list_tables(db_df):
-    db, df = db_df
+def test_db_meta_init(test_tbl):
+    db, _ = test_tbl
+    if isinstance(db, Pg):
+        Pg(_TEST_PG_URL).list_tables()
+        Pg(make_eng(_TEST_PG_URL)).list_tables()
+    elif isinstance(db, Lt):
+        Lt(_TEST_LT_URL).list_tables()
+        Lt(make_eng(_TEST_LT_URL)).list_tables()
+    elif isinstance(db, Oc):
+        Oc(_TEST_OC_URL).list_tables()
+        Oc(make_eng(_TEST_OC_URL)).list_tables()
+    else:
+        raise ValueError("Invalid db")
+
+
+def test_db_meta_qry(test_tbl):
+    db, df = test_tbl
+    act = db.qry("test")
+    exp = _Qry
+    assert isinstance(act, exp)
+
+
+def test_db_meta_list_tables(test_tbl):
+    db, df = test_tbl
     if isinstance(db, Pg):
         sql = """
 select
@@ -32,8 +56,8 @@ group by owner,table_name
     assert_frame_equal(act, exp)
 
 
-def test_db_meta_table_cols(db_df):
-    db, df = db_df
+def test_db_meta_table_cols(test_tbl):
+    db, df = test_tbl
     if isinstance(db, Pg):
         sql = """
 select column_name, data_type
@@ -56,8 +80,8 @@ and table_name = 'test'
     assert_frame_equal(act, exp)
 
 
-def test_db_meta_table_sizes(db_df):
-    db, df = db_df
+def test_db_meta_table_sizes(test_tbl):
+    db, df = test_tbl
     if isinstance(db, Pg):
         return True
     elif isinstance(db, Lt):
@@ -75,8 +99,8 @@ group by tablespace_name,segment_type,segment_name
     assert_frame_equal(act, exp)
 
 
-def test_db_meta_list_cons(db_df):
-    db, df = db_df
+def test_db_meta_list_cons(test_tbl):
+    db, df = test_tbl
     if isinstance(db, Pg):
         sql = """
 select * from information_schema.constraint_table_usage

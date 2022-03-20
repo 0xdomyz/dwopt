@@ -1,10 +1,28 @@
-from mimetypes import suffix_map
-from pandas.testing import assert_frame_equal, assert_series_equal, assert_index_equal
-import numpy as np
+from pandas.testing import assert_frame_equal
+from contextlib import redirect_stdout
+import io
+
+_SQL = "select count(1) from test"
 
 
-def test_qry_cls_select(db_df):
-    db, df = db_df
+def test_qry_ops_run(test_tbl):
+    db, df = test_tbl
+    act = db.qry(sql=_SQL).run()
+    exp = db.run(_SQL)
+    assert_frame_equal(act, exp)
+
+
+def test_qry_ops_print(test_tbl):
+    db, df = test_tbl
+    with redirect_stdout(io.StringIO()) as f:
+        db.qry(sql=_SQL).print()
+    act = f.getvalue()
+    exp = _SQL
+    assert act.strip() == exp.strip()
+
+
+def test_qry_cls_select(test_tbl):
+    db, df = test_tbl
 
     act = db.qry("test").select("id, score, amt").run()
     exp = db.run(
@@ -22,8 +40,8 @@ from test
     assert_frame_equal(act, exp)
 
 
-def test_qry_cls_case(db_df):
-    db, df = db_df
+def test_qry_cls_case(test_tbl):
+    db, df = test_tbl
     act = (
         db.qry("test")
         .select("test.*")
@@ -40,15 +58,15 @@ from test
     assert_frame_equal(act, exp)
 
 
-def test_qry_cls_from_(db_df):
-    db, df = db_df
+def test_qry_cls_from_(test_tbl):
+    db, df = test_tbl
     act = db.qry().from_("test").run()
-    exp = df
+    exp = db.run("select * from test")
     assert_frame_equal(act, exp)
 
 
-def test_qry_cls_join(db_df):
-    db, df = db_df
+def test_qry_cls_join(test_tbl):
+    db, df = test_tbl
     act = (
         db.qry("test x")
         .select("x.id", "x.score", "y.score as scorey", "z.score as scorez")
@@ -70,8 +88,8 @@ where x.id <= 100
     assert_frame_equal(act, exp)
 
 
-def test_qry_cls_where(db_df):
-    db, df = db_df
+def test_qry_cls_where(test_tbl):
+    db, df = test_tbl
     act = db.qry("test").where("score > 0.5").run()
     exp = db.run(
         """
@@ -81,8 +99,8 @@ select * from test where score > 0.5
     assert_frame_equal(act, exp)
 
 
-def test_qry_cls_group_by(db_df):
-    db, df = db_df
+def test_qry_cls_group_by(test_tbl):
+    db, df = test_tbl
     act = db.qry("test").select("cat, count(1) n").group_by("cat").run()
     exp = db.run(
         """
@@ -94,8 +112,8 @@ group by cat
     assert_frame_equal(act, exp)
 
 
-def test_qry_cls_having(db_df):
-    db, df = db_df
+def test_qry_cls_having(test_tbl):
+    db, df = test_tbl
     act = (
         db.qry("test")
         .select("cat, count(1) n")
@@ -114,8 +132,8 @@ having count(1) > 100
     assert_frame_equal(act, exp)
 
 
-def test_qry_cls_order_by(db_df):
-    db, df = db_df
+def test_qry_cls_order_by(test_tbl):
+    db, df = test_tbl
     act = db.qry("test").order_by("id desc").run()
     exp = db.run(
         """
@@ -127,8 +145,8 @@ order by id desc
     assert_frame_equal(act, exp)
 
 
-def test_qry_cls_sql(db_df):
-    db, df = db_df
+def test_qry_cls_sql(test_tbl):
+    db, df = test_tbl
     sql = """
 select * from test
 where score > 0.5

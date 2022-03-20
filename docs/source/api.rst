@@ -2,62 +2,117 @@ API Reference
 =============
 
 .. toctree::
+   :maxdepth: 2
    :hidden:
 
-   urls.rst
-   db.rst
+   set_up.rst
+   dbo.rst
    qry.rst
 
-:doc:`The Set-up functions <urls>`
 
-        * :func:`dwopt.save_url`
-        * :func:`dwopt.make_eng`
+.. _set-up functions:
 
-:doc:`The Database Operator Class <db>`
+.. rubric:: The set-up functions
 
-    :ref:`db-ops-mtd`:
-        * :meth:`dwopt.db._Db.run`
-        * :meth:`dwopt.db._Db.create`
-        * :meth:`dwopt.db._Db.add_pkey`
-        * :meth:`dwopt.db._Db.drop`
-        * :meth:`dwopt.db._Db.write`
-        * :meth:`dwopt.db._Db.write_nodup`
-    
-    :ref:`db-qry-mtd`:
-        * :meth:`dwopt.db._Db.qry`
-    
-    :ref:`db-meta-mtd`:
-        * :meth:`dwopt.db._Db.list_tables`
-        * :meth:`dwopt.db._Db.table_cols`
-        * :meth:`dwopt.db._Db.table_sizes`
-        * :meth:`dwopt.db._Db.list_cons`
+.. autosummary::
+   :nosignatures:
+
+   dwopt.save_url
+   dwopt.db
+   dwopt.Db
+   dwopt.make_eng
+   dwopt.make_test_tbl
 
 
-:doc:`The Query Class <qry>`
+.. rubric:: Database operator object
 
-    :ref:`qry-build-framework`
+.. autosummary::
+   :nosignatures:
 
-    :ref:`qry-cls-mtd`:
-        * :meth:`dwopt._qry._Qry.select`
-        * :meth:`dwopt._qry._Qry.case`
-        * :meth:`dwopt._qry._Qry.from_`
-        * :meth:`dwopt._qry._Qry.join`
-        * :meth:`dwopt._qry._Qry.where`
-        * :meth:`dwopt._qry._Qry.group_by`
-        * :meth:`dwopt._qry._Qry.having`
-        * :meth:`dwopt._qry._Qry.order_by`
-        * :meth:`dwopt._qry._Qry.sql`
-    
-    :ref:`qry-ops-mtd`:
-        * :meth:`dwopt._qry._Qry.print`
-        * :meth:`dwopt._qry._Qry.run`
-    
-    :ref:`qry-sum-mtd`:
-        * :meth:`dwopt._qry._Qry.top`
-        * :meth:`dwopt._qry._Qry.cols`
-        * :meth:`dwopt._qry._Qry.head`
-        * :meth:`dwopt._qry._Qry.len`
-        * :meth:`dwopt._qry._Qry.dist`
-        * :meth:`dwopt._qry._Qry.mimx`
-        * :meth:`dwopt._qry._Qry.valc`
-        * :meth:`dwopt._qry._Qry.hash`
+   dwopt.dbo._Db
+
+
+.. _operation methods:
+
+.. rubric:: Database operator object - operation methods
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt.dbo._Db.add_pkey
+   dwopt.dbo._Db.create
+   dwopt.dbo._Db.create_schema
+   dwopt.dbo._Db.cwrite
+   dwopt.dbo._Db.delete
+   dwopt.dbo._Db.drop
+   dwopt.dbo._Db.exist
+   dwopt.dbo._Db.iris
+   dwopt.dbo._Db.mtcars
+   dwopt.dbo._Db.qry
+   dwopt.dbo._Db.run
+   dwopt.dbo._Db.update
+   dwopt.dbo._Db.write
+   dwopt.dbo._Db.write_nodup
+
+
+.. _metadata methods:
+
+.. rubric:: Database operator object - metadata methods
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt.dbo._Db.list_cons
+   dwopt.dbo._Db.list_tables
+   dwopt.dbo._Db.table_cols
+   dwopt.dbo._Db.table_sizes
+
+
+.. rubric:: Query object
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt._qry._Qry
+
+
+.. _clause methods:
+
+.. rubric:: Query object - clause methods
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt._qry._Qry.case
+   dwopt._qry._Qry.from_
+   dwopt._qry._Qry.group_by
+   dwopt._qry._Qry.having
+   dwopt._qry._Qry.join
+   dwopt._qry._Qry.order_by
+   dwopt._qry._Qry.print
+   dwopt._qry._Qry.run
+   dwopt._qry._Qry.select
+   dwopt._qry._Qry.sql
+   dwopt._qry._Qry.str
+   dwopt._qry._Qry.where
+
+
+.. _summary methods:
+
+.. rubric:: Query object - summary methods
+
+.. autosummary::
+   :nosignatures:
+
+   dwopt._qry._Qry.bin
+   dwopt._qry._Qry.cols
+   dwopt._qry._Qry.dist
+   dwopt._qry._Qry.five
+   dwopt._qry._Qry.hash
+   dwopt._qry._Qry.head
+   dwopt._qry._Qry.len
+   dwopt._qry._Qry.mimx
+   dwopt._qry._Qry.pct
+   dwopt._qry._Qry.piv
+   dwopt._qry._Qry.top
+   dwopt._qry._Qry.valc
