@@ -1,17 +1,15 @@
 DWOPT - Datawarehouse Operator
 ==============================
 
-Getting insights out of database tables can often be unstreamlined.
+Getting summary stats out of databases can often be unstreamlined.
 Does one read in millions of rows before doing any work on Python,
 or run sql elsewhere and use intermediate CSVs,
-or write sql strings in a python script?
+or write sql strings in python scripts?
 
-**Dwopt** is a Python package that streamlines analytics on databases
-via pre-built sql templates and a flexible summary query building framework.
+The Python package **dwopt**
+provides Excel-pivot-table-like and dataframe-summary-methods-like API,
+driven by sql templates under a flexible summary query building framework.
 
-The goal is to have, at fingertips,
-Excel-pivot-table-like and dataframe-summary-methods-like API
-for common analytics on large database tables.
 See the Features and the Walk Through section for examples.
 
 .. end-of-readme-intro
@@ -50,33 +48,40 @@ Run sql frictionlessly using saved credentials
 .. _dwopt.save_url: https://dwopt.readthedocs.io/en/stable/set_up.html#dwopt.save_url
 
 On import, the package gives ready-to-be-used `database operator objects`_
-(e.g. ``pg``, ``lt``, ``oc``, one for each supported database),
-with default credentials
-(Saved prior by user to the system keyring using the |dwopt.save_url|_ function).
+with default credentials, which could be saved prior by user to
+the system keyring using the |dwopt.save_url|_ function.
 
->>> from dwopt import pg
->>> pg.iris()
->>> pg.run('select count(1) from iris')
-150
+.. code-block:: python
 
-This way, quick analysis can be done from any Python/Console window:
+    from dwopt import lt
+    lt.iris()
+    lt.run('select count(1) from iris')
+       count
+    0    150
 
->>> from dwopt import lt
->>> lt.iris()
->>> lt.qry('iris').valc('species', 'avg(petal_length)')
-   species   n  avg(petal_length)
-0  sicolor  50              4.260
-1   setosa  50              1.462
-2  rginica  50              5.552
+This enable quick analysis from any Python/Console window:
+
+.. code-block:: python
+
+    from dwopt import pg
+    pg.iris()
+    pg.qry('iris').valc('species', 'avg(petal_length)')
+       species   n  avg(petal_length)
+    0  sicolor  50              4.260
+    1   setosa  50              1.462
+    2  rginica  50              5.552
 
 Alternatively, use the database operator object factory function |dwopt.db|_
 and the database engine url to access database.
 
->>> from dwopt import db
->>> d = db("postgresql://dwopt_tester:1234@localhost/dwopt_test")
->>> d.mtcars()
->>> d.run('select count(1) from mtcars')
-32
+.. code-block:: python
+
+    from dwopt import db
+    d = db("postgresql://dwopt_tester:1234@localhost/dwopt_test")
+    d.mtcars()
+    d.run('select count(1) n from mtcars')
+        n
+    0  32
 
 
 Run sql script with text replacement
@@ -85,72 +90,81 @@ Run sql script with text replacement
 .. |run| replace:: ``run``
 .. _run: https://dwopt.readthedocs.io/en/stable/dbo.html#dwopt.dbo._Db.run
 
-The database operator object's |run|_ method allows running sql stored on a file.
-One could then replace ``:`` marked parameters via mappings supplied on runtime.
+Use the `database operator object's <database operator objects>`_
+|run|_ method to run sql script file.
+One could then replace ``:`` marked parameters via mappings supplied to the method.
 
->>> from dwopt import pg, make_test_tbl
->>> _ = make_test_tbl(pg)
->>> pg.run(pth = "E:/projects/my_sql_script.sql",
-...     my_run_date = '2022-03-03',
-...     my_label = '20220303',
-...     threshold = 5)
-   count
-0    137
+.. code-block:: python
+
+    from dwopt import pg, make_test_tbl
+    _ = make_test_tbl(pg)
+    pg.run(pth = "E:/projects/my_sql_script.sql",
+        my_run_date = '2022-03-03',
+        my_label = '20220303',
+        threshold = 5)
+       count
+    0    137
 
 Above runs the sql stored on ``E:/projects/my_sql_script.sql`` as below:
 
 .. code-block:: sql
 
     drop table if exists monthly_extract_:my_label;
+
     create table monthly_extract_:my_label as
     select * from test
     where
         date = to_date(':my_run_date','YYYY-MM-DD')
         and score > :threshold;
+
     select count(1) from monthly_extract_:my_label;
 
 
 Programatically make simple sql query
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. _clause methods: https://dwopt.readthedocs.io/en/stable/api.html#clause-methods
+.. _list of clause methods: https://dwopt.readthedocs.io/en/stable/api.html#clause-methods
 .. |qry| replace:: ``qry``
 .. _qry: https://dwopt.readthedocs.io/en/stable/dbo.html#dwopt.db._Db.qry
+.. _summary query building framework: https://dwopt.readthedocs.io/en/stable/qry.html#the-summary-query-building-framework
 .. _query object: https://dwopt.readthedocs.io/en/stable/qry.html#dwopt._qry._Qry
-.. _summary methods: https://dwopt.readthedocs.io/en/stable/api.html#summary-methods
 
 The database operator object's |qry|_ method returns the `query object`_.
-Use it's `clause methods`_ to make a simple sql query, as it's underlying query.
-The underlying query can be run directly, but the main usage is to act as
-the preprocessing step of the `summary methods`_
-explained in the subsequent sections.
+Use it's `list of clause methods`_ to make a simple sql query.
+
+This is not faster than just writing the sql,
+main usage is to provide flexibility to the `summary query building framework`_.
 
 .. code-block:: python
 
     from dwopt import lt
-    (   
-        lt.qry('test a').select('a.id', 'a.time')
-        .case('amt', cond = {'amt < 1000':500,'amt < 2000':1500}, els = 'amt')
-        .join('test2 b', 'a.id = b.id')
-        .where("score > 0.5", "cat = 'test'")
-        .print()#.run()
+    lt.mtcars()
+    sql = "select cyl from mtcars group by cyl having count(1) > 10"
+    q = (
+        lt.qry('mtcars a')
+        .select('a.cyl, count(1) n, avg(a.mpg)')
+        .case('cat', "a.cyl = 8 then 1", els=0)
+        .join(f'({sql}) b', 'a.cyl = b.cyl', how='inner')
+        .group_by('a.cyl')
+        .having('count(1) > 10')
+        .order_by('n desc')
     )
-
-Above prints:
+    q.run()
+       cyl   n  avg(a.mpg)  cat
+    0    8  14   15.100000    1
+    1    4  11   26.663636    0
 
 .. code-block:: sql
 
-    select a.id,a.time
-        ,case
-            when amt < 1000 then 500
-            when amt < 2000 then 1500
-            else amt
-        end as amt
-    from test a
-    left join test2 b
-        on a.id = b.id
-    where score > 0.5
-        and cat = 'test'
+    q.print()
+    select a.cyl, count(1) n, avg(a.mpg)
+        ,case when a.cyl = 8 then 1 else 0 end as cat
+    from mtcars a
+    inner join (select cyl from mtcars group by cyl having count(1) > 10) b
+        on a.cyl = b.cyl
+    group by a.cyl
+    having count(1) > 10
+    order by n desc
 
 
 Templates: Excel-pivot-table-like API
@@ -159,152 +173,215 @@ Templates: Excel-pivot-table-like API
 .. |valc| replace:: ``valc``
 .. _valc: https://dwopt.readthedocs.io/en/stable/qry.html#dwopt._qry._Qry.valc
 
-A few lines of code specifying minimal information could produce a pivot-table
-similiar to what could be achieved in Excel. Difference being
-it is the efficient database engine doing the data processing work,
-and the flexible python machineries doing the presentation work.
+.. |pivot| replace:: ``pivot``
+.. _pivot: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.pivot.html
 
-For example:
+Use the `query object`_ and it's |valc|_ method to make and run
+a value counts summary query with custom groups and calcs,
+on top of arbituary sub-query, as part of the `summary query building framework`_.
+
+Then call the result dataframe's |pivot|_ method to finalize the pivot table.
 
 .. code-block:: python
 
-    from dwopt import lt, make_test_tbl #1
+    from dwopt import lt, make_test_tbl
+    import logging
+    logging.basicConfig(level = logging.INFO)
     _ = make_test_tbl(lt)
     (
-        lt.qry('test')
-        .where('score > 0.5', 'date is not null', 'cat is not null') #2
-        .valc('date, cat','avg(score) avgscore, round(sum(amt)/1e3,2) total') #3
-        .pivot('date', 'cat') #4
+        lt.qry('test').where('score>0.5', 'date is not null', 'cat is not null')
+        .valc('date, cat', 'avg(score) avgscore, round(sum(amt)/1e3,2) total')
+        .pivot('date', 'cat')
     )
 
-Results:
+Result:
 
 ==========  =====  =====  ========  ========  ======  ======
 cat           n           avgscore             total
 ----------  -----  -----  --------  --------  ------  ------
 date         test  train    test     train     test   train 
 ==========  =====  =====  ========  ========  ======  ======
-2013-01-02  816.0  847.0  0.746747  0.750452  398.34  417.31
-2013-02-02  837.0  858.0  0.748214  0.743094  419.11  447.04
-2013-03-02  805.0  860.0  0.756775  0.739017  394.89  422.35
+2022-01-01  1140   1051   2.736275  2.800106  565.67  530.09
+2022-02-02  1077   1100   2.759061  2.748898  536.68  544.10
+2022-03-03  1037   1072   2.728527  2.743825  521.54  528.85
 ==========  =====  =====  ========  ========  ======  ======
 
-Explanation of lines:
-
-.. |pivot| replace:: ``pivot``
-.. _pivot: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.pivot.html
-
-#. Set up the databse operator object and the test table.
-#. Make, but do not run, an underlying query.
-#. Make and run a value counts summary query (|valc|_) with 2 groups,
-   custom calcs, with the previous step's underlying query placed
-   inside a with clause.
-#. Query result comes back to python as a pandas dataframe, call it's |pivot|_ method.
-
-Automatic logs showing the sql that was ran on #3:
+The final query used can be invoked by the |valc|_ method, or logged via standard
+logging.
 
 .. code-block:: sql
 
-    2022-01-23 11:08:13,407 [INFO] running:
     with x as (
         select * from test
-        where score > 0.5
+        where score>0.5
+            and date is not null
+            and cat is not null
     )
-    select 
-        time, cat
+    select
+        date, cat
         ,count(1) n
         ,avg(score) avgscore, round(sum(amt)/1e3,2) total
     from x
-    group by time, cat
+    group by date, cat
     order by n desc
-    2022-01-23 11:08:13,413 [INFO] done
 
 
 Templates: Dataframe-summary-methods-like API
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is possible to mimic some of the dataframe's summary methods,
-but implement via sql templates.
-Difference being
-it is the efficient database engine doing the data processing work,
-and the flexible python machineries doing the presentation work.
+.. _list of summary methods: https://dwopt.readthedocs.io/en/stable/api.html#summary-methods
 
-Use the `query object`_ and it's list of `summary methods`_
-to make and run summary queries.
-These methods works under the summary query building framework.
-
-For example:
+Use the `query object`_ and it's `list of summary methods`_ to make and run
+summary queries on top of arbituary sub-query,
+as part of the `summary query building framework`_:
 
 .. code-block:: python
 
-    from dwopt import lt #1
-    tbl = lt.qry('test').where("score > 0.5") #2
-    tbl.top()   #show top row to understand shape of data
-    tbl.head()  #as expected
-    tbl.cols()  #as expected
-    tbl.len()   #as expected
-    tbl.mimx('time')  #min and max of the column
-    tbl.dist('time', 'time, cat') #count distinct on the column or columns
+    from dwopt import pg
+    pg.iris()
+    q = pg.qry('iris a').select('a.*').case('cat',
+        "petal_length > 5             then '5+'",
+        "petal_length between 2 and 5 then '2-5'",
+        "petal_length < 2             then '-2'",
+    )
 
+    #Column names:
+    q.cols()
+    ['sepal_length', 'sepal_width', 'petal_length', 'petal_width', 'species', 'cat']
+
+    #Number of distinct combination:
+    q.dist(['species', 'petal_length'])
+    count    48
+    Name: 0, dtype: int64
+
+    #Head:
+    q.head()
+       sepal_length  sepal_width  petal_length  petal_width species cat
+    0           5.1          3.5           1.4          0.2  setosa  -2
+    1           4.9          3.0           1.4          0.2  setosa  -2
+    2           4.7          3.2           1.3          0.2  setosa  -2
+    3           4.6          3.1           1.5          0.2  setosa  -2
+    4           5.0          3.6           1.4          0.2  setosa  -2
+
+    #Length:
+    q.len()
+    150
+
+    #Min and max value:
+    q.mimx('petal_length')
+    max    6.9
+    min    1.0
+    Name: 0, dtype: float64
+
+    #Top record:
+    q.top()
+    sepal_length       5.1
+    sepal_width        3.5
+    petal_length       1.4
+    petal_width        0.2
+    species         setosa
+    cat                 -2
+    Name: 0, dtype: object
+
+    #Value count followed by pivot:
+    q.valc('species, cat').pivot('species','cat','n')
+    cat        -2   2-5    5+
+    species
+    rginica   NaN   9.0  41.0
+    setosa   50.0   NaN   NaN
+    sicolor   NaN  49.0   1.0
+
+.. code-block:: sql
+
+    #--All summary methods support output by printing or str:
+    q.valc('species, cat', out=1)
+    with x as (
+        select a.*
+            ,case
+                when petal_length > 5             then '5+'
+                when petal_length between 2 and 5 then '2-5'
+                when petal_length < 2             then '-2'
+                else NULL
+            end as cat
+        from iris a
+    )
+    select
+        species, cat
+        ,count(1) n
+    from x
+    group by species, cat
+    order by n desc
 
 Templates: DDL/DML statements, metadata queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. _metadata methods: https://dwopt.readthedocs.io/en/stable/api.html#metadata-methods
-.. _operation methods: https://dwopt.readthedocs.io/en/stable/api.html#operation-methods
+.. _list of metadata methods: https://dwopt.readthedocs.io/en/stable/api.html#metadata-methods
+.. _list of operation methods: https://dwopt.readthedocs.io/en/stable/api.html#operation-methods
 
-Use the list of `operation methods`_ to make and run some
-DDL/DML statements with convenient or enhanced functionalities. Example:
+Use the `list of operation methods`_ to make and run some
+DDL/DML statements with convenient or enhanced functionalities:
 
-::
+.. code-block:: python
 
+    import pandas as pd
     from dwopt import lt
+    tbl = pd.DataFrame({'col1': [1, 2], 'col2': ['a', 'b']})
+    tbl2 = pd.DataFrame({'col1': [1, 3], 'col2': ['a', 'c']})
     lt.drop('test')
-    lt.drop('test') #alter return instead of raising error if table not exist
-    lt.create(
-            tbl_nme = 'test'
-            ,dtypes = {
-                'id':'integer'
-                ,'score':'real'
-                ,'amt':'integer'
-                ,'cat':'text'
-                ,'time':'text'
-                ,'constraint df_pk':
-                    'primary key (id)'
-            }
-        )
-    lt.write(df,'test')
-    lt.write_nodup(df,'test',['id']) #remove duplicates before inserting
+    lt.create('test', col1='int', col2='text')
+    lt.write(tbl, 'test')
+    lt.write_nodup(tbl2, 'test', ['col1'], "col1 < 4")
+    lt.run("select * from test")
+       col1 col2
+    0     1    a
+    1     2    b
+    2     3    c
 
-Use the list of `metadata methods`_ to make and run some useful metadata queries.
-Example:
+.. code-block:: python
 
-::
+    lt.drop('test')
+    lt.cwrite(tbl, 'test')
+    lt.qry('test').run()
+       col1 col2
+    0     1    a
+    1     2    b
+
+
+Use the `list of metadata methods`_ to make and run some useful metadata queries:
+
+.. code-block:: python
 
     from dwopt import pg
-    pg.list_tables() #list all tables
-    pg.table_cols('test.test') #examine columns
-    pg.table_cons() #list constraints
+    pg.iris()
+    pg.table_cols('public.iris')
+        column_name          data_type
+    0  sepal_length               real
+    1   sepal_width               real
+    2  petal_length               real
+    3   petal_width               real
+    4       species  character varying
+
+.. code-block:: python
+
+    from dwopt import lt
+    lt.iris()
+    lt.mtcars()
+    lt.list_tables().iloc[:,:-1]
+        type    name tbl_name  rootpage
+    0  table    iris     iris         2
+    1  table  mtcars   mtcars         5
 
 
 Standard logging with reproducible sql
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Many of the package's methods are wired through the standard
-`logging <https://docs.python.org/3/library/logging.html#module-logging>`_
-package.
-
 .. |INFO| replace:: ``INFO``
 .. _INFO: https://docs.python.org/3/howto/logging.html#when-to-use-logging
 
-In particular, the |run|_ method emits sql used as |INFO|_ level message.
-The relevant logger object has standard naming and is called ``dwopt.db``.
-Configure the logging package or the logger at the start of application code
-for logs.
-See the `logging package documentation
-<https://docs.python.org/3/howto/logging.html#logging-from-multiple-modules>`_
-for details.
-
+Many of the package's methods are wired through the standard
+`logging <https://docs.python.org/3/library/logging.html#module-logging>`_
+package. In particular, the |run|_ method emits sql used as |INFO|_ level message.
+The relevant logger object has standard naming and is called ``dwopt.dbo``.
 
 Example configuration to show logs in console:
 
@@ -314,7 +391,40 @@ Example configuration to show logs in console:
     logging.basicConfig(level = logging.INFO)
 
     from dwopt import lt
-    lt.list_tables()
+    lt.iris(q=1).valc('species', 'avg(petal_length)')
+
+.. code-block:: text
+
+    INFO:dwopt.dbo:dropping table via sqlalchemy: iris
+    INFO:dwopt.dbo:done
+    INFO:dwopt.dbo:creating table via sqlalchemy:
+    INFO:dwopt.dbo:('sepal_length', Column('sepal_length', REAL(), table=<iris>))
+    INFO:dwopt.dbo:('sepal_width', Column('sepal_width', REAL(), table=<iris>))
+    INFO:dwopt.dbo:('petal_length', Column('petal_length', REAL(), table=<iris>))
+    INFO:dwopt.dbo:('petal_width', Column('petal_width', REAL(), table=<iris>))
+    INFO:dwopt.dbo:('species', Column('species', String(), table=<iris>))
+    INFO:dwopt.dbo:done
+    INFO:dwopt.dbo:running:
+    INSERT INTO iris (sepal_length, sepal_width, petal_length, petal_width, species) VALUES (:sepal_length, :sepal_width, :petal_length, :petal_width, :species)
+    INFO:dwopt.dbo:args len=150, e.g.
+    {'sepal_length': 5.1, 'sepal_width': 3.5, 'petal_length': 1.4, 'petal_width': 0.2, 'species': 'setosa'}
+    INFO:dwopt.dbo:done
+    INFO:dwopt.dbo:running:
+    with x as (
+        select * from iris
+    )
+    select
+        species
+        ,count(1) n
+        ,avg(petal_length)
+    from x
+    group by species
+    order by n desc
+    INFO:dwopt.dbo:done
+       species   n  avg(petal_length)
+    0  sicolor  50              4.260
+    1   setosa  50              1.462
+    2  rginica  50              5.552
 
 Alternatively, to avoid logging info messages from other packages:
 
@@ -322,10 +432,9 @@ Alternatively, to avoid logging info messages from other packages:
 
     import logging
     logging.basicConfig()
-    logging.getLogger('dwopt.db').setLevel(logging.INFO)
+    logging.getLogger('dwopt.dbo').setLevel(logging.INFO)
 
-
-Example configuration to show in console and store on file, with timestamps:
+Example configuration to print on console and store on file with timestamps:
 
 .. code-block:: python
 
@@ -337,32 +446,22 @@ Example configuration to show in console and store on file, with timestamps:
             logging.StreamHandler()
         ]
     )
-    logging.getLogger('dwopt.db').setLevel(logging.INFO)
+    logging.getLogger('dwopt.dbo').setLevel(logging.INFO)
 
-Example logs:
+Sqlalchemy logger can also be used to obtain even more details:
 
-.. code-block:: sql
+.. code-block:: python
 
-    2022-01-23 11:08:13,407 [INFO] running:
-    with x as (
-        select * from test
-        where score > 0.5
-    )
-    select 
-        time, cat
-        ,count(1) n
-        ,avg(score) avgscore, round(sum(amt)/1e3,2) total
-    from x
-    group by time, cat
-    order by n desc
-    2022-01-23 11:08:13,413 [INFO] done
+    import logging
+    logging.basicConfig()
+    logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 
 Development
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------
 
 Testing
-"""""""""""""""""""""""
+^^^^^^^^^^^^
 
 Main tests and checks. Only test for sqlite:
 
@@ -377,7 +476,7 @@ Quick main test:
     pytest
 
 .. |dwopt.make_test_tbl| replace:: ``dwopt.make_test_tbl``
-.. _dwopt.make_test_tbl: https://dwopt--10.org.readthedocs.build/en/10/set_up.html#dwopt.make_test_tbl
+.. _dwopt.make_test_tbl: https://dwopt.readthedocs.io/en/stable/set_up.html#dwopt.make_test_tbl
 
 Testing for sqlite, postgre, oracle.
 Set up environment based on |dwopt.make_test_tbl|_ function notes.
@@ -392,7 +491,7 @@ Oracle test unimplemented:
     pytest --db="pg" --db="oc"
 
 Future
-""""""""""""""""""""""""""
+^^^^^^^^^
 
 * Set up oracle test environment.
 * Add more summary templates based on Python pandas, R tidyverse,

@@ -52,18 +52,18 @@ class _Qry:
 
         -- Sub query: arbituary query within a with clause named x
         with x as (
-            select a.*
-                ,case when amt < 1000 then amt*1.2 else amt end as amt
-            from test a
-            where score > 0.5
+            select * from test
+            where score>0.5
+                and date is not null
+                and cat is not null
         )
         -- Summary query: generated from templates
         select
-            date,cat
+            date, cat
             ,count(1) n
             ,avg(score) avgscore, round(sum(amt)/1e3,2) total
         from x
-        group by date,cat
+        group by date, cat
         order by n desc
 
     Corresponding code::
@@ -71,16 +71,18 @@ class _Qry:
         from dwopt import lt, make_test_tbl
         _ = make_test_tbl(lt)
         (
-            lt.qry('test a')
-            .select('a.*').case("amt", "amt < 1000 then amt*1.2", els="amt")
-            .where("score > 0.5")
-            .valc("date,cat", "avg(score) avgscore, round(sum(amt)/1e3,2) total")
+            lt.qry('test').where('score>0.5', 'date is not null', 'cat is not null')
+            .valc(
+                'date, cat',
+                'avg(score) avgscore, round(sum(amt)/1e3,2) total',
+                out=1
+            )
         )
 
     Use the :ref:`clause methods` to iteratively
     piece together a query, or use the :meth:`~dwopt._qry._Qry.sql` method to provide
     an arbituary query. This created query will then be placed inside a
-    with block and become the ``sub query`` on invocation of any :ref:`summary methods`.
+    with block and become the ``sub query`` on invocation of any summary methods.
 
     The ``summary query`` is built from parameterized templates via
     the :ref:`summary methods`. Calling one of them completes the whole query
@@ -117,6 +119,35 @@ class _Qry:
     group by species
     order by n desc
 
+    Iteratively piece together a query using the :ref:`clause methods`:
+
+    >>> from dwopt import lt
+    >>> lt.mtcars()
+    >>> sql = "select cyl from mtcars group by cyl having count(1) > 10"
+    >>> q = (
+    ...     lt.qry('mtcars a')
+    ...     .select('a.cyl, count(1) n, avg(a.mpg)')
+    ...     .case('cat', "a.cyl = 8 then 1", els=0)
+    ...     .join(f'({sql}) b', 'a.cyl = b.cyl', how='inner')
+    ...     .group_by('a.cyl')
+    ...     .having('count(1) > 10')
+    ...     .order_by('n desc')
+    ... )
+    >>>
+    >>> q.print()
+    select a.cyl, count(1) n, avg(a.mpg)
+        ,case when a.cyl = 8 then 1 else 0 end as cat
+    from mtcars a
+    inner join (select cyl from mtcars group by cyl having count(1) > 10) b
+        on a.cyl = b.cyl
+    group by a.cyl
+    having count(1) > 10
+    order by n desc
+    >>> q.run()
+       cyl   n  avg(a.mpg)  cat
+    0    8  14   15.100000    1
+    1    4  11   26.663636    0
+
     Use the :ref:`summary methods` for analysis:
 
     >>> from dwopt import pg as d
@@ -143,34 +174,6 @@ class _Qry:
        species   n  sepal_length  sepal_width  petal_length  petal_width
     0  sicolor  50         5.936        2.770         4.260        1.326
     1  rginica  50         6.588        2.974         5.552        2.026
-
-    Iteratively piece together a query using the :ref:`clause methods`::
-
-        (
-            lt.qry('test x')
-            .select('x.cat,y.cat as bcat'
-                ,'sum(x.score) bscore','sum(y.score) yscore','count(1) n')
-            .join("test y","x.id = y.id+1")
-            .where('x.id < 1000')
-            .group_by('x.cat,y.cat')
-            .having('count(1) > 50','sum(y.score) > 100')
-            .order_by('x.cat desc','sum(y.score) desc')
-            .print()
-            #.run()
-        )
-
-    .. code-block:: sql
-
-        select x.cat,y.cat as bcat,sum(x.score) bscore,sum(y.score) yscore,count(1) n
-        from test x
-        left join test y
-            on x.id = y.id+1
-        where x.id < 1000
-        group by x.cat,y.cat
-        having count(1) > 50
-            and sum(y.score) > 100
-        order by x.cat desc,sum(y.score) desc
-
     """
 
     def __init__(
@@ -734,16 +737,30 @@ class _Qry:
         --------
         >>> from dwopt import lt
         >>> lt.mtcars()
-        >>> (
+        >>> q = (
         ...     lt.qry('mtcars a').select('a.cyl, b.mpg')
         ...     .join('mtcars b','a.name = b.name')
-        ...     .valc('cyl', 'avg(mpg)')
         ... )
+        >>> q.valc('cyl', 'avg(mpg)')
            cyl   n   avg(mpg)
         0    8  14  15.100000
         1    4  11  26.663636
         2    6   7  19.742857
-        >>>
+        >>> q.valc('cyl', 'avg(mpg)', out=1)
+        with x as (
+            select a.cyl, b.mpg
+            from mtcars a
+            left join mtcars b
+                on a.name = b.name
+        )
+        select
+            cyl
+            ,count(1) n
+            ,avg(mpg)
+        from x
+        group by cyl
+        order by n desc
+
         >>> (
         ...     lt.qry('mtcars a').select('a.cyl, b.mpg, c.hp')
         ...     .join('mtcars b','a.name = b.name')
@@ -754,19 +771,32 @@ class _Qry:
         0    8  14  15.100000  209.214286
         1    4  11  26.663636   82.636364
         2    6   7  19.742857  122.285714
-        >>>
 
         Inject a sub-query into the ``sch_tbl_nme`` argument:
 
         >>> sql = "select cyl from mtcars group by cyl having count(1) > 10"
-        >>> (
+        >>> q = (
         ...     lt.qry('mtcars a').select('a.cyl, a.mpg')
         ...     .join(f'({sql}) b', 'a.cyl = b.cyl', how='inner')
-        ...     .valc('cyl', 'avg(mpg)')
         ... )
+        >>> q.valc('cyl', 'avg(mpg)')
            cyl   n   avg(mpg)
         0    8  14  15.100000
         1    4  11  26.663636
+        >>> q.valc('cyl', 'avg(mpg)', out=1)
+        with x as (
+            select a.cyl, a.mpg
+            from mtcars a
+            inner join (select cyl from mtcars group by cyl having count(1) > 10) b
+                on a.cyl = b.cyl
+        )
+        select
+            cyl
+            ,count(1) n
+            ,avg(mpg)
+        from x
+        group by cyl
+        order by n desc
         """
         _ = self.__copy__()
         on = self._args2str(args, "\n    and ")
@@ -1189,6 +1219,39 @@ class _Qry:
         from x
         group by species
         order by n desc
+
+        Excel-pivot-table-like API:
+
+        >>> from dwopt import lt, make_test_tbl
+        >>> import logging
+        >>> logging.basicConfig(level = logging.INFO)
+        >>> _ = make_test_tbl(lt)
+        >>> (
+        ...     lt.qry('test').where('score>0.5', 'date is not null', 'cat is not null')
+        ...     .valc('date, cat', 'avg(score) avgscore, round(sum(amt)/1e3,2) total')
+        ...     .pivot('date', 'cat')
+        ... )
+        INFO:dwopt.dbo:running:
+        with x as (
+            select * from test
+            where score>0.5
+                and date is not null
+                and cat is not null
+        )
+        select
+            date, cat
+            ,count(1) n
+            ,avg(score) avgscore, round(sum(amt)/1e3,2) total
+        from x
+        group by date, cat
+        order by n desc
+        INFO:dwopt.dbo:done
+                       n        avgscore             total
+        cat         test train      test     train    test   train
+        date
+        2022-01-01  1140  1051  2.736275  2.800106  565.67  530.09
+        2022-02-02  1077  1100  2.759061  2.748898  536.68  544.10
+        2022-03-03  1037  1072  2.728527  2.743825  521.54  528.85
 
         Combine case when, value counts, and pivot:
 
