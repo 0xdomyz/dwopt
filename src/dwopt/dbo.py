@@ -504,7 +504,9 @@ class _Db:
             *[alc.Column(col, self._guess_dtype(df[col].dtype)) for col in df.columns],
             schema=sch,
         )
-        _logger.info("running:\ncreate statments")
+        _logger.info(f"creating table via sqlalchemy:")
+        for col in tbl.columns.items():
+            _logger.info(f"{col}")
         tbl.create(self.eng)
         _logger.info("done")
         self.write(df, sch_tbl_nme)
@@ -549,7 +551,7 @@ class _Db:
         sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
         self._remove_sch_tbl(sch_tbl_nme)
         with self.eng.connect() as conn:
-            _logger.info("running:\ndrop statments")
+            _logger.info(f"dropping table via sqlalchemy: {sch_tbl_nme}")
             alc.Table(tbl_nme, self.meta, schema=sch).drop(conn, checkfirst=True)
             _logger.info("done")
 
@@ -587,7 +589,9 @@ class _Db:
         sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
         self._remove_sch_tbl(sch_tbl_nme)
         try:
+            _logger.info(f"reflecting table via sqlalchemy: {sch_tbl_nme}")
             self.meta.reflect(self.eng, schema=sch, only=[tbl_nme])
+            _logger.info(f"done")
             return True
         except Exception as ex:
             if "Could not reflect: requested table(s) not available in Engine" in str(
@@ -894,6 +898,32 @@ class _Db:
         >>> lt.run("select count(1) from :tbl", tbl=new)
            count(1)
         0       150
+
+        Run from sql script:
+
+        >>> from dwopt import pg, make_test_tbl
+        >>> _ = make_test_tbl(pg)
+        >>> pg.run(pth = "E:/projects/my_sql_script.sql",
+        ...     my_run_date = '2022-03-03',
+        ...     my_label = '20220303',
+        ...     threshold = 5)
+           count
+        0    137
+
+        Above runs the sql stored on ``E:/projects/my_sql_script.sql`` as below:
+
+        .. code-block:: sql
+
+            drop table if exists monthly_extract_:my_label;
+
+            create table monthly_extract_:my_label as
+            select * from test
+            where
+                date = to_date(':my_run_date','YYYY-MM-DD')
+                and score > :threshold;
+
+            select count(1) from monthly_extract_:my_label;
+
         """
         if sql is None and pth is not None:
             with open(pth) as f:
@@ -1089,7 +1119,6 @@ class _Db:
         """
         L = len(df)
         sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
-        _logger.info(f"writing to {sch_tbl_nme}, len: {L}")
         if L == 0:
             return
         df = df.copy()
@@ -1101,13 +1130,15 @@ class _Db:
         tbl = alc.Table(
             tbl_nme, self.meta, *[alc.Column(col) for col in cols], schema=sch
         )
+        _logger.info(f"running:\n{tbl.insert()}")
+        _ = df.to_dict("records")
+        _logger.info(f"args len={L}, e.g.\n{_[0]}")
         with self.eng.connect() as conn:
-            _logger.info("running:\ninsert statments")
             conn.execute(
                 tbl.insert(),
-                df.to_dict("records"),
+                _,
             )
-            _logger.info("done")
+        _logger.info("done")
 
     def write_nodup(self, tbl, sch_tbl_nme, pkey, where=None):
         """Insert without creating duplicates.
