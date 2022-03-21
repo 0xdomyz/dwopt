@@ -13,8 +13,8 @@ def test_db_meta_init(test_tbl):
         Lt(_TEST_LT_URL).list_tables()
         Lt(make_eng(_TEST_LT_URL)).list_tables()
     elif isinstance(db, Oc):
-        Oc(_TEST_OC_URL).list_tables()
-        Oc(make_eng(_TEST_OC_URL)).list_tables()
+        Oc(_TEST_OC_URL).qry("dual").run()
+        Oc(make_eng(_TEST_OC_URL)).qry("dual").run()
     else:
         raise ValueError("Invalid db")
 
@@ -37,21 +37,23 @@ from information_schema.tables
 where table_schema
 not in ('information_schema','pg_catalog')
 """
+        act = db.list_tables()
     elif isinstance(db, Lt):
         sql = """
 select * from sqlite_master
 where type ='table'
 and name NOT LIKE 'sqlite_%'
 """
+        act = db.list_tables()
     elif isinstance(db, Oc):
         sql = """
 select/*+PARALLEL (4)*/ owner,table_name
     ,max(column_name),min(column_name)
 from all_tab_columns
-where owner = 'test_schema'
+where owner = 'DWOPT_TEST'
 group by owner,table_name
 """
-    act = db.list_tables()
+        act = db.list_tables("dwopt_test")
     exp = db.run(sql)
     assert_frame_equal(act, exp)
 

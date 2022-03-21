@@ -1,6 +1,7 @@
 import sqlalchemy as alc
 import pandas as pd
 import numpy as np
+import datetime
 import logging
 import re
 from dwopt._qry import _Qry
@@ -190,6 +191,28 @@ class _Db:
 
     def _guess_dtype(self, dtype):
         """See :meth:`dwopt.dbo._Db.create`"""
+        if self._dialect == "pg":
+            if np.issubdtype(dtype, np.int64):
+                return alc.dialects.postgresql.BIGINT
+            elif np.issubdtype(dtype, np.float64):
+                return alc.Float(8)
+        elif self._dialect == "lt":
+            if np.issubdtype(dtype, np.float64):
+                return alc.REAL
+            elif np.issubdtype(dtype, np.datetime64):
+                return alc.String
+        elif self._dialect == "oc":
+            if np.issubdtype(dtype, np.int64):
+                return alc.dialects.oracle.NUMBER
+            elif np.issubdtype(dtype, np.float64):
+                return alc.Float
+            elif np.issubdtype(dtype, np.datetime64):
+                return alc.DateTime
+            else:
+                return alc.String(20)
+        else:
+            raise ValueError("invalid dialect, only 'pg', 'lt', or 'oc'")
+
         if np.issubdtype(dtype, np.int64):
             return alc.Integer
         elif np.issubdtype(dtype, np.float64):
@@ -1032,12 +1055,20 @@ class _Db:
         Notes
         -----
 
-        **Datetime**
+        **Datetime on sqlite**
+
+        For sqlite tables, datetime columns should be manually converted to str
+        and None before insertion.
+
+        **``NaT``**
 
         Pandas Datetime64 columns are converted into object columns, and the
         ``pandas.NaT`` objects are converted into ``None`` before insertion.
-        For sqlite tables, datetime columns should be manually converted to str
-        and None before insertion.
+
+        **``NaN``**
+
+        Pandas Float64 columns are converted into object columns, and the
+        ``pandas.NaN`` objects are converted into ``None`` before insertion.
 
         **Reversibility**
 
@@ -1048,7 +1079,7 @@ class _Db:
 
         With the set up used in the :func:`dwopt.make_test_tbl` function, we have
         following results (See the examples and the test function relevant for
-        the :meth:`dwopt.dbo._Db.write_nodup` method):
+        the :meth:`dwopt.dbo._Db.cwrite` method):
 
         * Postgre example has reversibility except for row ordering and auto generated
           pandas dataframe index. These can be strightened as below.
@@ -1079,7 +1110,23 @@ class _Db:
                   )
               )
 
-        * Oracle is similiar to postgre.
+        * Oracle has same issue as postgre. In addition:
+          Datetime milliseconds are lost on the timestamp datatype on database.
+          Date are not stored in isoformat, but in dd-MMM-yy format on database.
+          Conversion codes:
+
+        .. code-block:: python
+
+            tbl = db.run("select * from test2 order by id").assign(
+                date=lambda x: x["date"].apply(
+                    lambda x: datetime.datetime.strptime(x, "%d-%b-%y").date()
+                    if x
+                    else None
+                )
+            )
+            df = df.assign(
+                time=lambda x: x["time"].apply(lambda x: x.replace(microsecond=0))
+            )
 
         Examples
         --------
@@ -1124,7 +1171,9 @@ class _Db:
         df = df.copy()
         cols = df.columns.tolist()
         for col in cols:
-            if np.issubdtype(df[col].dtype, np.datetime64):
+            if np.issubdtype(df[col].dtype, np.datetime64) or np.issubdtype(
+                df[col].dtype, np.float64
+            ):
                 df[col] = df[col].astype(object).where(~df[col].isna(), None)
         self._remove_sch_tbl(sch_tbl_nme)
         tbl = alc.Table(
@@ -1207,14 +1256,6 @@ class _Db:
 
 
 class Pg(_Db):
-    def _guess_dtype(self, dtype):
-        if np.issubdtype(dtype, np.int64):
-            return alc.dialects.postgresql.BIGINT
-        elif np.issubdtype(dtype, np.float64):
-            return alc.Float(8)
-        else:
-            return super(type(self), self)._guess_dtype(dtype)
-
     def list_cons(self):
         sql = "SELECT * FROM information_schema.constraint_table_usage"
         return self.run(sql)
@@ -1240,14 +1281,6 @@ class Pg(_Db):
 
 
 class Lt(_Db):
-    def _guess_dtype(self, dtype):
-        if np.issubdtype(dtype, np.float64):
-            return alc.REAL
-        elif np.issubdtype(dtype, np.datetime64):
-            return alc.String
-        else:
-            return super(type(self), self)._guess_dtype(dtype)
-
     def list_tables(self):
         sql = (
             "select * from sqlite_master "
@@ -1258,12 +1291,6 @@ class Lt(_Db):
 
 
 class Oc(_Db):
-    def _guess_dtype(self, dtype):
-        if np.issubdtype(dtype, np.int64):
-            return alc.dialects.oracle.NUMBER
-        else:
-            return super(type(self), self)._guess_dtype(dtype)
-
     def list_tables(self, owner):
         sql = (
             "select/*+PARALLEL (4)*/ owner,table_name"
@@ -1275,7 +1302,7 @@ class Oc(_Db):
         return self.run(sql)
 
     def table_cols(self, sch_tbl_nme):
-        sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
+        sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
         sql = (
             "select/*+PARALLEL (4)*/ *"
             "\nfrom all_tab_columns"

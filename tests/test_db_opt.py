@@ -155,8 +155,15 @@ def test_db_opt_write_nodup(test_tbl, test_tbl2):
             )
         )
     elif isinstance(db, Oc):
-        db.write(df, "test2")
-        db.write_nodup(df, "test2", ["id"])
+        db.write(
+            df,
+            "test2",
+        )
+        db.write_nodup(
+            df,
+            "test2",
+            ["id"],
+        )
         tbl = db.run("select * from test2 order by id")
     else:
         raise ValueError
@@ -188,11 +195,19 @@ def test_db_opt_cwrite(test_tbl, test_tbl2):
             )
         )
     elif isinstance(db, Oc):
-        db.cwrite(df, "test2")
+        db.cwrite(
+            df,
+            "test2",
+        )
         tbl = db.run("select * from test2 order by id").assign(
             date=lambda x: x["date"].apply(
-                lambda x: datetime.date.fromisoformat(x) if x else None
+                lambda x: datetime.datetime.strptime(x, "%d-%b-%y").date()
+                if x
+                else None
             )
+        )
+        df = df.assign(
+            time=lambda x: x["time"].apply(lambda x: x.replace(microsecond=0))
         )
     else:
         raise ValueError
