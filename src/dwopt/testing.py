@@ -145,7 +145,8 @@ def _make_oc_tbl(df, eng, sch_tbl_nme):
         conn.execute(
             test_tbl.insert(),
             df.assign(
-                time=lambda x: x.time.astype(object).where(~x.time.isna(), None)
+                score=lambda x: x.score.astype(object).where(~x.score.isna(), None),
+                time=lambda x: x.time.astype(object).where(~x.time.isna(), None),
             ).to_dict("records"),
         )
 
@@ -204,10 +205,15 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
 
     The ``id`` column will be made primary key in the test database tables.
 
+    *Floating point types*
+
+    The ``score`` column's ``NaN`` objects are converted into ``None`` before insertion
+    for oracle.
+
     *Datetime types*
 
-    The ``time`` column's ``NaT`` objects are converted into None before insertion for
-    Postgre and Oracle.
+    The ``time`` column's ``NaT`` objects are converted into ``None`` before insertion
+    for Postgre and Oracle.
     The ``time`` column are converted into str and None before insertion for Sqlite.
 
     See :meth:`dwopt.dbo._Db.write` for discussion on
@@ -217,7 +223,8 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
 
     * ``pg``: ``postgresql://dwopt_tester:1234@localhost/dwopt_test``
     * ``lt``: ``sqlite://``
-    * ``oc``: Not implemented.
+    * ``oc``: ``oracle://dwopt_test:1234@localhost:1521/?service_name=XEPDB1
+      &encoding=UTF-8&nencoding=UTF-8``.
 
     **Install testing databases**
 
@@ -232,8 +239,15 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
 
     * Install oracle db from the
       `oracle xe <https://www.oracle.com/database/technologies/xe-downloads.html>`_.
-    * Schema: test_schema
-    * Not implemented.
+    * Set ORACLE_HOME environment variable to point to installation location.
+    * command::
+
+        cd /d %ORACLE_HOME%\\bin
+        sqlplus sys/[password]]@//localhost:1521/XEPDB1 as sysdba
+        create user dwopt_test identified by 1234;
+        grant create session to dwopt_test;
+        grant create table to dwopt_test;
+        grant unlimited tablespace to dwopt_test;
 
     Examples
     ----------
@@ -261,7 +275,7 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
             db = Pg(make_eng(_TEST_PG_URL))
         elif db == "lt":
             db = Lt(make_eng(_TEST_LT_URL))
-        elif db == "pg":
+        elif db == "oc":
             db = Oc(make_eng(_TEST_OC_URL))
         else:
             raise ValueError("Invalid db str, use one of 'pg', 'lt', or 'oc'")

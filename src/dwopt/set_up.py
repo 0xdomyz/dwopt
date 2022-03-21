@@ -13,7 +13,10 @@ _CONFIG_PTH = Path.home() / ".dwopt"
 _KEYRING_SERV_ID = Path(__file__).parent.resolve().as_posix()
 _TEST_PG_URL = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
 _TEST_LT_URL = "sqlite://"
-_TEST_OC_URL = "oracle://dwopt_tester:1234@localhost/dwopt_test"
+_TEST_OC_URL = (
+    "oracle://dwopt_test:1234@localhost:1521/?service_name=XEPDB1"
+    "&encoding=UTF-8&nencoding=UTF-8"
+)
 
 
 def save_url(db_nme, url, method="keyring"):
