@@ -67,8 +67,8 @@ select
 from test
     """
     if isinstance(db, Oc):
-        act = db.qry("test").hash("id, cat")
-        exp = db.run(sql)
-        assert_series_equal(act, exp)
+        act = db.qry("test").hash("id", "cat")
+        exp = db.run(sql).iloc[0, 0]
+        assert act == exp
     else:
         return True
