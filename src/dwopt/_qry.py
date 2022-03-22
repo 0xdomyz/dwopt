@@ -54,16 +54,16 @@ class _Qry:
         with x as (
             select * from test
             where score>0.5
-                and date is not null
+                and dte is not null
                 and cat is not null
         )
         -- Summary query: generated from templates
         select
-            date, cat
+            dte, cat
             ,count(1) n
             ,avg(score) avgscore, round(sum(amt)/1e3,2) total
         from x
-        group by date, cat
+        group by dte, cat
         order by n desc
 
     Corresponding code::
@@ -71,9 +71,9 @@ class _Qry:
         from dwopt import lt, make_test_tbl
         _ = make_test_tbl(lt)
         (
-            lt.qry('test').where('score>0.5', 'date is not null', 'cat is not null')
+            lt.qry('test').where('score>0.5', 'dte is not null', 'cat is not null')
             .valc(
-                'date, cat',
+                'dte, cat',
                 'avg(score) avgscore, round(sum(amt)/1e3,2) total',
                 out=1
             )
@@ -586,10 +586,11 @@ class _Qry:
 
         Args
         ----------
-        *args : str
+        *args : str or [str]
             Column names in str. If no value is given, a cols method will be
             performed to fetch the list of all columns, from which a hash will be
             calculated.
+            Also allow passing in a single list of str column names.
         out: int
             Output mode. None to run full query, 1 to print full query,
             2 to return full query as str. Default None.
@@ -606,6 +607,7 @@ class _Qry:
             q = oc.iris(q=1)
             q.hash('petal_length')
             q.hash('petal_length', 'petal_width')
+            q.hash(['petal_length', 'petal_width'])
             q.hash(out=1)
         """
         if self._ops._dialect != "oc":
@@ -1227,28 +1229,28 @@ class _Qry:
         >>> logging.basicConfig(level = logging.INFO)
         >>> _ = make_test_tbl(lt)
         >>> (
-        ...     lt.qry('test').where('score>0.5', 'date is not null', 'cat is not null')
-        ...     .valc('date, cat', 'avg(score) avgscore, round(sum(amt)/1e3,2) total')
-        ...     .pivot('date', 'cat')
+        ...     lt.qry('test').where('score>0.5', 'dte is not null', 'cat is not null')
+        ...     .valc('dte, cat', 'avg(score) avgscore, round(sum(amt)/1e3,2) total')
+        ...     .pivot('dte', 'cat')
         ... )
         INFO:dwopt.dbo:running:
         with x as (
             select * from test
             where score>0.5
-                and date is not null
+                and dte is not null
                 and cat is not null
         )
         select
-            date, cat
+            dte, cat
             ,count(1) n
             ,avg(score) avgscore, round(sum(amt)/1e3,2) total
         from x
-        group by date, cat
+        group by dte, cat
         order by n desc
         INFO:dwopt.dbo:done
                        n        avgscore             total
         cat         test train      test     train    test   train
-        date
+        dte
         2022-01-01  1140  1051  2.736275  2.800106  565.67  530.09
         2022-02-02  1077  1100  2.759061  2.748898  536.68  544.10
         2022-03-03  1037  1072  2.728527  2.743825  521.54  528.85

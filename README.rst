@@ -188,9 +188,9 @@ Then call the result dataframe's |pivot|_ method to finalize the pivot table.
     _ = make_test_tbl(lt)
     (
         lt.qry('test')
-        .where('score>0.5', 'date is not null', 'cat is not null')
-        .valc('date,cat', 'avg(score) avgscore, round(sum(amt)/1e3,2) total')
-        .pivot('date', 'cat')
+        .where('score>0.5', 'dte is not null', 'cat is not null')
+        .valc('dte,cat', 'avg(score) avgscore, round(sum(amt)/1e3,2) total')
+        .pivot('dte', 'cat')
     )
 
 Result:
@@ -198,7 +198,7 @@ Result:
 ==========  =====  =====  ========  ========  ======  ======
 cat           n           avgscore             total
 ----------  -----  -----  --------  --------  ------  ------
-date         test  train    test     train     test   train 
+dte         test  train    test     train     test   train 
 ==========  =====  =====  ========  ========  ======  ======
 2022-01-01  1140   1051   2.736275  2.800106  565.67  530.09
 2022-02-02  1077   1100   2.759061  2.748898  536.68  544.10
