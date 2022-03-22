@@ -14,13 +14,19 @@ def test_db_opt_run(test_tbl):
 
     if isinstance(db, Lt):
         exp = df.assign(
-            date=lambda x: x.date.astype(str).where(~x.date.isna(), None),
+            dte=lambda x: x.dte.astype(str).where(~x.dte.isna(), None),
             time=lambda x: x.time.astype(str).where(~x.time.isna(), None),
         ).loc[lambda x: x.id <= 9, :]
     elif isinstance(db, Pg):
         exp = df.loc[lambda x: x.id <= 9, :]
     elif isinstance(db, Oc):
-        exp = df.loc[lambda x: x.id <= 9, :]
+        exp = df.assign(
+            dte=lambda x: x["dte"].apply(
+                lambda x: datetime.datetime.combine(x, datetime.time()) if x else None
+            ),
+            time=lambda x: x["time"].apply(lambda x: x.replace(microsecond=0)),
+        ).loc[lambda x: x.id <= 9, :]
+        # import pdb;pdb.set_trace()
     else:
         raise ValueError
 
@@ -49,7 +55,7 @@ def test_db_opt_create(test_tbl, test_tbl2):
                 "amt": "bigint",
                 "cat": "varchar(20)",
             },
-            date="date",
+            dte="date",
             time="timestamp",
         )
     elif isinstance(db, Lt):
@@ -61,7 +67,7 @@ def test_db_opt_create(test_tbl, test_tbl2):
                 "amt": "integer",
                 "cat": "text",
             },
-            date="text",
+            dte="text",
             time="text",
         )
     elif isinstance(db, Oc):
@@ -73,7 +79,7 @@ def test_db_opt_create(test_tbl, test_tbl2):
                 "amt": "number",
                 "cat": "varchar2(20)",
             },
-            date="date",
+            dte="date",
             time="timestamp",
         )
     else:
@@ -134,6 +140,7 @@ def test_db_opt_write_nodup(test_tbl, test_tbl2):
         db.write(df, "test2")
         db.write_nodup(df, "test2", ["id"])
         tbl = db.run("select * from test2 order by id")
+        assert_frame_equal_reset_index(tbl, df)
     elif isinstance(db, Lt):
         db.write(
             df.assign(time=lambda x: x.time.astype(str).where(~x.time.isna(), None)),
@@ -148,12 +155,13 @@ def test_db_opt_write_nodup(test_tbl, test_tbl2):
             db.qry("test2")
             .run()
             .assign(
-                date=lambda x: x["date"].apply(
+                dte=lambda x: x["dte"].apply(
                     lambda x: datetime.date.fromisoformat(x) if x else None
                 ),
                 time=lambda x: pd.to_datetime(x.time),
             )
         )
+        assert_frame_equal_reset_index(tbl, df)
     elif isinstance(db, Oc):
         db.write(
             df,
@@ -164,10 +172,15 @@ def test_db_opt_write_nodup(test_tbl, test_tbl2):
             "test2",
             ["id"],
         )
-        tbl = db.run("select * from test2 order by id")
+        tbl = db.run("select * from test2 order by id").assign(
+            dte=lambda x: x["dte"].apply(lambda x: x.date() if x else None)
+        )
+        df2 = df.assign(
+            time=lambda x: x["time"].apply(lambda x: x.replace(microsecond=0))
+        )
+        assert_frame_equal_reset_index(tbl, df2)
     else:
         raise ValueError
-    assert_frame_equal_reset_index(tbl, df)
 
 
 def test_db_opt_cwrite(test_tbl, test_tbl2):
@@ -175,7 +188,7 @@ def test_db_opt_cwrite(test_tbl, test_tbl2):
     if isinstance(db, Pg):
         db.cwrite(df, "test2")
         tbl = db.run("select * from test2 order by id").assign(
-            date=lambda x: x["date"].apply(
+            dte=lambda x: x["dte"].apply(
                 lambda x: datetime.date.fromisoformat(x) if x else None
             )
         )
@@ -188,7 +201,7 @@ def test_db_opt_cwrite(test_tbl, test_tbl2):
             db.qry("test2")
             .run()
             .assign(
-                date=lambda x: x["date"].apply(
+                dte=lambda x: x["dte"].apply(
                     lambda x: datetime.date.fromisoformat(x) if x else None
                 ),
                 time=lambda x: pd.to_datetime(x.time),
@@ -200,7 +213,7 @@ def test_db_opt_cwrite(test_tbl, test_tbl2):
             "test2",
         )
         tbl = db.run("select * from test2 order by id").assign(
-            date=lambda x: x["date"].apply(
+            dte=lambda x: x["dte"].apply(
                 lambda x: datetime.datetime.strptime(x, "%d-%b-%y").date()
                 if x
                 else None

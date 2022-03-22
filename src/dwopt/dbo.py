@@ -207,7 +207,7 @@ class _Db:
             elif np.issubdtype(dtype, np.float64):
                 return alc.Float
             elif np.issubdtype(dtype, np.datetime64):
-                return alc.DateTime
+                return alc.Date
             else:
                 return alc.String(20)
         else:
@@ -1103,7 +1103,7 @@ class _Db:
               tbl = (
                   db.qry("test2").run()
                   .assign(
-                      date=lambda x: x["date"].apply(
+                      dte=lambda x: x["dte"].apply(
                           lambda x: datetime.date.fromisoformat(x) if x else None
                       ),
                       time=lambda x: pd.to_datetime(x.time),
@@ -1118,7 +1118,7 @@ class _Db:
         .. code-block:: python
 
             tbl = db.run("select * from test2 order by id").assign(
-                date=lambda x: x["date"].apply(
+                dte=lambda x: x["dte"].apply(
                     lambda x: datetime.datetime.strptime(x, "%d-%b-%y").date()
                     if x
                     else None
@@ -1156,7 +1156,7 @@ class _Db:
         >>>         "score": "float8",
         >>>         "amt": "bigint",
         >>>         "cat": "varchar(20)",
-        >>>         "date":"date",
+        >>>         "dte":"date",
         >>>         "time":"timestamp"
         >>>     }
         >>> )

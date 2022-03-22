@@ -33,7 +33,7 @@ def make_test_df(n=10000):
     score                      4.066531
     amt                             813
     cat                            test
-    date                     2022-01-01
+    dte                      2022-01-01
     time     2022-03-03 10:19:35.071235
     Name: 0, dtype: object
     """
@@ -44,7 +44,7 @@ def make_test_df(n=10000):
             "score": [random.uniform(-1, 5) for i in range(n)],
             "amt": random.choices(range(1000), k=n),
             "cat": random.choices(["test", "train"], k=n),
-            "date": [
+            "dte": [
                 datetime.date.fromisoformat(i)
                 for i in random.choices(["2022-01-01", "2022-02-02", "2022-03-03"], k=n)
             ],
@@ -62,7 +62,7 @@ def make_test_df(n=10000):
         }
     )
 
-    for col in ["score", "cat", "date", "time"]:
+    for col in ["score", "cat", "dte", "time"]:
         df.loc[random.choices(range(n), k=int(n / 20)), col] = None
 
     return df
@@ -82,7 +82,7 @@ def _make_pg_tbl(df, eng, sch_tbl_nme):
         alc.Column("score", alc.Float(8)),
         alc.Column("amt", BIGINT),
         alc.Column("cat", alc.String(20)),
-        alc.Column("date", alc.Date),
+        alc.Column("dte", alc.Date),
         alc.Column("time", alc.DateTime),
         schema=sch,
     )
@@ -108,7 +108,7 @@ def _make_lt_tbl(df, eng, sch_tbl_nme):
         alc.Column("score", alc.REAL),
         alc.Column("amt", alc.Integer),
         alc.Column("cat", alc.String),
-        alc.Column("date", alc.String),
+        alc.Column("dte", alc.String),
         alc.Column("time", alc.String),
         schema=sch,
     )
@@ -134,8 +134,8 @@ def _make_oc_tbl(df, eng, sch_tbl_nme):
         alc.Column("score", alc.Float),
         alc.Column("amt", NUMBER),
         alc.Column("cat", alc.String(20)),
-        alc.Column("date", alc.Date),
-        alc.Column("time", alc.DateTime),
+        alc.Column("dte", alc.Date),
+        alc.Column("time", alc.Date),
         schema=sch,
     )
     with eng.connect() as conn:
@@ -183,7 +183,7 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
     score  float64        NaN         4.066531
     amt    int64                      867
     cat    str            None        train
-    date   datetime.date  None        2022-03-03
+    dte    datetime.date  None        2022-03-03
     time   datetime64[ns] NaT         2022-02-02 23:00:00
     ====== ============== =========== ===================
 
@@ -196,7 +196,7 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
     score  float8      real    float
     amt    bigint      integer number
     cat    varchar(20) text    varchar2(20)
-    date   date        text    date
+    dte    date        text    date
     time   timestamp   text    timestamp
     ====== =========== ======= ============
 
