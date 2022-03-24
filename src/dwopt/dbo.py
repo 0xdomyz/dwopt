@@ -465,7 +465,7 @@ class _Db:
         --------
         >>> from dwopt import pg
         >>> pg.create_schema('test')
-        >>> pg.iris('test.iris').len()
+        >>> pg.iris('test.iris', q=1).len()
         150
         """
         try:
