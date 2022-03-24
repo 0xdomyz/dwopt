@@ -1,7 +1,6 @@
 import sqlalchemy as alc
 import pandas as pd
 import numpy as np
-import datetime
 import logging
 import re
 from dwopt._qry import _Qry
@@ -388,11 +387,11 @@ class _Db:
         -----
         **Datatypes**
 
-        Datatypes vary across databses
-        (`postgre type <https://www.postgresql.org/docs/current/
+        Datatypes vary across databases
+        (`postgre types <https://www.postgresql.org/docs/current/
         datatype.html>`_,
-        `sqlite type <https://www.sqlite.org/datatype3.html>`_,
-        `oracle type <https://docs.oracle.com/en/database/oracle/
+        `sqlite types <https://www.sqlite.org/datatype3.html>`_,
+        `oracle types <https://docs.oracle.com/en/database/oracle/
         oracle-database/21/sqlqr/Data-Types.html>`_),
         common example below:
 
@@ -402,12 +401,9 @@ class _Db:
         integer    bigint      integer number
         float      float8      real    float
         string     varchar(20) text    varchar2(20)
-        datetime   timestamp   text    timestamp
+        datetime   timestamp   text    date
         date       date        text    date
         ========== =========== ======= ============
-
-        Note `sqlite datetime functions <https://www.sqlite.org/lang_datefunc.html>`_
-        are supposed to be used to work with datetime data types stored as text.
 
         **Other statements**
 
@@ -481,12 +477,12 @@ class _Db:
                 raise (ex)
 
     def cwrite(self, df, sch_tbl_nme):
-        """
-        Create table and insert based on dataframe.
+        """Create table and insert based on dataframe.
 
         * Replace ``.`` by ``_`` in dataframe column names.
         * Data types infered based on the :meth:`dwopt.dbo._Db.create` method notes.
-        * Datetime and reversibility issue see :meth:`dwopt.dbo._Db.write` method notes.
+          Also, date type columns are treated same as str type columns.
+        * Reversibility issue see :meth:`dwopt.dbo._Db.write` method notes.
 
         Args
         ----------
@@ -1038,8 +1034,14 @@ class _Db:
         raise NotImplementedError
 
     def write(self, df, sch_tbl_nme):
-        """
-        Make and run a insert many statement.
+        """Make and run a insert many statement.
+
+        **Pre-processing**
+
+        * Pandas Datetime64 columns are converted into object columns, and the
+          ``pandas.NaT`` objects are converted into ``None``.
+        * Pandas Float64 columns are converted into object columns, and the
+          ``pandas.NaN`` objects are converted into ``None``.
 
         This should follow from a :meth:`dwopt.dbo._Db.create` call which sets up
         the database table with table name, column names, intended data types,
@@ -1055,43 +1057,30 @@ class _Db:
         Notes
         -----
 
-        **Datetime on sqlite**
-
-        For sqlite tables, datetime columns should be manually converted to str
-        and None before insertion.
-
-        **``NaT``**
-
-        Pandas Datetime64 columns are converted into object columns, and the
-        ``pandas.NaT`` objects are converted into ``None`` before insertion.
-
-        **``NaN``**
-
-        Pandas Float64 columns are converted into object columns, and the
-        ``pandas.NaN`` objects are converted into ``None`` before insertion.
-
         **Reversibility**
 
         Ideally python dataframe written to database should allow a exact same
-        dataframe to be read back into python. Whether this is true depends on the
-        database, data and object types on the dataframe,
-        and data types on the database table.
+        dataframe to be read back into python. Whether this is true depends on:
 
-        With the set up used in the :func:`dwopt.make_test_tbl` function, we have
-        following results (See the examples and the test function relevant for
-        the :meth:`dwopt.dbo._Db.cwrite` method):
+        * The database.
+        * The data and object types on the dataframe.
+        * The data types on the database table.
 
-        * Postgre example has reversibility except for row ordering and auto generated
-          pandas dataframe index. These can be strightened as below.
+        With the set up used in the :func:`dwopt.make_test_tbl` function,
+        following results is obtained:
+
+        * The postgre table is reversible except for row order on select from database.
+          Example fix/strategy for comparison:
 
           .. code-block:: python
 
               df.sort_values('id').reset_index(drop=True)
 
-        * Sqlite stores datetime datatypes as text, this causes a str type column to
+        * Sqlite stores date/datetime as text, this causes a str type column to
           be read back. One strategy is to convert from datatime and NaT to
-          str and None before insertion, and convert back to date and datetime
-          when read back. Use ``datetime`` and ``pandas`` package for this.
+          str and None before insertion, and convert to date and datetime
+          when reading back.
+          Example fix/strategy for comparison:
 
           .. code-block:: python
 
@@ -1111,22 +1100,23 @@ class _Db:
               )
 
         * Oracle has same issue as postgre. In addition:
-          Datetime milliseconds are lost on the timestamp datatype on database.
-          Date are not stored in isoformat, but in dd-MMM-yy format on database.
-          Conversion codes:
 
-        .. code-block:: python
+          * Both date and datetime are stored as date format, and are read back
+            as datetime.
+          * Datetime milliseconds are lost on the database.
+          * Date are stored in dd-MMM-yy format on database.
+          * Date passed into varchar2 type column are stored in dd-MMM-yy format.
 
-            tbl = db.run("select * from test2 order by id").assign(
-                dte=lambda x: x["dte"].apply(
-                    lambda x: datetime.datetime.strptime(x, "%d-%b-%y").date()
-                    if x
-                    else None
-                )
-            )
-            df = df.assign(
-                time=lambda x: x["time"].apply(lambda x: x.replace(microsecond=0))
-            )
+          Example fix/strategy for comparison:
+
+          .. code-block:: python
+
+              tbl = db.run("select * from test2 order by id").assign(
+                  dte=lambda x: x["dte"].apply(lambda x: x.date() if x else None)
+              )
+              df2 = df.assign(
+                  time=lambda x: x["time"].apply(lambda x: x.replace(microsecond=0))
+              )
 
         Examples
         --------

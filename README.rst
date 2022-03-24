@@ -479,7 +479,6 @@ Quick main test:
 
 Testing for sqlite, postgre, oracle.
 Set up environment based on |dwopt.make_test_tbl|_ function notes.
-Oracle test unimplemented:
 
 .. code-block:: console
 
@@ -492,12 +491,9 @@ Oracle test unimplemented:
 Future
 ^^^^^^^^^
 
-* Set up oracle test environment.
 * Add more summary templates based on Python pandas, R tidyverse,
   and Excel pivot table functionalities.
 * Add more DML/DDL, metadata templates.
-* For logging package, consider using
-  `loguru <https://pypi.org/project/loguru/>`_.
 * For sql syntax, consider using `sqlfluff <https://docs.sqlfluff.com/en/stable/>`_
   style and toolkit.
 * For templating internals, consider using
