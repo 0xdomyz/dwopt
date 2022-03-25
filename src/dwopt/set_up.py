@@ -95,9 +95,8 @@ def save_url(db_nme, url, method="keyring"):
     Engine(postgresql://dwopt_tester:***@localhost/dwopt_test)
     >>> lt.eng
     Engine(sqlite:///:memory:)
-    >>> oc.eng
-    oracle://dwopt_test:***@localhost:1521/?encoding=UTF-8&nencoding=UTF-8&
-    service_name=XEPDB1
+    >>> str(oc.eng)[:50]
+    'Engine(oracle://dwopt_test:***@localhost:1521/?enc'
     """
     url = _encode(url)
     if method == "keyring":
@@ -191,8 +190,10 @@ def make_eng(url):
     >>> url = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
     >>> pg_eng = make_eng(url)
     >>> pg = Pg(pg_eng)
-    >>> pg.run('select count(1) from test')
-        42
+    >>> pg.iris()
+    >>> pg.run('select count(1) from iris')
+       count
+    0    150
     """
     return sqlalchemy.create_engine(url)
 

@@ -107,7 +107,7 @@ class _Qry:
     0  sicolor  50              4.260
     1   setosa  50              1.462
     2  rginica  50              5.552
-    >>> lt.qry('iris').where('petal_length > 2').valc('species', out=1)
+    >>> lt.qry('iris').where('petal_length > 2').valc('species', out=1)# doctest: +SKIP
     with x as (
         select * from iris
         where petal_length > 2
@@ -331,7 +331,7 @@ class _Qry:
         Combine case when, value counts, and pivot:
 
         >>> from dwopt import lt as d
-        >>> d.iris(q=1).case('cat',
+        >>> d.iris(q=1).case('cat', # doctest: +SKIP
         ...     "petal_length > 5             then '5+'",
         ...     "petal_length between 2 and 5 then '2-5'",
         ...     "petal_length < 2             then '-2'",
@@ -469,7 +469,7 @@ class _Qry:
         >>> from dwopt import pg
         >>> pg.create_schema('test')
         >>> q = pg.mtcars('test.mtcars', q=1)
-        >>> q.dist('mpg', ['mpg', 'cyl'], out=1)
+        >>> q.dist('mpg', ['mpg', 'cyl'], out=1) # doctest: +SKIP
         with x as (
             select * from test.mtcars
         )
@@ -523,7 +523,7 @@ class _Qry:
         >>> from dwopt import lt
         >>> lt.iris()
         >>> lt.qry().from_("iris").print()
-            select * from iris
+        select * from iris
         """
         _ = self.__copy__()
         _._from_ = from_
@@ -748,7 +748,7 @@ class _Qry:
         0    8  14  15.100000
         1    4  11  26.663636
         2    6   7  19.742857
-        >>> q.valc('cyl', 'avg(mpg)', out=1)
+        >>> q.valc('cyl', 'avg(mpg)', out=1) # doctest: +SKIP
         with x as (
             select a.cyl, b.mpg
             from mtcars a
@@ -785,7 +785,7 @@ class _Qry:
            cyl   n   avg(mpg)
         0    8  14  15.100000
         1    4  11  26.663636
-        >>> q.valc('cyl', 'avg(mpg)', out=1)
+        >>> q.valc('cyl', 'avg(mpg)', out=1) # doctest: +SKIP
         with x as (
             select a.cyl, a.mpg
             from mtcars a
@@ -1054,7 +1054,7 @@ class _Qry:
         >>> lt.iris()
         >>> q = lt.qry().sql("select * from iris where sepal_length > 7")
         >>> q.len()
-        32
+        12
         >>> q.print()
         select * from iris where sepal_length > 7
         """
@@ -1210,7 +1210,7 @@ class _Qry:
         0  rginica              5.552
         1   setosa              1.462
         2  sicolor              4.260
-        >>> lt.qry('iris').valc('species', 'avg(petal_length)', out=1)
+        >>> lt.qry('iris').valc('species', 'avg(petal_length)', out=1)# doctest: +SKIP
         with x as (
             select * from iris
         )
@@ -1224,41 +1224,51 @@ class _Qry:
 
         Excel-pivot-table-like API:
 
-        >>> from dwopt import lt, make_test_tbl
-        >>> import logging
-        >>> logging.basicConfig(level = logging.INFO)
-        >>> _ = make_test_tbl(lt)
-        >>> (
-        ...     lt.qry('test').where('score>0.5', 'dte is not null', 'cat is not null')
-        ...     .valc('dte, cat', 'avg(score) avgscore, round(sum(amt)/1e3,2) total')
-        ...     .pivot('dte', 'cat')
-        ... )
-        INFO:dwopt.dbo:running:
-        with x as (
-            select * from test
-            where score>0.5
-                and dte is not null
-                and cat is not null
-        )
-        select
-            dte, cat
-            ,count(1) n
-            ,avg(score) avgscore, round(sum(amt)/1e3,2) total
-        from x
-        group by dte, cat
-        order by n desc
-        INFO:dwopt.dbo:done
-                       n        avgscore             total
-        cat         test train      test     train    test   train
-        dte
-        2022-01-01  1140  1051  2.736275  2.800106  565.67  530.09
-        2022-02-02  1077  1100  2.759061  2.748898  536.68  544.10
-        2022-03-03  1037  1072  2.728527  2.743825  521.54  528.85
+        .. code-block :: python
+
+            from dwopt import lt, make_test_tbl
+            import logging
+            logging.basicConfig(level = logging.INFO)
+            _ = make_test_tbl(lt)
+            (
+                lt.qry('test').where('score>0.5', 'dte is not null', 'cat is not null')
+                .valc('dte, cat', 'avg(score) avgscore, round(sum(amt)/1e3,2) total')
+                .pivot('dte', 'cat')
+            )
+
+        Logs showing sql used:
+
+        .. code-block :: sql
+
+            INFO:dwopt.dbo:running:
+            with x as (
+                select * from test
+                where score>0.5
+                    and dte is not null
+                    and cat is not null
+            )
+            select
+                dte, cat
+                ,count(1) n
+                ,avg(score) avgscore, round(sum(amt)/1e3,2) total
+            from x
+            group by dte, cat
+            order by n desc
+            INFO:dwopt.dbo:done
+
+        Results::
+
+                           n        avgscore             total
+            cat         test train      test     train    test   train
+            dte
+            2022-01-01  1140  1051  2.736275  2.800106  565.67  530.09
+            2022-02-02  1077  1100  2.759061  2.748898  536.68  544.10
+            2022-03-03  1037  1072  2.728527  2.743825  521.54  528.85
 
         Combine case when, value counts, and pivot:
 
         >>> from dwopt import lt as d
-        >>> d.iris(q=1).case('cat',
+        >>> d.iris(q=1).case('cat', # doctest: +SKIP
         ...     "petal_length > 5             then '5+'",
         ...     "petal_length between 2 and 5 then '2-5'",
         ...     "petal_length < 2             then '-2'",

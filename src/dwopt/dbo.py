@@ -552,10 +552,8 @@ class _Db:
         >>> lt.drop('iris')
         >>> lt.iris()
         >>> lt.drop('iris')
-        >>> lt.list_tables()
-        Empty DataFrame
-        Columns: [type, name, tbl_name, rootpage, sql]
-        Index: []
+        >>> lt.exist('iris')
+        False
 
         >>> from dwopt import pg
         >>> pg.create_schema('test')
@@ -687,7 +685,7 @@ class _Db:
         >>> pg.list_cons().loc[
         ...     lambda x:(x.table_schema == 'public') & (x.table_name == 'mtcars'),
         ...     ['table_name', 'constraint_name']
-        ... ]
+        ... ].reset_index(drop=True)
           table_name constraint_name
         0     mtcars     mtcars_pkey
         """
@@ -750,10 +748,12 @@ class _Db:
         >>> from dwopt import lt
         >>> lt.iris()
         >>> lt.mtcars()
-        >>> lt.list_tables().iloc[:,:-1]
-            type    name tbl_name  rootpage
-        0  table    iris     iris         2
-        1  table  mtcars   mtcars         5
+        >>> lt.drop('test')
+        >>> lt.drop('test2')
+        >>> lt.list_tables().iloc[:,:-2]
+            type    name tbl_name
+        0  table    iris     iris
+        1  table  mtcars   mtcars
         """
         raise NotImplementedError
 
@@ -923,7 +923,7 @@ class _Db:
         >>> from dwopt import pg, make_test_tbl
         >>> _ = make_test_tbl(pg)
         >>> pg.run(pth = "E:/projects/my_sql_script.sql",
-        ...     my_run_date = '2022-03-03',
+        ...     my_run_dte = '2022-03-03',
         ...     my_label = '20220303',
         ...     threshold = 5)
            count
@@ -938,7 +938,7 @@ class _Db:
             create table monthly_extract_:my_label as
             select * from test
             where
-                date = to_date(':my_run_date','YYYY-MM-DD')
+                dte = to_date(':my_run_dte','YYYY-MM-DD')
                 and score > :threshold;
 
             select count(1) from monthly_extract_:my_label;
@@ -1140,16 +1140,16 @@ class _Db:
         >>> pg, df = make_test_tbl('pg')
         >>> pg.drop('test')
         >>> pg.create(
-        >>>     "test",
-        >>>     dtypes={
-        >>>         "id": "bigint primary key",
-        >>>         "score": "float8",
-        >>>         "amt": "bigint",
-        >>>         "cat": "varchar(20)",
-        >>>         "dte":"date",
-        >>>         "time":"timestamp"
-        >>>     }
-        >>> )
+        ...     "test",
+        ...     dtypes={
+        ...         "id": "bigint primary key",
+        ...         "score": "float8",
+        ...         "amt": "bigint",
+        ...         "cat": "varchar(20)",
+        ...         "dte":"date",
+        ...         "time":"timestamp"
+        ...     }
+        ... )
         >>> pg.write(df, 'test')
         >>> df_back = pg.qry('test').run().sort_values('id').reset_index(drop=True)
         >>> assert_frame_equal(df_back, df)

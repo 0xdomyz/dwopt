@@ -99,7 +99,7 @@ One could then replace ``:`` marked parameters via mappings supplied to the meth
     from dwopt import pg, make_test_tbl
     _ = make_test_tbl(pg)
     pg.run(pth = "E:/projects/my_sql_script.sql",
-        my_run_date = '2022-03-03',
+        my_run_dte = '2022-03-03',
         my_label = '20220303',
         threshold = 5)
        count
@@ -114,7 +114,7 @@ Above runs the sql stored on ``E:/projects/my_sql_script.sql`` as below:
     create table monthly_extract_:my_label as
     select * from test
     where
-        date = to_date(':my_run_date','YYYY-MM-DD')
+        dte = to_date(':my_run_dte','YYYY-MM-DD')
         and score > :threshold;
 
     select count(1) from monthly_extract_:my_label;
@@ -213,15 +213,15 @@ logging.
     with x as (
         select * from test
         where score>0.5
-            and date is not null
+            and dte is not null
             and cat is not null
     )
     select
-        date,cat
+        dte,cat
         ,count(1) n
         ,avg(score) avgscore, round(sum(amt)/1e3,2) total
     from x
-    group by date,cat
+    group by dte,cat
     order by n desc
 
 
@@ -482,11 +482,20 @@ Set up environment based on |dwopt.make_test_tbl|_ function notes.
 
 .. code-block:: console
 
-    pytest --db="pg"
+    pytest --db="pg" --db="oc"
+
+Test examples across docs:
 
 .. code-block:: console
 
-    pytest --db="pg" --db="oc"
+    docs\make doctest
+
+Test code styles:
+
+.. code-block:: console
+
+    flake8 src\dwopt
+
 
 Future
 ^^^^^^^^^
