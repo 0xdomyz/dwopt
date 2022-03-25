@@ -13,7 +13,10 @@ _CONFIG_PTH = Path.home() / ".dwopt"
 _KEYRING_SERV_ID = Path(__file__).parent.resolve().as_posix()
 _TEST_PG_URL = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
 _TEST_LT_URL = "sqlite://"
-_TEST_OC_URL = "oracle://dwopt_tester:1234@localhost/dwopt_test"
+_TEST_OC_URL = (
+    "oracle://dwopt_test:1234@localhost:1521/?service_name=XEPDB1"
+    "&encoding=UTF-8&nencoding=UTF-8"
+)
 
 
 def save_url(db_nme, url, method="keyring"):
@@ -79,7 +82,10 @@ def save_url(db_nme, url, method="keyring"):
     >>> import dwopt
     >>> dwopt.save_url('pg', 'postgresql://dwopt_tester:1234@localhost/dwopt_test')
     'Saved pg url to keyring'
-    >>> dwopt.save_url('oc', 'oracle://scott2:tiger@tnsname', 'config')
+    >>> url = ("oracle://dwopt_test:1234@localhost:1521/?service_name=XEPDB1"
+    ...     "&encoding=UTF-8&nencoding=UTF-8")
+    >>>
+    >>> dwopt.save_url('oc', url, 'config')
     'Saved oc url to config'
 
     Exit and re-enter python for changes to take effect.
@@ -89,8 +95,8 @@ def save_url(db_nme, url, method="keyring"):
     Engine(postgresql://dwopt_tester:***@localhost/dwopt_test)
     >>> lt.eng
     Engine(sqlite:///:memory:)
-    >>> oc.eng
-    Engine(oracle://scott2:***@tnsname)
+    >>> str(oc.eng)[:50]
+    'Engine(oracle://dwopt_test:***@localhost:1521/?enc'
     """
     url = _encode(url)
     if method == "keyring":
@@ -184,8 +190,10 @@ def make_eng(url):
     >>> url = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
     >>> pg_eng = make_eng(url)
     >>> pg = Pg(pg_eng)
-    >>> pg.run('select count(1) from test')
-        42
+    >>> pg.iris()
+    >>> pg.run('select count(1) from iris')
+       count
+    0    150
     """
     return sqlalchemy.create_engine(url)
 

@@ -1,42 +1,12 @@
 import random
 import pandas as pd
 import datetime
-from dwopt import make_eng, Pg, Lt, Oc
+import dwopt
 from dwopt.set_up import _TEST_PG_URL, _TEST_LT_URL, _TEST_OC_URL
 import sqlalchemy as alc
-from sqlalchemy.dialects.oracle import NUMBER
-from sqlalchemy.dialects.postgresql import BIGINT
-import logging
-
-_logger = logging.getLogger(__file__)
 
 
-def make_test_df(n=10000):
-    """Make a test dataframe with various data types and missing values.
-
-    Details see :func:`dwopt.make_test_tbl`.
-
-    Parameters
-    ------------
-    n: int
-        Number of records.
-
-    Returns
-    --------
-    pandas.DataFrame
-
-    Examples
-    ----------
-    >>> from dwopt.testing import make_test_df
-    >>> make_test_df(10000).iloc[0,:]
-    id                                0
-    score                      4.066531
-    amt                             813
-    cat                            test
-    date                     2022-01-01
-    time     2022-03-03 10:19:35.071235
-    Name: 0, dtype: object
-    """
+def _make_test_df(n=10000):
     random.seed(0)
     df = pd.DataFrame(
         {
@@ -44,7 +14,7 @@ def make_test_df(n=10000):
             "score": [random.uniform(-1, 5) for i in range(n)],
             "amt": random.choices(range(1000), k=n),
             "cat": random.choices(["test", "train"], k=n),
-            "date": [
+            "dte": [
                 datetime.date.fromisoformat(i)
                 for i in random.choices(["2022-01-01", "2022-02-02", "2022-03-03"], k=n)
             ],
@@ -62,14 +32,15 @@ def make_test_df(n=10000):
         }
     )
 
-    for col in ["score", "cat", "date", "time"]:
+    for col in ["score", "cat", "dte", "time"]:
         df.loc[random.choices(range(n), k=int(n / 20)), col] = None
 
     return df
 
 
 def _parse_sch_tbl_nme(sch_tbl_nme):
-    return Pg._parse_sch_tbl_nme(Pg, sch_tbl_nme)
+    db = dwopt.dbo._Db
+    return db._parse_sch_tbl_nme(db, sch_tbl_nme)
 
 
 def _make_pg_tbl(df, eng, sch_tbl_nme):
@@ -78,11 +49,11 @@ def _make_pg_tbl(df, eng, sch_tbl_nme):
     test_tbl = alc.Table(
         tbl_nme,
         meta,
-        alc.Column("id", BIGINT, primary_key=True),
+        alc.Column("id", alc.dialects.postgresql.BIGINT, primary_key=True),
         alc.Column("score", alc.Float(8)),
-        alc.Column("amt", BIGINT),
+        alc.Column("amt", alc.dialects.postgresql.BIGINT),
         alc.Column("cat", alc.String(20)),
-        alc.Column("date", alc.Date),
+        alc.Column("dte", alc.Date),
         alc.Column("time", alc.DateTime),
         schema=sch,
     )
@@ -108,7 +79,7 @@ def _make_lt_tbl(df, eng, sch_tbl_nme):
         alc.Column("score", alc.REAL),
         alc.Column("amt", alc.Integer),
         alc.Column("cat", alc.String),
-        alc.Column("date", alc.String),
+        alc.Column("dte", alc.String),
         alc.Column("time", alc.String),
         schema=sch,
     )
@@ -130,12 +101,12 @@ def _make_oc_tbl(df, eng, sch_tbl_nme):
     test_tbl = alc.Table(
         tbl_nme,
         meta,
-        alc.Column("id", NUMBER, primary_key=True),
+        alc.Column("id", alc.dialects.oracle.NUMBER, primary_key=True),
         alc.Column("score", alc.Float),
-        alc.Column("amt", NUMBER),
+        alc.Column("amt", alc.dialects.oracle.NUMBER),
         alc.Column("cat", alc.String(20)),
-        alc.Column("date", alc.Date),
-        alc.Column("time", alc.DateTime),
+        alc.Column("dte", alc.Date),
+        alc.Column("time", alc.Date),
         schema=sch,
     )
     with eng.connect() as conn:
@@ -145,7 +116,8 @@ def _make_oc_tbl(df, eng, sch_tbl_nme):
         conn.execute(
             test_tbl.insert(),
             df.assign(
-                time=lambda x: x.time.astype(object).where(~x.time.isna(), None)
+                score=lambda x: x.score.astype(object).where(~x.score.isna(), None),
+                time=lambda x: x.time.astype(object).where(~x.time.isna(), None),
             ).to_dict("records"),
         )
 
@@ -175,16 +147,16 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
 
     **Table specifications**
 
-    ====== ============== =========== ===================
-    Column Data type      None values Example
-    ====== ============== =========== ===================
-    id     int64                      0
-    score  float64        NaN         4.066531
-    amt    int64                      867
-    cat    str            None        train
-    date   datetime.date  None        2022-03-03
-    time   datetime64[ns] NaT         2022-02-02 23:00:00
-    ====== ============== =========== ===================
+    ====== ============== ============== ==== ===================
+    Column Column type    Object type    None Example
+    ====== ============== ============== ==== ===================
+    id     int64          int64               0
+    score  float64        float64        NaN  4.066531
+    amt    int64          int64               867
+    cat    object         str            None train
+    dte    object         datetime.date  None 2022-03-03
+    time   datetime64[ns] datetime64[ns] NaT  2022-02-02 23:00:00
+    ====== ============== ============== ==== ===================
 
     **Test database table specifications**
 
@@ -195,29 +167,32 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
     score  float8      real    float
     amt    bigint      integer number
     cat    varchar(20) text    varchar2(20)
-    date   date        text    date
-    time   timestamp   text    timestamp
+    dte    date        text    date
+    time   timestamp   text    date
     ====== =========== ======= ============
 
-    These datatypes are implemented via respective
+    These datatypes are implemented via closest
     `Sqlalchemy datatypes <https://docs.sqlalchemy.org/en/14/core/type_basics.html>`_.
 
-    The ``id`` column will be made primary key in the test database tables.
+    The ``id`` column is made primary key in the test database tables.
+
+    *Floating point types*
+
+    The ``score`` column's ``NaN`` objects are converted into ``None`` before insertion
+    for oracle.
 
     *Datetime types*
 
-    The ``time`` column's ``NaT`` objects are converted into None before insertion for
-    Postgre and Oracle.
+    The ``time`` column's ``NaT`` objects are converted into ``None`` before insertion
+    for Postgre and Oracle.
     The ``time`` column are converted into str and None before insertion for Sqlite.
-
-    See :meth:`dwopt.dbo._Db.write` for discussion on
-    datetime columns and reversibility of insert statements.
 
     **Pre-defined testing database engines**
 
     * ``pg``: ``postgresql://dwopt_tester:1234@localhost/dwopt_test``
     * ``lt``: ``sqlite://``
-    * ``oc``: Not implemented.
+    * ``oc``: ``oracle://dwopt_test:1234@localhost:1521/?service_name=XEPDB1
+      &encoding=UTF-8&nencoding=UTF-8``.
 
     **Install testing databases**
 
@@ -232,20 +207,27 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
 
     * Install oracle db from the
       `oracle xe <https://www.oracle.com/database/technologies/xe-downloads.html>`_.
-    * Schema: test_schema
-    * Not implemented.
+    * Set ORACLE_HOME environment variable to point to installation location.
+    * command::
+
+        cd /d %ORACLE_HOME%\\bin
+        sqlplus sys/[password]]@//localhost:1521/XEPDB1 as sysdba
+        create user dwopt_test identified by 1234;
+        grant create session to dwopt_test;
+        grant create table to dwopt_test;
+        grant unlimited tablespace to dwopt_test;
 
     Examples
     ----------
-    Make test table through user provided database operator:
+    Make test table via provided database operator:
 
     >>> from dwopt import lt, make_test_tbl
     >>> _ = make_test_tbl(lt)
     >>> lt.qry('test').len()
     10000
 
-    Use the function to make database operator linked to the pre-defined
-    test databases, then make test table on it:
+    Make database operator for the pre-defined test databases,
+    then make test table on it:
 
     >>> from dwopt import make_test_tbl
     >>> lt, df = make_test_tbl('lt', 'foo', 999)
@@ -258,19 +240,20 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
     """
     if isinstance(db, str):
         if db == "pg":
-            db = Pg(make_eng(_TEST_PG_URL))
+            db = dwopt.db(_TEST_PG_URL)
         elif db == "lt":
-            db = Lt(make_eng(_TEST_LT_URL))
-        elif db == "pg":
-            db = Oc(make_eng(_TEST_OC_URL))
+            db = dwopt.db(_TEST_LT_URL)
+        elif db == "oc":
+            db = dwopt.db(_TEST_OC_URL)
         else:
             raise ValueError("Invalid db str, use one of 'pg', 'lt', or 'oc'")
-    df = make_test_df(n)
-    if isinstance(db, Pg):
+    df = _make_test_df(n)
+    dlc = db._dialect
+    if dlc == "pg":
         _make_pg_tbl(df, db.eng, sch_tbl_nme)
-    elif isinstance(db, Lt):
+    elif dlc == "lt":
         _make_lt_tbl(df, db.eng, sch_tbl_nme)
-    elif isinstance(db, Oc):
+    elif dlc == "oc":
         _make_oc_tbl(df, db.eng, sch_tbl_nme)
     else:
         raise ValueError(

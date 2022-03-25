@@ -99,7 +99,7 @@ One could then replace ``:`` marked parameters via mappings supplied to the meth
     from dwopt import pg, make_test_tbl
     _ = make_test_tbl(pg)
     pg.run(pth = "E:/projects/my_sql_script.sql",
-        my_run_date = '2022-03-03',
+        my_run_dte = '2022-03-03',
         my_label = '20220303',
         threshold = 5)
        count
@@ -114,7 +114,7 @@ Above runs the sql stored on ``E:/projects/my_sql_script.sql`` as below:
     create table monthly_extract_:my_label as
     select * from test
     where
-        date = to_date(':my_run_date','YYYY-MM-DD')
+        dte = to_date(':my_run_dte','YYYY-MM-DD')
         and score > :threshold;
 
     select count(1) from monthly_extract_:my_label;
@@ -188,9 +188,9 @@ Then call the result dataframe's |pivot|_ method to finalize the pivot table.
     _ = make_test_tbl(lt)
     (
         lt.qry('test')
-        .where('score>0.5', 'date is not null', 'cat is not null')
-        .valc('date,cat', 'avg(score) avgscore, round(sum(amt)/1e3,2) total')
-        .pivot('date', 'cat')
+        .where('score>0.5', 'dte is not null', 'cat is not null')
+        .valc('dte,cat', 'avg(score) avgscore, round(sum(amt)/1e3,2) total')
+        .pivot('dte', 'cat')
     )
 
 Result:
@@ -198,7 +198,7 @@ Result:
 ==========  =====  =====  ========  ========  ======  ======
 cat           n           avgscore             total
 ----------  -----  -----  --------  --------  ------  ------
-date         test  train    test     train     test   train 
+dte         test   train    test     train     test   train 
 ==========  =====  =====  ========  ========  ======  ======
 2022-01-01  1140   1051   2.736275  2.800106  565.67  530.09
 2022-02-02  1077   1100   2.759061  2.748898  536.68  544.10
@@ -213,15 +213,15 @@ logging.
     with x as (
         select * from test
         where score>0.5
-            and date is not null
+            and dte is not null
             and cat is not null
     )
     select
-        date,cat
+        dte,cat
         ,count(1) n
         ,avg(score) avgscore, round(sum(amt)/1e3,2) total
     from x
-    group by date,cat
+    group by dte,cat
     order by n desc
 
 
@@ -479,25 +479,30 @@ Quick main test:
 
 Testing for sqlite, postgre, oracle.
 Set up environment based on |dwopt.make_test_tbl|_ function notes.
-Oracle test unimplemented:
-
-.. code-block:: console
-
-    pytest --db="pg"
 
 .. code-block:: console
 
     pytest --db="pg" --db="oc"
 
+Test examples across docs:
+
+.. code-block:: console
+
+    docs\make doctest
+
+Test code styles:
+
+.. code-block:: console
+
+    flake8 src\dwopt
+
+
 Future
 ^^^^^^^^^
 
-* Set up oracle test environment.
 * Add more summary templates based on Python pandas, R tidyverse,
   and Excel pivot table functionalities.
 * Add more DML/DDL, metadata templates.
-* For logging package, consider using
-  `loguru <https://pypi.org/project/loguru/>`_.
 * For sql syntax, consider using `sqlfluff <https://docs.sqlfluff.com/en/stable/>`_
   style and toolkit.
 * For templating internals, consider using

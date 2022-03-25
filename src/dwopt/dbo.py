@@ -190,6 +190,28 @@ class _Db:
 
     def _guess_dtype(self, dtype):
         """See :meth:`dwopt.dbo._Db.create`"""
+        if self._dialect == "pg":
+            if np.issubdtype(dtype, np.int64):
+                return alc.dialects.postgresql.BIGINT
+            elif np.issubdtype(dtype, np.float64):
+                return alc.Float(8)
+        elif self._dialect == "lt":
+            if np.issubdtype(dtype, np.float64):
+                return alc.REAL
+            elif np.issubdtype(dtype, np.datetime64):
+                return alc.String
+        elif self._dialect == "oc":
+            if np.issubdtype(dtype, np.int64):
+                return alc.dialects.oracle.NUMBER
+            elif np.issubdtype(dtype, np.float64):
+                return alc.Float
+            elif np.issubdtype(dtype, np.datetime64):
+                return alc.Date
+            else:
+                return alc.String(20)
+        else:
+            raise ValueError("invalid dialect, only 'pg', 'lt', or 'oc'")
+
         if np.issubdtype(dtype, np.int64):
             return alc.Integer
         elif np.issubdtype(dtype, np.float64):
@@ -365,11 +387,11 @@ class _Db:
         -----
         **Datatypes**
 
-        Datatypes vary across databses
-        (`postgre type <https://www.postgresql.org/docs/current/
+        Datatypes vary across databases
+        (`postgre types <https://www.postgresql.org/docs/current/
         datatype.html>`_,
-        `sqlite type <https://www.sqlite.org/datatype3.html>`_,
-        `oracle type <https://docs.oracle.com/en/database/oracle/
+        `sqlite types <https://www.sqlite.org/datatype3.html>`_,
+        `oracle types <https://docs.oracle.com/en/database/oracle/
         oracle-database/21/sqlqr/Data-Types.html>`_),
         common example below:
 
@@ -379,12 +401,9 @@ class _Db:
         integer    bigint      integer number
         float      float8      real    float
         string     varchar(20) text    varchar2(20)
-        datetime   timestamp   text    timestamp
+        datetime   timestamp   text    date
         date       date        text    date
         ========== =========== ======= ============
-
-        Note `sqlite datetime functions <https://www.sqlite.org/lang_datefunc.html>`_
-        are supposed to be used to work with datetime data types stored as text.
 
         **Other statements**
 
@@ -446,7 +465,7 @@ class _Db:
         --------
         >>> from dwopt import pg
         >>> pg.create_schema('test')
-        >>> pg.iris('test.iris').len()
+        >>> pg.iris('test.iris', q=1).len()
         150
         """
         try:
@@ -458,12 +477,12 @@ class _Db:
                 raise (ex)
 
     def cwrite(self, df, sch_tbl_nme):
-        """
-        Create table and insert based on dataframe.
+        """Create table and insert based on dataframe.
 
         * Replace ``.`` by ``_`` in dataframe column names.
         * Data types infered based on the :meth:`dwopt.dbo._Db.create` method notes.
-        * Datetime and reversibility issue see :meth:`dwopt.dbo._Db.write` method notes.
+          Also, date type columns are treated same as str type columns.
+        * Reversibility issue see :meth:`dwopt.dbo._Db.write` method notes.
 
         Args
         ----------
@@ -533,10 +552,8 @@ class _Db:
         >>> lt.drop('iris')
         >>> lt.iris()
         >>> lt.drop('iris')
-        >>> lt.list_tables()
-        Empty DataFrame
-        Columns: [type, name, tbl_name, rootpage, sql]
-        Index: []
+        >>> lt.exist('iris')
+        False
 
         >>> from dwopt import pg
         >>> pg.create_schema('test')
@@ -668,7 +685,7 @@ class _Db:
         >>> pg.list_cons().loc[
         ...     lambda x:(x.table_schema == 'public') & (x.table_name == 'mtcars'),
         ...     ['table_name', 'constraint_name']
-        ... ]
+        ... ].reset_index(drop=True)
           table_name constraint_name
         0     mtcars     mtcars_pkey
         """
@@ -731,10 +748,12 @@ class _Db:
         >>> from dwopt import lt
         >>> lt.iris()
         >>> lt.mtcars()
-        >>> lt.list_tables().iloc[:,:-1]
-            type    name tbl_name  rootpage
-        0  table    iris     iris         2
-        1  table  mtcars   mtcars         5
+        >>> lt.drop('test')
+        >>> lt.drop('test2')
+        >>> lt.list_tables().iloc[:,:-2]
+            type    name tbl_name
+        0  table    iris     iris
+        1  table  mtcars   mtcars
         """
         raise NotImplementedError
 
@@ -904,7 +923,7 @@ class _Db:
         >>> from dwopt import pg, make_test_tbl
         >>> _ = make_test_tbl(pg)
         >>> pg.run(pth = "E:/projects/my_sql_script.sql",
-        ...     my_run_date = '2022-03-03',
+        ...     my_run_dte = '2022-03-03',
         ...     my_label = '20220303',
         ...     threshold = 5)
            count
@@ -919,7 +938,7 @@ class _Db:
             create table monthly_extract_:my_label as
             select * from test
             where
-                date = to_date(':my_run_date','YYYY-MM-DD')
+                dte = to_date(':my_run_dte','YYYY-MM-DD')
                 and score > :threshold;
 
             select count(1) from monthly_extract_:my_label;
@@ -1015,8 +1034,14 @@ class _Db:
         raise NotImplementedError
 
     def write(self, df, sch_tbl_nme):
-        """
-        Make and run a insert many statement.
+        """Make and run a insert many statement.
+
+        **Pre-processing**
+
+        * Pandas Datetime64 columns are converted into object columns, and the
+          ``pandas.NaT`` objects are converted into ``None``.
+        * Pandas Float64 columns are converted into object columns, and the
+          ``pandas.NaN`` objects are converted into ``None``.
 
         This should follow from a :meth:`dwopt.dbo._Db.create` call which sets up
         the database table with table name, column names, intended data types,
@@ -1032,35 +1057,30 @@ class _Db:
         Notes
         -----
 
-        **Datetime**
-
-        Pandas Datetime64 columns are converted into object columns, and the
-        ``pandas.NaT`` objects are converted into ``None`` before insertion.
-        For sqlite tables, datetime columns should be manually converted to str
-        and None before insertion.
-
         **Reversibility**
 
         Ideally python dataframe written to database should allow a exact same
-        dataframe to be read back into python. Whether this is true depends on the
-        database, data and object types on the dataframe,
-        and data types on the database table.
+        dataframe to be read back into python. Whether this is true depends on:
 
-        With the set up used in the :func:`dwopt.make_test_tbl` function, we have
-        following results (See the examples and the test function relevant for
-        the :meth:`dwopt.dbo._Db.write_nodup` method):
+        * The database.
+        * The data and object types on the dataframe.
+        * The data types on the database table.
 
-        * Postgre example has reversibility except for row ordering and auto generated
-          pandas dataframe index. These can be strightened as below.
+        With the set up used in the :func:`dwopt.make_test_tbl` function,
+        following results is obtained:
+
+        * The postgre table is reversible except for row order on select from database.
+          Example fix/strategy for comparison:
 
           .. code-block:: python
 
               df.sort_values('id').reset_index(drop=True)
 
-        * Sqlite stores datetime datatypes as text, this causes a str type column to
+        * Sqlite stores date/datetime as text, this causes a str type column to
           be read back. One strategy is to convert from datatime and NaT to
-          str and None before insertion, and convert back to date and datetime
-          when read back. Use ``datetime`` and ``pandas`` package for this.
+          str and None before insertion, and convert to date and datetime
+          when reading back.
+          Example fix/strategy for comparison:
 
           .. code-block:: python
 
@@ -1072,14 +1092,31 @@ class _Db:
               tbl = (
                   db.qry("test2").run()
                   .assign(
-                      date=lambda x: x["date"].apply(
+                      dte=lambda x: x["dte"].apply(
                           lambda x: datetime.date.fromisoformat(x) if x else None
                       ),
                       time=lambda x: pd.to_datetime(x.time),
                   )
               )
 
-        * Oracle is similiar to postgre.
+        * Oracle has same issue as postgre. In addition:
+
+          * Both date and datetime are stored as date format, and are read back
+            as datetime.
+          * Datetime milliseconds are lost on the database.
+          * Date are stored in dd-MMM-yy format on database.
+          * Date passed into varchar2 type column are stored in dd-MMM-yy format.
+
+          Example fix/strategy for comparison:
+
+          .. code-block:: python
+
+              tbl = db.run("select * from test2 order by id").assign(
+                  dte=lambda x: x["dte"].apply(lambda x: x.date() if x else None)
+              )
+              df2 = df.assign(
+                  time=lambda x: x["time"].apply(lambda x: x.replace(microsecond=0))
+              )
 
         Examples
         --------
@@ -1103,16 +1140,16 @@ class _Db:
         >>> pg, df = make_test_tbl('pg')
         >>> pg.drop('test')
         >>> pg.create(
-        >>>     "test",
-        >>>     dtypes={
-        >>>         "id": "bigint primary key",
-        >>>         "score": "float8",
-        >>>         "amt": "bigint",
-        >>>         "cat": "varchar(20)",
-        >>>         "date":"date",
-        >>>         "time":"timestamp"
-        >>>     }
-        >>> )
+        ...     "test",
+        ...     dtypes={
+        ...         "id": "bigint primary key",
+        ...         "score": "float8",
+        ...         "amt": "bigint",
+        ...         "cat": "varchar(20)",
+        ...         "dte":"date",
+        ...         "time":"timestamp"
+        ...     }
+        ... )
         >>> pg.write(df, 'test')
         >>> df_back = pg.qry('test').run().sort_values('id').reset_index(drop=True)
         >>> assert_frame_equal(df_back, df)
@@ -1124,7 +1161,9 @@ class _Db:
         df = df.copy()
         cols = df.columns.tolist()
         for col in cols:
-            if np.issubdtype(df[col].dtype, np.datetime64):
+            if np.issubdtype(df[col].dtype, np.datetime64) or np.issubdtype(
+                df[col].dtype, np.float64
+            ):
                 df[col] = df[col].astype(object).where(~df[col].isna(), None)
         self._remove_sch_tbl(sch_tbl_nme)
         tbl = alc.Table(
@@ -1207,14 +1246,6 @@ class _Db:
 
 
 class Pg(_Db):
-    def _guess_dtype(self, dtype):
-        if np.issubdtype(dtype, np.int64):
-            return alc.dialects.postgresql.BIGINT
-        elif np.issubdtype(dtype, np.float64):
-            return alc.Float(8)
-        else:
-            return super(type(self), self)._guess_dtype(dtype)
-
     def list_cons(self):
         sql = "SELECT * FROM information_schema.constraint_table_usage"
         return self.run(sql)
@@ -1240,14 +1271,6 @@ class Pg(_Db):
 
 
 class Lt(_Db):
-    def _guess_dtype(self, dtype):
-        if np.issubdtype(dtype, np.float64):
-            return alc.REAL
-        elif np.issubdtype(dtype, np.datetime64):
-            return alc.String
-        else:
-            return super(type(self), self)._guess_dtype(dtype)
-
     def list_tables(self):
         sql = (
             "select * from sqlite_master "
@@ -1258,12 +1281,6 @@ class Lt(_Db):
 
 
 class Oc(_Db):
-    def _guess_dtype(self, dtype):
-        if np.issubdtype(dtype, np.int64):
-            return alc.dialects.oracle.NUMBER
-        else:
-            return super(type(self), self)._guess_dtype(dtype)
-
     def list_tables(self, owner):
         sql = (
             "select/*+PARALLEL (4)*/ owner,table_name"
@@ -1275,7 +1292,7 @@ class Oc(_Db):
         return self.run(sql)
 
     def table_cols(self, sch_tbl_nme):
-        sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
+        sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
         sql = (
             "select/*+PARALLEL (4)*/ *"
             "\nfrom all_tab_columns"
