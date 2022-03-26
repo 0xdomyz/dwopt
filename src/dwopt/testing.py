@@ -196,7 +196,12 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
 
     **Install testing databases**
 
-    *Postgre*::
+    *Postgre*
+
+    * Install from
+      `postgresql windows <https://www.postgresql.org/download/windows/>`_.
+    * Add postgres bin directory to path.
+    * Run commands::
 
         psql -U postgres
         CREATE DATABASE dwopt_test;
@@ -205,10 +210,10 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
 
     *Oracle*
 
-    * Install oracle db from the
+    * Install from
       `oracle xe <https://www.oracle.com/database/technologies/xe-downloads.html>`_.
     * Set ORACLE_HOME environment variable to point to installation location.
-    * command::
+    * Run commands::
 
         cd /d %ORACLE_HOME%\\bin
         sqlplus sys/[password]]@//localhost:1521/XEPDB1 as sysdba
