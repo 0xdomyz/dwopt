@@ -22,19 +22,32 @@ _TEST_OC_URL = (
 def save_url(db_nme, url, method="keyring"):
     """Save encoded database engine url to keyring or config.
 
-    The package can also read a manually set environment variable storing the raw url.
-    See examples for quick-start.
-
-    On package import, default url are taken firstly from keyring if available,
-    then the config file if available, then the environment variable
-    if available, lastly a set of hard-coded testing urls.
+    See notes for details, see examples for quick-start.
 
     A `sqlalchemy engine url <https://docs.sqlalchemy.org/en/14/core/
     engines.html#database-urls>`_
     combines the user name, password, database names, etc
     into a single string.
 
-    *Details on credential locations:*
+    Parameters
+    ----------
+    db_nme : str
+        Relevant database code. Either ``pg`` for postgre, ``lt`` for sqlite,
+        or ``oc`` for oracle.
+    url : str
+        Sqlalchemy engine url.
+    method: str
+        Method used to save, either 'keyring', or 'config'.
+        Default 'keyring'.
+
+    Returns
+    -------
+    str
+        Message anouncing completion.
+
+    Notes
+    ------
+    Credential locations:
 
     * The system keyring service is accessed via the
       `keyring <https://pypi.org/project/keyring/>`_
@@ -57,21 +70,15 @@ def save_url(db_nme, url, method="keyring"):
     User could rewrite the ``_encode`` and the ``_decode`` functions to implement
     custom encryption algorithm.
 
-    Parameters
-    ----------
-    db_nme : str
-        Relevant database code. Either ``pg`` for postgre, ``lt`` for sqlite,
-        or ``oc`` for oracle.
-    url : str
-        Sqlalchemy engine url.
-    method: str
-        Method used to save, either 'keyring', or 'config'.
-        Default 'keyring'.
+    On package import, default url are taken firstly from keyring if available,
+    then the config file if available, then the environment variable
+    if available, lastly a set of hard-coded testing urls.
 
-    Returns
-    -------
-    str
-        Message anouncing completion.
+    To extend this feature and add additional default urls, add to the instantiation
+    lines in the ``__init__.py`` file, and save url to the symbol, example::
+
+        dev = db(_get_url("lt_dev")) # add to __init__.py
+        dwopt.save_url('lt_dev', "sqlite://")# run in a session
 
     Examples
     --------
