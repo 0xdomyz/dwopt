@@ -8,7 +8,7 @@ or write sql strings in python scripts?
 
 The Python package **dwopt**
 provides Excel-pivot-table-like and dataframe-summary-methods-like API,
-driven by sql templates under a flexible summary query building framework.
+driven by sql templates, under a flexible summary query building framework.
 
 See the Features and the Walk Through section for examples.
 
