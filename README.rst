@@ -1,7 +1,7 @@
 DWOPT - Datawarehouse Operator
 ==============================
 
-Getting summary stats out of databases can often be unstreamlined.
+Getting summary statistics out of database tables is often an unstreamlined process.
 Does one read in millions of rows before doing any work on Python,
 or run sql elsewhere and use intermediate CSVs,
 or write sql strings in python scripts?
