@@ -503,6 +503,7 @@ Future
 * Add more summary templates based on Python pandas, R tidyverse,
   and Excel pivot table functionalities.
 * Add more DML/DDL, metadata templates.
+* Test more Python versions, dependency versions, and on linux.
 * For sql syntax, consider using `sqlfluff <https://docs.sqlfluff.com/en/stable/>`_
   style and toolkit.
 * For templating internals, consider using
