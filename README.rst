@@ -459,6 +459,20 @@ Sqlalchemy logger can also be used to obtain even more details:
 Development
 ---------------
 
+Installation
+^^^^^^^^^^^^^^^
+
+Testing, documentation building package:
+
+.. code-block:: console
+
+    pip install pytest
+    pip install tox
+    pip install sphinx
+    pip install sphinx_rtd_theme
+    pip install build
+    pip install twine
+
 Testing
 ^^^^^^^^^^^^
 
