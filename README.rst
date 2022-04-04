@@ -1,14 +1,14 @@
 DWOPT - Datawarehouse Operator
 ==============================
 
-Getting summary stats out of databases can often be unstreamlined.
+Getting summary statistics out of database tables is often an unstreamlined process.
 Does one read in millions of rows before doing any work on Python,
 or run sql elsewhere and use intermediate CSVs,
 or write sql strings in python scripts?
 
 The Python package **dwopt**
 provides Excel-pivot-table-like and dataframe-summary-methods-like API,
-driven by sql templates under a flexible summary query building framework.
+driven by sql templates, under a flexible summary query building framework.
 
 See the Features and the Walk Through section for examples.
 
@@ -503,6 +503,7 @@ Future
 * Add more summary templates based on Python pandas, R tidyverse,
   and Excel pivot table functionalities.
 * Add more DML/DDL, metadata templates.
+* Test more Python versions, dependency versions, and on linux.
 * For sql syntax, consider using `sqlfluff <https://docs.sqlfluff.com/en/stable/>`_
   style and toolkit.
 * For templating internals, consider using
