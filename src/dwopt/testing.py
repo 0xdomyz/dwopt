@@ -221,7 +221,7 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
 
       .. code-block:: console
 
-        sqlplus sys/[password]]@//localhost:1521/XEPDB1 as sysdba
+        sqlplus sys/{PASSWORD}@//localhost:1521/XEPDB1 as sysdba
         create user dwopt_test identified by 1234;
         grant create session to dwopt_test;
         grant create table to dwopt_test;
