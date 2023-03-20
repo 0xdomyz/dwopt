@@ -1,7 +1,8 @@
 from pandas.testing import assert_frame_equal
-from dwopt import Pg, Lt, Oc, make_eng
+
+from dwopt import Lt, Oc, Pg, make_eng
 from dwopt._qry import _Qry
-from dwopt.testing import _TEST_PG_URL, _TEST_LT_URL, _TEST_OC_URL
+from dwopt.testing import _TEST_LT_URL, _TEST_OC_URL, _TEST_PG_URL
 
 
 def test_db_meta_init(test_tbl):
@@ -69,7 +70,8 @@ and table_name = 'test'
 """
         act = db.table_cols("public.test")
     elif isinstance(db, Lt):
-        return True
+        assert True
+        return
     elif isinstance(db, Oc):
         sql = """
 select/*+PARALLEL (4)*/ *
@@ -85,9 +87,11 @@ and table_name = 'test'
 def test_db_meta_table_sizes(test_tbl):
     db, df = test_tbl
     if isinstance(db, Pg):
-        return True
+        assert True
+        return
     elif isinstance(db, Lt):
-        return True
+        assert True
+        return
     elif isinstance(db, Oc):
         sql = """
 select/*+PARALLEL (4)*/
@@ -108,9 +112,11 @@ def test_db_meta_list_cons(test_tbl):
 select * from information_schema.constraint_table_usage
 """
     elif isinstance(db, Lt):
-        return True
+        assert True
+        return
     elif isinstance(db, Oc):
-        return True
+        assert True
+        return
     act = db.list_cons()
     exp = db.run(sql)
     assert_frame_equal(act, exp)
