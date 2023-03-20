@@ -481,17 +481,12 @@ Testing, documentation building package:
 Testing
 ^^^^^^^^^^^^
 
-Main tests and checks. Only test for sqlite:
+Main tests and checks.
 
 .. code-block:: console
 
-    python -m tox
-
-Quick main test:
-
-.. code-block:: console
-
-    python -m pytest
+    python -m tox -- --db=pg #sqlite, postgre on WSL2
+    python -m tox -- --db=oc #sqlite, oracle on Windows 10
 
 .. |dwopt.make_test_tbl| replace:: ``dwopt.make_test_tbl``
 .. _dwopt.make_test_tbl: https://dwopt.readthedocs.io/en/stable/set_up.html#dwopt.make_test_tbl
@@ -501,8 +496,9 @@ Set up environment based on |dwopt.make_test_tbl|_ function notes.
 
 .. code-block:: console
 
-    python -m pytest --db="pg"
-    python -m pytest --db="oc"
+    python -m pytest
+    python -m pytest --db=pg
+    python -m pytest --db=oc
 
 Test code styles:
 
