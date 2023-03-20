@@ -924,7 +924,7 @@ class _Db:
 
         >>> from dwopt import pg, make_test_tbl
         >>> _ = make_test_tbl(pg)
-        >>> pg.run(pth = "E:/projects/my_sql_script.sql",
+        >>> pg.run(pth = "E:/projects/my_sql_script.sql", # doctest: +SKIP
         ...     my_run_dte = '2022-03-03',
         ...     my_label = '20220303',
         ...     threshold = 5)
