@@ -466,12 +466,17 @@ Testing, documentation building package:
 
 .. code-block:: console
 
-    pip install pytest
-    pip install tox
-    pip install sphinx
-    pip install sphinx_rtd_theme
-    pip install build
-    pip install twine
+    #testing
+    python -m pip install pytest black flake8 tox
+    
+    #doco
+    python -m pip install sphinx sphinx_rtd_theme build twine
+    
+    #depend
+    python -m pip install -U sqlalchemy psycopg2 cx_Oracle pandas numpy keyring
+    
+    #package
+    python -m pip install -e .
 
 Testing
 ^^^^^^^^^^^^
@@ -510,6 +515,10 @@ Test code styles:
 
     flake8 src\dwopt
 
+Tested on:
+
+* WSL2, py39, py310 for sqlite, postgres on 2023-03-20
+* Windows 10, py39, py310 for sqlite, oracle on 2023-03-20
 
 Future
 ^^^^^^^^^
