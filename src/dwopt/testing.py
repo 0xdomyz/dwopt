@@ -1,9 +1,11 @@
-import random
-import pandas as pd
 import datetime
-import dwopt
-from dwopt.set_up import _TEST_PG_URL, _TEST_LT_URL, _TEST_OC_URL
+import random
+
+import pandas as pd
 import sqlalchemy as alc
+
+import dwopt
+from dwopt.set_up import _TEST_LT_URL, _TEST_OC_URL, _TEST_PG_URL
 
 
 def _make_test_df(n=10000):
@@ -57,10 +59,10 @@ def _make_pg_tbl(df, eng, sch_tbl_nme):
         alc.Column("time", alc.DateTime),
         schema=sch,
     )
-    with eng.connect() as conn:
+    with eng.begin() as conn:
         test_tbl.drop(conn, checkfirst=True)
     meta.create_all(eng)
-    with eng.connect() as conn:
+    with eng.begin() as conn:
         conn.execute(
             test_tbl.insert(),
             df.assign(
@@ -83,10 +85,10 @@ def _make_lt_tbl(df, eng, sch_tbl_nme):
         alc.Column("time", alc.String),
         schema=sch,
     )
-    with eng.connect() as conn:
+    with eng.begin() as conn:
         test_tbl.drop(conn, checkfirst=True)
     meta.create_all(eng)
-    with eng.connect() as conn:
+    with eng.begin() as conn:
         conn.execute(
             test_tbl.insert(),
             df.assign(
@@ -109,10 +111,10 @@ def _make_oc_tbl(df, eng, sch_tbl_nme):
         alc.Column("time", alc.Date),
         schema=sch,
     )
-    with eng.connect() as conn:
+    with eng.begin() as conn:
         test_tbl.drop(conn, checkfirst=True)
     meta.create_all(eng)
-    with eng.connect() as conn:
+    with eng.begin() as conn:
         conn.execute(
             test_tbl.insert(),
             df.assign(
@@ -206,6 +208,16 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
       .. code-block:: console
 
         psql -U postgres
+        CREATE DATABASE dwopt_test;
+        CREATE USER dwopt_tester WITH PASSWORD '1234';
+        GRANT ALL PRIVILEGES ON DATABASE dwopt_test to dwopt_tester;
+
+    *Postgre on linux*
+
+    .. code-block:: console
+
+        sudo su postgres
+        psql
         CREATE DATABASE dwopt_test;
         CREATE USER dwopt_tester WITH PASSWORD '1234';
         GRANT ALL PRIVILEGES ON DATABASE dwopt_test to dwopt_tester;
