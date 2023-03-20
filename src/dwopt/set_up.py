@@ -1,12 +1,12 @@
-import keyring
-import os
-from pathlib import Path
-import pandas as pd
-from configparser import ConfigParser
-import sqlalchemy
-import logging
 import base64
+import logging
+import os
+from configparser import ConfigParser
+from pathlib import Path
 
+import keyring
+import pandas as pd
+import sqlalchemy
 
 _logger = logging.getLogger(__name__)
 _CONFIG_PTH = Path.home() / ".dwopt"
@@ -57,6 +57,9 @@ def save_url(db_nme, url, method="keyring"):
       The user name will be either ``pg``, ``lt``, or ``oc``.
       The url will be encoded before saving.
 
+      Does not work if no keyring service is not available on
+      the system, see keyring package documentation for details.
+
     * The config file is created with name ``.dwopt``
       on the system ``HOME`` directory.
       There will be a url section on the config file, with option names being
@@ -84,7 +87,7 @@ def save_url(db_nme, url, method="keyring"):
     --------
     Save connection urls in various methods for various databases.
     Also manually create following environment variable
-    ``variable = value`` pair: ``dwopt_lt = sqlite:///:memory:``.
+    ``variable = value`` pair: ``dwopt_lt = sqlite://``.
 
     >>> import dwopt
     >>> dwopt.save_url('pg', 'postgresql://dwopt_tester:1234@localhost/dwopt_test')
@@ -101,7 +104,7 @@ def save_url(db_nme, url, method="keyring"):
     >>> pg.eng
     Engine(postgresql://dwopt_tester:***@localhost/dwopt_test)
     >>> lt.eng
-    Engine(sqlite:///:memory:)
+    Engine(sqlite://)
     >>> str(oc.eng)[:50]
     'Engine(oracle://dwopt_test:***@localhost:1521/?enc'
     """

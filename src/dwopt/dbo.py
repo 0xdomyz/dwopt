@@ -1,8 +1,10 @@
-import sqlalchemy as alc
-import pandas as pd
-import numpy as np
 import logging
 import re
+
+import numpy as np
+import pandas as pd
+import sqlalchemy as alc
+
 from dwopt._qry import _Qry
 from dwopt.set_up import _make_iris_df, _make_mtcars_df
 
@@ -337,7 +339,7 @@ class _Db:
                 _logger.info(f"{len(args) = }")
                 r = c.execute(alc.text(sql), args)
             else:
-                r = c.execute(sql)
+                r = c.execute(alc.text(sql))
             _logger.info("done")
             if r.returns_rows:
                 return pd.DataFrame(r.all(), columns=r.keys())
@@ -567,7 +569,7 @@ class _Db:
         """
         sch_tbl_nme, sch, tbl_nme = self._parse_sch_tbl_nme(sch_tbl_nme)
         self._remove_sch_tbl(sch_tbl_nme)
-        with self.eng.connect() as conn:
+        with self.eng.begin() as conn:
             _logger.info(f"dropping table via sqlalchemy: {sch_tbl_nme}")
             alc.Table(tbl_nme, self.meta, schema=sch).drop(conn, checkfirst=True)
             _logger.info("done")
@@ -922,7 +924,7 @@ class _Db:
 
         >>> from dwopt import pg, make_test_tbl
         >>> _ = make_test_tbl(pg)
-        >>> pg.run(pth = "E:/projects/my_sql_script.sql",
+        >>> pg.run(pth = "E:/projects/my_sql_script.sql", # doctest: +SKIP
         ...     my_run_dte = '2022-03-03',
         ...     my_label = '20220303',
         ...     threshold = 5)
@@ -1172,7 +1174,7 @@ class _Db:
         _logger.info(f"running:\n{tbl.insert()}")
         _ = df.to_dict("records")
         _logger.info(f"args len={L}, e.g.\n{_[0]}")
-        with self.eng.connect() as conn:
+        with self.eng.begin() as conn:
             conn.execute(
                 tbl.insert(),
                 _,

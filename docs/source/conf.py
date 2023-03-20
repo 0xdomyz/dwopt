@@ -4,8 +4,8 @@
 
 # -- Path setup --------------------------------------------------------------
 
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.abspath("../../src"))
 
@@ -13,9 +13,9 @@ sys.path.insert(0, os.path.abspath("../../src"))
 # -- Project information -----------------------------------------------------
 
 project = "dwopt"
-copyright = "2022, 0xdomyz"
+copyright = "2023, 0xdomyz"
 author = "0xdomyz"
-release = "0.0.5"
+release = "0.0.6"
 
 
 # -- General configuration ---------------------------------------------------

@@ -1,4 +1,5 @@
 from pandas.testing import assert_frame_equal, assert_series_equal
+
 from dwopt import Oc
 
 
@@ -71,4 +72,5 @@ from test
         exp = db.run(sql).iloc[0, 0]
         assert act == exp
     else:
-        return True
+        assert True
+        return

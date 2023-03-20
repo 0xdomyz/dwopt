@@ -459,6 +459,25 @@ Sqlalchemy logger can also be used to obtain even more details:
 Development
 ---------------
 
+Installation
+^^^^^^^^^^^^^^^
+
+Testing, documentation building package:
+
+.. code-block:: console
+
+    #testing
+    python -m pip install pytest black flake8 tox
+    
+    #doco
+    python -m pip install sphinx sphinx_rtd_theme build twine
+    
+    #depend
+    python -m pip install -U sqlalchemy psycopg2 cx_Oracle pandas numpy keyring
+    
+    #package
+    python -m pip install -e .
+
 Testing
 ^^^^^^^^^^^^
 
@@ -466,13 +485,13 @@ Main tests and checks. Only test for sqlite:
 
 .. code-block:: console
 
-    tox
+    python -m tox
 
 Quick main test:
 
 .. code-block:: console
 
-    pytest
+    python -m pytest
 
 .. |dwopt.make_test_tbl| replace:: ``dwopt.make_test_tbl``
 .. _dwopt.make_test_tbl: https://dwopt.readthedocs.io/en/stable/set_up.html#dwopt.make_test_tbl
@@ -482,20 +501,36 @@ Set up environment based on |dwopt.make_test_tbl|_ function notes.
 
 .. code-block:: console
 
-    pytest --db="pg" --db="oc"
-
-Test examples across docs:
-
-.. code-block:: console
-
-    docs\make doctest
+    python -m pytest --db="pg"
+    python -m pytest --db="oc"
 
 Test code styles:
 
 .. code-block:: console
 
-    flake8 src\dwopt
+    flake8 src/dwopt
 
+Tested on:
+
+* WSL2, py39, py310 for sqlite, postgres on 2023-03-20
+* Windows 10, py39, py310 for sqlite, oracle on 2023-03-20
+
+Documentation
+^^^^^^^^^^^^^^^^^
+
+Build document:
+
+.. code-block:: console
+
+    cd docs
+    make html
+
+Test examples across docs:
+
+.. code-block:: console
+
+    cd docs
+    make doctest
 
 Future
 ^^^^^^^^^
