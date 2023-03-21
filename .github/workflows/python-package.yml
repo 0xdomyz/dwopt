@@ -28,6 +28,6 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install tox
         python -m pip install .
-    - name: Test with tox
+    - name: Test with pytest
       run: |
-        python -m tox
+        python -m pytest
