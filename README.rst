@@ -89,6 +89,8 @@ Supports:
 * Windows 10: Sqlite, Postgre, Oracle.
 * Linux: Sqlite, Postgre.
 
+See `Testing`_ section for package version tested.
+
 Run sql script with text replacement
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -486,8 +488,7 @@ Testing, documentation building package:
 Testing
 ^^^^^^^^^^^^
 
-Test for sqlite, postgre on WSL2. And sqlite, oracle on Windows 10.
-Test for python 3.9, 3.10, 3.11.
+Test:
 
 .. code-block:: console
 
@@ -496,7 +497,7 @@ Test for python 3.9, 3.10, 3.11.
 .. |dwopt.make_test_tbl| replace:: ``dwopt.make_test_tbl``
 .. _dwopt.make_test_tbl: https://dwopt.readthedocs.io/en/stable/set_up.html#dwopt.make_test_tbl
 
-Testing for sqlite, postgre, oracle.
+Testing for specific databases.
 Set up environment based on |dwopt.make_test_tbl|_ function notes.
 
 .. code-block:: console
