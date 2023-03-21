@@ -83,6 +83,11 @@ and the database engine url to access database.
         n
     0  32
 
+Supports:
+
+* Python 3.9, 3.10, 3.11.
+* Windows 10: Sqlite, Postgre, Oracle.
+* Linux: Sqlite, Postgre.
 
 Run sql script with text replacement
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -543,18 +548,9 @@ Test examples across docs:
 Future
 ^^^^^^^^^
 
-* Add more summary templates based on Python pandas, R tidyverse,
-  and Excel pivot table functionalities.
-* Add more DML/DDL, metadata templates.
-* Test more Python versions, dependency versions, and on linux.
-* For sql syntax, consider using `sqlfluff <https://docs.sqlfluff.com/en/stable/>`_
-  style and toolkit.
-* For templating internals, consider using
-  `jinjasql <https://github.com/sripathikrishnan/jinjasql>`_ toolkit.
-* For query building internals, consider using
-  `sqlalchemy <https://www.sqlalchemy.org/>`_ toolkit.
-* For text replacement directives, consider using
+* For text replacement directives, use
   `jinja2 <https://jinja2docs.readthedocs.io/en/stable/>`_ syntax.
+* Add more summary, DML/DDL, metadata templates.
 
 .. end-of-readme-usage
 
