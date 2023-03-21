@@ -469,11 +469,11 @@ Testing, documentation building package:
     #testing
     python -m pip install pytest black flake8 tox
     
-    #doco
+    #doco and packaging
     python -m pip install sphinx sphinx_rtd_theme build twine
     
     #depend
-    python -m pip install -U sqlalchemy psycopg2 cx_Oracle pandas numpy keyring
+    python -m pip install -U sqlalchemy psycopg2 cx_Oracle pandas keyring
     
     #package
     python -m pip install -e .
@@ -481,12 +481,12 @@ Testing, documentation building package:
 Testing
 ^^^^^^^^^^^^
 
-Main tests and checks.
+Test for sqlite, postgre on WSL2. And sqlite, oracle on Windows 10.
+Test for python 3.9, 3.10, 3.11.
 
 .. code-block:: console
 
-    python -m tox -- --db=pg #sqlite, postgre on WSL2
-    python -m tox -- --db=oc #sqlite, oracle on Windows 10
+    python -m tox
 
 .. |dwopt.make_test_tbl| replace:: ``dwopt.make_test_tbl``
 .. _dwopt.make_test_tbl: https://dwopt.readthedocs.io/en/stable/set_up.html#dwopt.make_test_tbl
@@ -506,10 +506,22 @@ Test code styles:
 
     flake8 src/dwopt
 
-Tested on:
+Package versions tested are::
 
-* WSL2, py39, py310 for sqlite, postgres on 2023-03-20
-* Windows 10, py39, py310 for sqlite, oracle on 2023-03-20
+    Name: SQLAlchemy
+    Version: 2.0.7
+    ---
+    Name: psycopg2
+    Version: 2.9.5
+    ---
+    Name: cx-Oracle
+    Version: 8.3.0
+    ---
+    Name: pandas
+    Version: 1.5.3
+    ---
+    Name: keyring
+    Version: 23.13.1
 
 Documentation
 ^^^^^^^^^^^^^^^^^
