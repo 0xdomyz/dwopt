@@ -83,6 +83,13 @@ and the database engine url to access database.
         n
     0  32
 
+Supports:
+
+* Python 3.9, 3.10, 3.11.
+* Windows 10: Sqlite, Postgre, Oracle.
+* Linux: Sqlite, Postgre.
+
+See `Testing`_ section for package version tested.
 
 Run sql script with text replacement
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -469,11 +476,11 @@ Testing, documentation building package:
     #testing
     python -m pip install pytest black flake8 tox
     
-    #doco
+    #doco and packaging
     python -m pip install sphinx sphinx_rtd_theme build twine
     
     #depend
-    python -m pip install -U sqlalchemy psycopg2 cx_Oracle pandas numpy keyring
+    python -m pip install -U sqlalchemy psycopg2 cx_Oracle pandas keyring
     
     #package
     python -m pip install -e .
@@ -481,28 +488,23 @@ Testing, documentation building package:
 Testing
 ^^^^^^^^^^^^
 
-Main tests and checks. Only test for sqlite:
+Test:
 
 .. code-block:: console
 
     python -m tox
 
-Quick main test:
-
-.. code-block:: console
-
-    python -m pytest
-
 .. |dwopt.make_test_tbl| replace:: ``dwopt.make_test_tbl``
 .. _dwopt.make_test_tbl: https://dwopt.readthedocs.io/en/stable/set_up.html#dwopt.make_test_tbl
 
-Testing for sqlite, postgre, oracle.
+Testing for specific databases.
 Set up environment based on |dwopt.make_test_tbl|_ function notes.
 
 .. code-block:: console
 
-    python -m pytest --db="pg"
-    python -m pytest --db="oc"
+    python -m pytest
+    python -m pytest --db=pg
+    python -m pytest --db=oc
 
 Test code styles:
 
@@ -510,10 +512,22 @@ Test code styles:
 
     flake8 src/dwopt
 
-Tested on:
+Package versions tested are::
 
-* WSL2, py39, py310 for sqlite, postgres on 2023-03-20
-* Windows 10, py39, py310 for sqlite, oracle on 2023-03-20
+    Name: SQLAlchemy
+    Version: 2.0.7
+    ---
+    Name: psycopg2
+    Version: 2.9.5
+    ---
+    Name: cx-Oracle
+    Version: 8.3.0
+    ---
+    Name: pandas
+    Version: 1.5.3
+    ---
+    Name: keyring
+    Version: 23.13.1
 
 Documentation
 ^^^^^^^^^^^^^^^^^
@@ -535,18 +549,9 @@ Test examples across docs:
 Future
 ^^^^^^^^^
 
-* Add more summary templates based on Python pandas, R tidyverse,
-  and Excel pivot table functionalities.
-* Add more DML/DDL, metadata templates.
-* Test more Python versions, dependency versions, and on linux.
-* For sql syntax, consider using `sqlfluff <https://docs.sqlfluff.com/en/stable/>`_
-  style and toolkit.
-* For templating internals, consider using
-  `jinjasql <https://github.com/sripathikrishnan/jinjasql>`_ toolkit.
-* For query building internals, consider using
-  `sqlalchemy <https://www.sqlalchemy.org/>`_ toolkit.
-* For text replacement directives, consider using
+* For text replacement directives, use
   `jinja2 <https://jinja2docs.readthedocs.io/en/stable/>`_ syntax.
+* Add more summary, DML/DDL, metadata templates.
 
 .. end-of-readme-usage
 
