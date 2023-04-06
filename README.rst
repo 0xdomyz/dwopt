@@ -101,6 +101,8 @@ Use the database operator object's
 |run|_ method to run sql script file.
 One could then replace ``:`` marked parameters via mappings supplied to the method.
 
+Colon syntax is to be depreciated. A future version will use jinja2 syntax across the board.
+
 .. code-block:: python
 
     from dwopt import pg, make_test_tbl
