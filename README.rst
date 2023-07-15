@@ -489,7 +489,10 @@ Testing, documentation building package:
     
     #depend
     python -m pip install -U sqlalchemy psycopg2 oracledb pandas keyring
+    
+    # consider
     python -m pip install -U cx_Oracle
+    python -m pip install -U keyrings.alt
     
     #package
     python -m pip install -e .
