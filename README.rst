@@ -475,14 +475,21 @@ Testing, documentation building package:
 
 .. code-block:: console
 
+    #venv on linux
+    sudo apt-get install python3-venv
+    python3.11 -m venv dwopt_dev
+    source dwopt_dev/bin/activate
+    deactivate
+
     #testing
     python -m pip install pytest black flake8 tox
     
     #doco and packaging
-    python -m pip install sphinx sphinx_rtd_theme build twine
+    python -m pip install sphinx sphinx_rtd_theme build twine wheel
     
     #depend
-    python -m pip install -U sqlalchemy psycopg2 cx_Oracle pandas keyring
+    python -m pip install -U sqlalchemy psycopg2 oracledb pandas keyring
+    python -m pip install -U cx_Oracle
     
     #package
     python -m pip install -e .
