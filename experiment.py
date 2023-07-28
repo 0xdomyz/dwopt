@@ -23,7 +23,6 @@ triage_loads(a)
 triage_loads(b)
 
 
-
 # base64 string, even if string is a dict's json.dumps
 import base64
 
@@ -36,8 +35,6 @@ import base64
 
 # _CONFIG_PTH = "config.ini"
 # cfg = ConfigParser()
-
-
 
 
 def _encode(x: str) -> str:
@@ -87,11 +84,16 @@ df
 
 # oracledb
 url = f"oracle+oracledb://{url_base}"
-bin_path = r"C:\app\User\product\21c\dbhomeXE\bin"
-eng = alc.create_engine(url, echo=True, thick_mode = {"lib_dir": bin_path})
+bin_path = r"C:\app\yzdom\product\21c\dbhomeXE\bin"
+eng = alc.create_engine(url, echo=True, thick_mode={"lib_dir": bin_path})
 df = pd.read_sql("select * from dual", eng)
 df
 
+# thin mode
+url = f"oracle+oracledb://{url_base}"
+eng = alc.create_engine(url, echo=True)
+df = pd.read_sql("select * from dual", eng)
+df
 
 # config save and read dict
 from configparser import ConfigParser
@@ -114,12 +116,15 @@ if cfg.has_option("url", db_nme):
 if url is not None:
     print(url)
 
+
 # save url save additional args
 def save_url(db_nme, url, method="keyring"):
     pass
 
-alc.create_engine(url,db_nme="a")
-alc.create_engine(url,method="a")
+
+alc.create_engine(url, db_nme="a")
+alc.create_engine(url, method="a")
+
 
 def save_url(db_nme, url, method="keyring", **kwargs):
     kwargs.update({"url": url})
@@ -157,4 +162,3 @@ triage_loads(dict_form_wo_kwargs)
 raw_url_form = url
 raw_url_form
 triage_loads(raw_url_form)
-
