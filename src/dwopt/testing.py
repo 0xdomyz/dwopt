@@ -211,6 +211,7 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
         CREATE DATABASE dwopt_test;
         CREATE USER dwopt_tester WITH PASSWORD '1234';
         GRANT ALL PRIVILEGES ON DATABASE dwopt_test to dwopt_tester;
+        ALTER DATABASE dwopt_test OWNER TO dwopt_tester;
 
     *Postgre on linux*
 
@@ -221,6 +222,7 @@ def make_test_tbl(db, sch_tbl_nme="test", n=10000):
         CREATE DATABASE dwopt_test;
         CREATE USER dwopt_tester WITH PASSWORD '1234';
         GRANT ALL PRIVILEGES ON DATABASE dwopt_test to dwopt_tester;
+        ALTER DATABASE dwopt_test OWNER TO dwopt_tester;
 
     *Oracle*
 
