@@ -86,8 +86,8 @@ and the database engine url to access database.
 Supports:
 
 * Python 3.9, 3.10, 3.11.
-* Windows 10: Sqlite, Postgre, Oracle.
-* Linux: Sqlite, Postgre.
+* Windows 10: Sqlite, Postgres 15, Oracle.
+* Linux: Sqlite, Postgres 15.
 
 See `Testing`_ section for package version tested.
 
