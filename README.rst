@@ -488,11 +488,14 @@ Testing, documentation building package:
     python -m pip install sphinx sphinx_rtd_theme build twine wheel
     
     #depend
-    python -m pip install -U sqlalchemy psycopg2 oracledb pandas keyring
+    python -m pip install -U sqlalchemy pandas keyring
+    python -m pip install -U psycopg2
+    python -m pip install -U oracledb 
     
     # consider
-    python -m pip install -U cx_Oracle
     python -m pip install -U keyrings.alt
+    python -m pip install -U psycopg2-binary
+    python -m pip install -U cx_Oracle
     
     #package
     python -m pip install -e .
