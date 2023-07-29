@@ -86,8 +86,8 @@ and the database engine url to access database.
 Supports:
 
 * Python 3.9, 3.10, 3.11.
-* Windows 10: Sqlite, Postgres 15, Oracle.
-* Linux: Sqlite, Postgres 15.
+* Windows 10: Sqlite, Postgres, Oracle.
+* Linux: Sqlite, Postgres.
 
 See `Testing`_ section for package version tested.
 
@@ -526,6 +526,11 @@ Test code styles:
 .. code-block:: console
 
     flake8 src/dwopt
+
+Databases used for testings are::
+
+    Postgres 15
+    Oracle express 21c
 
 Package versions tested are::
 
