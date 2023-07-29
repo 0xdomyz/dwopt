@@ -85,7 +85,7 @@ and the database engine url to access database.
 
 Supports:
 
-* Python 3.9, 3.10, 3.11.
+* Python 3.10, 3.11.
 * Windows 10: Sqlite, Postgres, Oracle.
 * Linux: Sqlite, Postgres.
 
@@ -489,11 +489,11 @@ Testing, documentation building package:
     
     #depend
     python -m pip install -U sqlalchemy pandas keyring
+    python -m pip install -U keyrings.alt
     python -m pip install -U psycopg2
     python -m pip install -U oracledb 
     
     # consider
-    python -m pip install -U keyrings.alt
     python -m pip install -U psycopg2-binary
     python -m pip install -U cx_Oracle
     
