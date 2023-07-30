@@ -120,18 +120,26 @@ def save_url(db_nme: str, url: str = None, method: str = "keyring", **kwargs):
     >>> dwopt.save_url('oc', method='config')
     'Deleted oc url from config'
 
-    Save additional engine parameters alongside url::
+    Save additional engine parameters alongside url,
+    username for location of oracle bin to be replaced by actual username::
 
         import dwopt
         dwopt.save_url(
-            db_nme='pg',
-            url='postgresql://dwopt_tester:1234@localhost/dwopt_test',
+            db_nme='oc',
+            url=(
+                "oracle+oracledb://dwopt_test:1234@localhost:1521/"
+                "?service_name=XEPDB1 &encoding=UTF-8&nencoding=UTF-8"
+            ),
             method='keyring',
-            echo=True, #additional
+            thick_mode={"lib_dir":"C:/app/{username}/product/21c/dbhomeXE/bin"}
         )
         # restart python
-        from dwopt import pg
-        pg.eng.echo
+        from dwopt import oc
+        oc.run("select * from dual")
+
+        # check if thick mode is enabled
+        import oracledb
+        oracledb.is_thin_mode()# False
 
     Environment variable storing additional parameters,
     example ``variable = value`` pair:

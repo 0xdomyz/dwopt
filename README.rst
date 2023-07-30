@@ -91,6 +91,8 @@ and the database engine url to access database.
         n
     0  32
 
+Allows for thick mode connection to Oracle database:
+
 .. code-block:: python
 
     from dwopt import db
