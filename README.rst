@@ -475,6 +475,14 @@ Example configuration to print on console and store on file with timestamps:
     )
     logging.getLogger('dwopt.dbo').setLevel(logging.INFO)
 
+Debug logging:
+
+.. code-block:: python
+
+    import logging
+    logging.basicConfig()
+    logging.getLogger('dwopt').setLevel(logging.DEBUG)
+
 Sqlalchemy logger can also be used to obtain even more details:
 
 .. code-block:: python
