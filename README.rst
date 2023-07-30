@@ -22,6 +22,14 @@ Installation
 
     pip install dwopt
 
+Install the database drivers for the database engines you want to use.
+
+.. code-block:: console
+
+    pip install psycopg2 # postgres
+    pip install psycopg2-binary # postgres alternative in case of error
+    
+    pip install oracledb # oracle
 
 Features
 --------
@@ -491,7 +499,7 @@ Testing, documentation building package:
     python -m pip install -U sqlalchemy pandas keyring
     python -m pip install -U keyrings.alt
     python -m pip install -U psycopg2
-    python -m pip install -U oracledb 
+    python -m pip install -U oracledb
     
     # consider
     python -m pip install -U psycopg2-binary
@@ -534,20 +542,7 @@ Databases used for testings are::
 
 Package versions tested are::
 
-    Name: SQLAlchemy
-    Version: 2.0.7
-    ---
-    Name: psycopg2
-    Version: 2.9.5
-    ---
-    Name: cx-Oracle
-    Version: 8.3.0
-    ---
-    Name: pandas
-    Version: 1.5.3
-    ---
-    Name: keyring
-    Version: 23.13.1
+
 
 Documentation
 ^^^^^^^^^^^^^^^^^
