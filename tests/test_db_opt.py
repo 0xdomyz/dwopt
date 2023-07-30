@@ -1,8 +1,10 @@
-from pandas.testing import assert_frame_equal
-from dwopt import Pg, Lt, Oc
-import pandas as pd
 import datetime
+
+import pandas as pd
 import pytest
+from pandas.testing import assert_frame_equal
+
+from dwopt import Lt, Oc, Pg
 
 
 def assert_frame_equal_reset_index(a, b):

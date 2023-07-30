@@ -1,10 +1,10 @@
 import base64
+import json
 import logging
 import os
 from configparser import ConfigParser
 from pathlib import Path
 from typing import Tuple, Union
-import json
 
 import keyring
 import pandas as pd

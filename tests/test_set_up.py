@@ -1,7 +1,9 @@
-import dwopt
-from sqlalchemy.engine import Engine
-import os
 import json
+import os
+
+from sqlalchemy.engine import Engine
+
+import dwopt
 
 _DB_LST = ["pg", "lt", "oc"]
 

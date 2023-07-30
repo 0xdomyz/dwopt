@@ -1152,9 +1152,7 @@ class _Qry:
             if res.empty:
                 return pd.Series(index=res.columns)
             else:
-                return res.iloc[
-                    0,
-                ]
+                return res.iloc[0,]
         elif out == 1:
             self.print(q)
         elif out == 2:
