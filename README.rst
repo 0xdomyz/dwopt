@@ -7,8 +7,12 @@ or run sql elsewhere and use intermediate CSVs,
 or write sql strings in python scripts?
 
 The Python package **dwopt**
-provides Excel-pivot-table-like and dataframe-summary-methods-like API,
+provides classes to directly operate on database tables,
 driven by sql templates, under a flexible summary query building framework.
+
+Speficially, it provides Excel-pivot-table-like API,
+dataframe-summary-methods-like API,
+and DDL/DML statements, metadata query wrappers.
 
 See the Features and the Walk Through section for examples.
 
@@ -27,7 +31,7 @@ Install the database drivers for the database engines you want to use.
 .. code-block:: console
 
     pip install psycopg2 # postgres
-    pip install psycopg2-binary # postgres alternative in case of error
+    pip install psycopg2-binary # in case can't build psycopg2
     
     pip install oracledb # oracle
 
@@ -122,7 +126,8 @@ Use the database operator object's
 |run|_ method to run sql script file.
 One could then replace ``:`` marked parameters via mappings supplied to the method.
 
-Colon syntax is to be depreciated. A future version will use jinja2 syntax across the board.
+Colon syntax is to be deprecated.
+A future version will use jinja2 syntax across the board.
 
 .. code-block:: python
 
@@ -522,7 +527,7 @@ Testing, documentation building package:
     python -m pip install -U psycopg2
     python -m pip install -U oracledb
     
-    # consider
+    #consider
     python -m pip install -U psycopg2-binary
     python -m pip install -U cx_Oracle
     
