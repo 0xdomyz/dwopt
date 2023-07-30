@@ -1,8 +1,10 @@
-from dwopt import make_test_tbl
-import pytest
-from pathlib import Path
-import keyring
 import os
+from pathlib import Path
+
+import keyring
+import pytest
+
+from dwopt import make_test_tbl
 
 _CONFIG_PTH = Path.home() / ".dwopt"
 _KEYRING_SERV_ID = (Path(__file__).parents[1] / "src" / "dwopt").resolve().as_posix()
@@ -25,7 +27,7 @@ def _clean_up_credential():
 def creds():
     pg_url = "postgresql://tiger:!@#aD123@localhost/mydatabase"
     lt_url = "sqlite:////E:/db.sqlite"
-    oc_url = "oracle://tiger:!@#aD123@tnsname"
+    oc_url = "oracle+oracledb://tiger:!@#aD123@tnsname"
     _clean_up_credential()
     yield pg_url, lt_url, oc_url
     _clean_up_credential()

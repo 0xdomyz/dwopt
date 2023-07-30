@@ -1,6 +1,7 @@
-from pandas.testing import assert_frame_equal
-from contextlib import redirect_stdout
 import io
+from contextlib import redirect_stdout
+
+from pandas.testing import assert_frame_equal
 
 _SQL = "select count(1) from test"
 

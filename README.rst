@@ -1,14 +1,24 @@
-DWOPT - Datawarehouse Operator
-==============================
+DWOPT - SQL query abstraction library
+========================================
 
 Getting summary statistics out of database tables is often an unstreamlined process.
 Does one read in millions of rows before doing any work on Python,
-or run sql elsewhere and use intermediate CSVs,
+or run SQL elsewhere and use intermediate CSVs,
 or write sql strings in python scripts?
 
-The Python package **dwopt**
-provides Excel-pivot-table-like and dataframe-summary-methods-like API,
-driven by sql templates, under a flexible summary query building framework.
+The Python package **dwopt** (Datawarehouse Operator)
+uses classes with a collection of sql templates to dynamically build and run queries,
+under a flexible summary query building framework.
+
+Specifically, it features Excel-pivot-table-like API,
+a collection of dataframe-summary-methods-like API,
+and a collection of DDL/DML statements, metadata query wrappers.
+
+Supports:
+
+* Python 3.10, 3.11.
+* Windows 10: Sqlite, Postgres, Oracle.
+* Linux: Sqlite, Postgres.
 
 See the Features and the Walk Through section for examples.
 
@@ -22,6 +32,14 @@ Installation
 
     pip install dwopt
 
+Install the database drivers for the database engines you want to use.
+
+.. code-block:: console
+
+    pip install psycopg2 # postgres
+    pip install psycopg2-binary # in case can't build psycopg2
+    
+    pip install oracledb # oracle
 
 Features
 --------
@@ -83,11 +101,18 @@ and the database engine url to access database.
         n
     0  32
 
-Supports:
+Allows for thick mode connection to Oracle database:
 
-* Python 3.9, 3.10, 3.11.
-* Windows 10: Sqlite, Postgre, Oracle.
-* Linux: Sqlite, Postgre.
+.. code-block:: python
+
+    from dwopt import db
+    url = """oracle+oracledb://dwopt_test:1234@localhost:1521/?service_name=XEPDB1 
+    &encoding=UTF-8&nencoding=UTF-8"""
+    lib_dir = "C:/app/{user_name}/product/21c/dbhomeXE/bin"
+    o = db(url, thick_mode={"lib_dir": lib_dir})
+    o.run("select * from dual")
+      dummy
+    0     X
 
 See `Testing`_ section for package version tested.
 
@@ -101,7 +126,8 @@ Use the database operator object's
 |run|_ method to run sql script file.
 One could then replace ``:`` marked parameters via mappings supplied to the method.
 
-Colon syntax is to be depreciated. A future version will use jinja2 syntax across the board.
+Colon syntax is to be deprecated.
+A future version will use jinja2 syntax across the board.
 
 .. code-block:: python
 
@@ -456,6 +482,14 @@ Example configuration to print on console and store on file with timestamps:
     )
     logging.getLogger('dwopt.dbo').setLevel(logging.INFO)
 
+Debug logging:
+
+.. code-block:: python
+
+    import logging
+    logging.basicConfig()
+    logging.getLogger('dwopt').setLevel(logging.DEBUG)
+
 Sqlalchemy logger can also be used to obtain even more details:
 
 .. code-block:: python
@@ -475,14 +509,27 @@ Testing, documentation building package:
 
 .. code-block:: console
 
+    #venv on linux
+    sudo apt-get install python3-venv
+    python3.11 -m venv dwopt_dev
+    source dwopt_dev/bin/activate
+    deactivate
+
     #testing
     python -m pip install pytest black flake8 tox
     
     #doco and packaging
-    python -m pip install sphinx sphinx_rtd_theme build twine
+    python -m pip install sphinx sphinx_rtd_theme build twine wheel
     
     #depend
-    python -m pip install -U sqlalchemy psycopg2 cx_Oracle pandas keyring
+    python -m pip install -U sqlalchemy pandas keyring
+    python -m pip install -U keyrings.alt
+    python -m pip install -U psycopg2
+    python -m pip install -U oracledb
+    
+    #consider
+    python -m pip install -U psycopg2-binary
+    python -m pip install -U cx_Oracle
     
     #package
     python -m pip install -e .
@@ -514,22 +561,31 @@ Test code styles:
 
     flake8 src/dwopt
 
+Databases used for testings are::
+
+    Postgres 15
+    Oracle express 21c
+
 Package versions tested are::
 
-    Name: SQLAlchemy
-    Version: 2.0.7
+    Name: keyring
+    Version: 24.2.0
     ---
-    Name: psycopg2
-    Version: 2.9.5
+    Name: keyrings.alt
+    Version: 5.0.0
     ---
-    Name: cx-Oracle
-    Version: 8.3.0
+    Name: oracledb
+    Version: 1.3.2
     ---
     Name: pandas
-    Version: 1.5.3
+    Version: 2.0.3
     ---
-    Name: keyring
-    Version: 23.13.1
+    Name: psycopg2-binary
+    Version: 2.9.6
+    ---
+    Name: SQLAlchemy
+    Version: 2.0.19
+
 
 Documentation
 ^^^^^^^^^^^^^^^^^

@@ -11,7 +11,7 @@ from dwopt.set_up import _make_iris_df, _make_mtcars_df
 _logger = logging.getLogger(__name__)
 
 
-def db(eng):
+def db(eng, **kwargs):
     """The :class:`database operator object <dwopt.dbo._Db>` factory.
 
     Args
@@ -23,6 +23,8 @@ def db(eng):
 
         Alternatively a Database connection engine to be used.
         Use the :func:`dwopt.make_eng` function to make engine.
+
+    kwargs: Additional engine creation arguments.
 
     Returns
     -------
@@ -57,12 +59,23 @@ def db(eng):
     Produce an oracle database operator object:
 
     >>> from dwopt import db, Oc
-    >>> url = "oracle://scott2:tiger@tnsname"
+    >>> url = "oracle+oracledb://scott2:tiger@tnsname"
     >>> isinstance(db(url), Oc)
     True
+
+    Use additional engine creation arguments::
+
+        from dwopt import db
+        url = (
+            "oracle+oracledb://dwopt_test:1234@localhost:1521/?service_name=XEPDB1 "
+            "&encoding=UTF-8&nencoding=UTF-8"
+        )
+        lib_dir = "C:/app/{user_name}/product/21c/dbhomeXE/bin"
+        o = db(url, thick_mode={"lib_dir": lib_dir})
+        o.run("select * from dual")
     """
     if isinstance(eng, str):
-        eng = alc.create_engine(eng)
+        eng = alc.create_engine(eng, **kwargs)
     else:
         if not isinstance(eng, alc.engine.Engine):
             raise ValueError("Invalid eng, either engine url or engine")
@@ -74,12 +87,12 @@ def db(eng):
     elif nme == "oracle":
         return Oc(eng)
     else:
-        raise ValueError("Invalid engine, either postgre, sqlite, or oracle")
+        raise ValueError("Invalid engine, either postgres, sqlite, or oracle")
 
 
-def Db(eng):
+def Db(eng, **kwargs):
     """Alias for :func:`dwopt.db`"""
-    return db(eng)
+    return db(eng, **kwargs)
 
 
 class _Db:
@@ -117,6 +130,7 @@ class _Db:
 
         Alternatively a Database connection engine to be used.
         Use the :func:`dwopt.make_eng` function to make engine.
+    kwargs: Additional engine creation arguments.
 
     Attributes
     ----------
@@ -153,11 +167,17 @@ class _Db:
     >>> p = Pg("postgresql://dwopt_tester:1234@localhost/dwopt_test")
     >>> p.mtcars(q=1).len()
     32
+
+    Additonal engine creation arguments::
+
+        from dwopt import Pg
+        p = Pg("postgresql://dwopt_tester:1234@localhost/dwopt_test", echo=1)
+        p.mtcars()
     """
 
-    def __init__(self, eng):
+    def __init__(self, eng, **kwargs):
         if isinstance(eng, str):
-            self.eng = alc.create_engine(eng)
+            self.eng = alc.create_engine(eng, **kwargs)
         else:
             self.eng = eng
         self.meta = alc.MetaData()

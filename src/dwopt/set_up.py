@@ -1,8 +1,10 @@
 import base64
+import json
 import logging
 import os
 from configparser import ConfigParser
 from pathlib import Path
+from typing import Tuple, Union
 
 import keyring
 import pandas as pd
@@ -14,13 +16,13 @@ _KEYRING_SERV_ID = Path(__file__).parent.resolve().as_posix()
 _TEST_PG_URL = "postgresql://dwopt_tester:1234@localhost/dwopt_test"
 _TEST_LT_URL = "sqlite://"
 _TEST_OC_URL = (
-    "oracle://dwopt_test:1234@localhost:1521/?service_name=XEPDB1"
+    "oracle+oracledb://dwopt_test:1234@localhost:1521/?service_name=XEPDB1"
     "&encoding=UTF-8&nencoding=UTF-8"
 )
 
 
-def save_url(db_nme, url, method="keyring"):
-    """Save encoded database engine url to keyring or config.
+def save_url(db_nme: str, url: str = None, method: str = "keyring", **kwargs):
+    """Save or delete encoded database engine url to keyring or config.
 
     See notes for details, see examples for quick-start.
 
@@ -34,11 +36,13 @@ def save_url(db_nme, url, method="keyring"):
     db_nme : str
         Relevant database code. Either ``pg`` for postgre, ``lt`` for sqlite,
         or ``oc`` for oracle.
-    url : str
+    url : str or None
         Sqlalchemy engine url.
+        None to delete url from keyring or config.
     method: str
         Method used to save, either 'keyring', or 'config'.
         Default 'keyring'.
+    kwargs: Additional engine creation parameters.
 
     Returns
     -------
@@ -67,7 +71,8 @@ def save_url(db_nme, url, method="keyring"):
 
     * The environment variables should be manually made with the names
       ``dwopt_pg``, ``dwopt_lt`` or ``dwopt_oc``, and the value being
-      the raw url string.
+      the raw url string, or string representing dictionary of engine parameters,
+      see examples.
 
     Base 64 encoding is done to prevent raw password being stored on files.
     User could rewrite the ``_encode`` and the ``_decode`` functions to implement
@@ -92,7 +97,7 @@ def save_url(db_nme, url, method="keyring"):
     >>> import dwopt
     >>> dwopt.save_url('pg', 'postgresql://dwopt_tester:1234@localhost/dwopt_test')
     'Saved pg url to keyring'
-    >>> url = ("oracle://dwopt_test:1234@localhost:1521/?service_name=XEPDB1"
+    >>> url = ("oracle+oracledb://dwopt_test:1234@localhost:1521/?service_name=XEPDB1"
     ...     "&encoding=UTF-8&nencoding=UTF-8")
     >>>
     >>> dwopt.save_url('oc', url, 'config')
@@ -106,49 +111,150 @@ def save_url(db_nme, url, method="keyring"):
     >>> lt.eng
     Engine(sqlite://)
     >>> str(oc.eng)[:50]
-    'Engine(oracle://dwopt_test:***@localhost:1521/?enc'
+    'Engine(oracle+oracledb://dwopt_test:***@localhost:'
+
+    Remove saved urls.
+
+    >>> dwopt.save_url('pg', url=None, method='keyring')
+    'Deleted pg url from keyring'
+    >>> dwopt.save_url('oc', method='config')
+    'Deleted oc url from config'
+
+    Save additional engine parameters alongside url,
+    username for location of oracle bin to be replaced by actual username::
+
+        import dwopt
+        dwopt.save_url(
+            db_nme='oc',
+            url=(
+                "oracle+oracledb://dwopt_test:1234@localhost:1521/"
+                "?service_name=XEPDB1 &encoding=UTF-8&nencoding=UTF-8"
+            ),
+            method='keyring',
+            thick_mode={"lib_dir":"C:/app/{username}/product/21c/dbhomeXE/bin"}
+        )
+        # restart python
+        from dwopt import oc
+        oc.run("select * from dual")
+
+        # check if thick mode is enabled
+        import oracledb
+        oracledb.is_thin_mode()# False
+
+    Environment variable storing additional parameters,
+    example ``variable = value`` pair:
+    ``dwopt_oc = {"url": "oracle+oracledb://dwopt_test:1234@localhost:1521/
+    ?service_name=XEPDB1 &encoding=UTF-8&nencoding=UTF-8",
+    "thick_mode":{"lib_dir":"C:/app/{user_name}/product/21c/dbhomeXE/bin"}}``
+    . Then assuming oc url not saved to keyring or config::
+
+        from dwopt import oc
+        oc.run("select * from dual")
+
     """
-    url = _encode(url)
+    # create url with possible additional parameters
+    if url is not None:
+        kwargs.update({"url": url})
+        dict_url = json.dumps(kwargs)
+        encoded_url = _encode(dict_url)
+    else:
+        encoded_url = None
+
+    # save url
     if method == "keyring":
-        keyring.set_password(_KEYRING_SERV_ID, db_nme, url)
+        if encoded_url is None:
+            keyring.delete_password(_KEYRING_SERV_ID, db_nme)
+        else:
+            keyring.set_password(_KEYRING_SERV_ID, db_nme, encoded_url)
     elif method == "config":
         cfg = ConfigParser()
         cfg.read(_CONFIG_PTH)
         if not cfg.has_section("url"):
             cfg.add_section("url")
-        cfg.set("url", db_nme, url)
+
+        if encoded_url is None:
+            cfg.remove_option("url", db_nme)
+        else:
+            cfg.set("url", db_nme, encoded_url)
+
         with open(_CONFIG_PTH, "w") as f:
             cfg.write(f)
     else:
         raise ValueError("Invalid method, either 'keyring', or 'config'")
-    return f"Saved {db_nme} url to {method}"
+
+    if encoded_url is None:
+        _logger.debug(f"{db_nme} url deleted from {method}")
+        return f"Deleted {db_nme} url from {method}"
+    else:
+        _logger.debug(f"{db_nme} url saved to {method}")
+        return f"Saved {db_nme} url to {method}"
 
 
-def _get_url(db_nme):
+def _parse_saved_url(raw: str) -> Tuple[str, dict]:
+    """
+    Examples
+    --------
+    >>> _parse_saved_url('sqlite://')
+    ('sqlite://', {})
+    >>> _parse_saved_url('{"url": "sqlite://"}')
+    ('sqlite://', {})
+    >>> _parse_saved_url('{"url": "sqlite://", "echo": true}')
+    ('sqlite://', {'echo': True})
+    """
+    if '"url":' in raw:
+        try:
+            res = json.loads(raw)
+        except Exception as e:
+            raise ValueError(f"invalid json format: {raw}") from e
+        if isinstance(res, dict):
+            url = res["url"]
+            res.pop("url")
+            kwargs = res
+        elif isinstance(res, str):
+            url = res
+            kwargs = {}
+        else:
+            raise ValueError(f"unknown loaded url format: {res}")
+    else:  # backward compatibility
+        url = raw
+        kwargs = {}
+
+    return url, kwargs
+
+
+def _get_url(db_nme: str) -> Tuple[str, dict]:
     """Get url if available, else dummy url."""
     url = None
 
+    # keyring
     try:
-        url = _decode(keyring.get_password(_KEYRING_SERV_ID, db_nme))
+        url = keyring.get_password(_KEYRING_SERV_ID, db_nme)
+        if url is not None:
+            url = _decode(url)
     except Exception as e:
         _logger.warning(e)
     if url is not None:
         _logger.debug(f"{db_nme} url obtained from keyring")
-        return url
+        return _parse_saved_url(raw=url)
 
+    # config
     cfg = ConfigParser()
     cfg.read(_CONFIG_PTH)
     if cfg.has_option("url", db_nme):
-        url = _decode(cfg.get("url", db_nme))
+        url = cfg.get("url", db_nme)
+        if url is not None:
+            url = _decode(url)
     if url is not None:
         _logger.debug(f"{db_nme} url obtained from config")
-        return url
+        return _parse_saved_url(raw=url)
 
+    # environ
     url = os.environ.get(f"dwopt_{db_nme}")
     if url is not None:
         _logger.debug(f"{db_nme} url obtained from environ")
-        return url
+        return _parse_saved_url(raw=url)
 
+    # dummy
     if db_nme == "pg":
         url = _TEST_PG_URL
     elif db_nme == "lt":
@@ -157,21 +263,20 @@ def _get_url(db_nme):
         url = _TEST_OC_URL
     else:
         raise ValueError("Invalid db_nme, either 'pg', 'lt' or 'oc'")
-    _logger.debug(f"{db_nme} url obtained from hardcoded dummy")
-    return url
+    _logger.debug(f"{db_nme} url obtained from hardcoded testing url")
+    return _parse_saved_url(raw=url)
 
 
-def _encode(x):
-    if x is not None:
-        return base64.b64encode(x.encode("UTF-8")).decode("UTF-8")
+# todo remove none case
+def _encode(x: str) -> str:
+    return base64.b64encode(x.encode("UTF-8")).decode("UTF-8")
 
 
-def _decode(x):
-    if x is not None:
-        return base64.b64decode(x.encode("UTF-8")).decode("UTF-8")
+def _decode(x: str) -> str:
+    return base64.b64decode(x.encode("UTF-8")).decode("UTF-8")
 
 
-def make_eng(url):
+def make_eng(url, **kwargs):
     """Make database connection engine.
 
     Use the database connection engine to instantiate the database opeartor class.
@@ -187,6 +292,7 @@ def make_eng(url):
     ----------
     url : str
         Sqlalchemy engine url.
+    kwargs : additional engine creation parameters.
 
     Returns
     -------

@@ -1,14 +1,31 @@
-from .dbo import db, Db, Pg, Lt, Oc
-from .set_up import save_url, make_eng, _get_url
+import logging
+
+from .dbo import Db, Lt, Oc, Pg, db
+from .set_up import _get_url, make_eng, save_url
 from .testing import make_test_tbl
 
-pg = db(_get_url("pg"))
-lt = db(_get_url("lt"))
-oc = db(_get_url("oc"))
+_logger = logging.getLogger(__name__)
 
-d = db
-l = lt
-m = make_test_tbl
-o = oc
-p = pg
-s = save_url
+try:
+    url, kwargs = _get_url("lt")
+    lt = db(url, **kwargs)
+except Exception as e:
+    msg = f"Failed to initialize default lt operator: {e}"
+    _logger.debug(msg)
+    lt = msg
+
+try:
+    url, kwargs = _get_url("pg")
+    pg = db(url, **kwargs)
+except Exception as e:
+    msg = f"Failed to initialize default lt operator: {e}"
+    _logger.debug(msg)
+    pg = msg
+
+try:
+    url, kwargs = _get_url("oc")
+    oc = db(url, **kwargs)
+except Exception as e:
+    msg = f"Failed to initialize default lt operator: {e}"
+    _logger.debug(msg)
+    oc = msg

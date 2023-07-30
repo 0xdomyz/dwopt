@@ -1152,9 +1152,7 @@ class _Qry:
             if res.empty:
                 return pd.Series(index=res.columns)
             else:
-                return res.iloc[
-                    0,
-                ]
+                return res.iloc[0,]
         elif out == 1:
             self.print(q)
         elif out == 2:
@@ -1228,7 +1226,7 @@ class _Qry:
 
             from dwopt import lt, make_test_tbl
             import logging
-            logging.basicConfig(level = logging.INFO)
+            # logging.basicConfig(level = logging.INFO)
             _ = make_test_tbl(lt)
             (
                 lt.qry('test').where('score>0.5', 'dte is not null', 'cat is not null')
