@@ -1,19 +1,24 @@
-DWOPT - Datawarehouse Operator
-=================================
+DWOPT - SQL query abstraction library
+========================================
 
 Getting summary statistics out of database tables is often an unstreamlined process.
 Does one read in millions of rows before doing any work on Python,
 or run SQL elsewhere and use intermediate CSVs,
 or write sql strings in python scripts?
 
-The Python package **dwopt** is a SQL query abstraction library.
-It provides classes that dynamically build and run queries,
-driven by a collection of sql templates,
+The Python package **dwopt** (Datawarehouse Operator)
+uses classes with a collection of sql templates to dynamically build and run queries,
 under a flexible summary query building framework.
 
-Speficially, it features Excel-pivot-table-like API,
+Specifically, it features Excel-pivot-table-like API,
 a collection of dataframe-summary-methods-like API,
 and a collection of DDL/DML statements, metadata query wrappers.
+
+Supports:
+
+* Python 3.10, 3.11.
+* Windows 10: Sqlite, Postgres, Oracle.
+* Linux: Sqlite, Postgres.
 
 See the Features and the Walk Through section for examples.
 
@@ -108,12 +113,6 @@ Allows for thick mode connection to Oracle database:
     o.run("select * from dual")
       dummy
     0     X
-
-Supports:
-
-* Python 3.10, 3.11.
-* Windows 10: Sqlite, Postgres, Oracle.
-* Linux: Sqlite, Postgres.
 
 See `Testing`_ section for package version tested.
 

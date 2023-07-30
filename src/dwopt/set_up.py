@@ -149,8 +149,7 @@ def save_url(db_nme: str, url: str = None, method: str = "keyring", **kwargs):
     . Then assuming oc url not saved to keyring or config::
 
         from dwopt import oc
-        oc.eng.url
-        oc.eng.thick_mode
+        oc.run("select * from dual")
 
     """
     # create url with possible additional parameters
