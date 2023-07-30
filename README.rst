@@ -91,6 +91,17 @@ and the database engine url to access database.
         n
     0  32
 
+.. code-block:: python
+
+    from dwopt import db
+    url = """oracle+oracledb://dwopt_test:1234@localhost:1521/?service_name=XEPDB1 
+    &encoding=UTF-8&nencoding=UTF-8"""
+    lib_dir = "C:/app/{user_name}/product/21c/dbhomeXE/bin"
+    o = db(url, thick_mode={"lib_dir": lib_dir})
+    o.run("select * from dual")
+      dummy
+    0     X
+
 Supports:
 
 * Python 3.10, 3.11.
