@@ -111,7 +111,7 @@ def save_url(db_nme: str, url: str = None, method: str = "keyring", **kwargs):
     >>> lt.eng
     Engine(sqlite://)
     >>> str(oc.eng)[:50]
-    'Engine(oracle+oracledb://dwopt_test:***@localhost:1521/?enc'
+    'Engine(oracle+oracledb://dwopt_test:***@localhost:'
 
     Remove saved urls.
 
@@ -165,7 +165,8 @@ def save_url(db_nme: str, url: str = None, method: str = "keyring", **kwargs):
     if method == "keyring":
         if encoded_url is None:
             keyring.delete_password(_KEYRING_SERV_ID, db_nme)
-        keyring.set_password(_KEYRING_SERV_ID, db_nme, encoded_url)
+        else:
+            keyring.set_password(_KEYRING_SERV_ID, db_nme, encoded_url)
     elif method == "config":
         cfg = ConfigParser()
         cfg.read(_CONFIG_PTH)
