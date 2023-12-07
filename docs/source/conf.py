@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.abspath("../../src"))
 project = "dwopt"
 copyright = "2023, 0xdomyz"
 author = "0xdomyz"
-release = "0.0.8"
+release = "0.0.9"
 
 
 # -- General configuration ---------------------------------------------------
