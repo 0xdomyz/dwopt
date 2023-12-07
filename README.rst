@@ -604,12 +604,6 @@ Test examples across docs:
     cd docs
     make doctest
 
-Future
-^^^^^^^^^
-
-* For text replacement directives, use
-  `jinja2 <https://jinja2docs.readthedocs.io/en/stable/>`_ syntax.
-* Add more summary, DML/DDL, metadata templates.
 
 .. end-of-readme-usage
 
