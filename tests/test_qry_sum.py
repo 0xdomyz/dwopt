@@ -33,7 +33,7 @@ def test_qry_sum_len(test_tbl):
 
 def test_qry_sum_dist(test_tbl):
     db, df = test_tbl
-    act = db.qry("test").dist("id")[0]
+    act = db.qry("test").dist("id").iloc[0]
     exp = df.loc[:, "id"].nunique()
     assert act == exp
 
