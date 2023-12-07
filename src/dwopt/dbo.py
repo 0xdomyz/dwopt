@@ -6,7 +6,7 @@ import pandas as pd
 import sqlalchemy as alc
 
 from dwopt._qry import _Qry
-from dwopt.set_up import _make_iris_df, _make_mtcars_df
+from dwopt.set_up import _make_iris_df, _make_mtcars_df, make_eng
 
 _logger = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ def db(eng, **kwargs):
         o.run("select * from dual")
     """
     if isinstance(eng, str):
-        eng = alc.create_engine(eng, **kwargs)
+        eng = make_eng(eng, **kwargs)
     else:
         if not isinstance(eng, alc.engine.Engine):
             raise ValueError("Invalid eng, either engine url or engine")
@@ -177,7 +177,7 @@ class _Db:
 
     def __init__(self, eng, **kwargs):
         if isinstance(eng, str):
-            self.eng = alc.create_engine(eng, **kwargs)
+            self.eng = make_eng(eng, **kwargs)
         else:
             self.eng = eng
         self.meta = alc.MetaData()

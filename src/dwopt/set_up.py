@@ -311,7 +311,7 @@ def make_eng(url, **kwargs):
        count
     0    150
     """
-    return sqlalchemy.create_engine(url)
+    return sqlalchemy.create_engine(url, **kwargs)
 
 
 def make_meta(eng, schema):
